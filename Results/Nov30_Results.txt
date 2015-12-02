@@ -1,0 +1,9 @@
+LSTM - babi simple dataset - 100% (first epoch )
+	 - babi medium dataset - 100% (after 3 epochs)
+	 - babi full - 16% + (didn't let finish)
+	 
+MemNet
+	- babi full: 100%
+	
+	
+For the CNN dataset, simple, min test erorr was about 51% on 6000 training examples. 
