@@ -3,10 +3,13 @@ cd /home/dan/Desktop/aws_key
 ssh -i DansKey-ubuntu-usoregon.pem "INSERT_AMAZON_MACHINE_URL"
 
 # Once connected to amazon machine:
+# The only problem so far seems to happen when updating ubuntu, the computer seems to restart and it doesn't complete
+
 
 sudo mkdir project
 cd project 
 sudo apt-get install git
+Y
 sudo git init
 sudo git clone https://github.com/dstrawse/Nlp2Commands.git
 cd Nlp2Commands

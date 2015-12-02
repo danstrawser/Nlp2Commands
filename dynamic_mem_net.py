@@ -29,7 +29,7 @@ class DynamicMemNet(object):
     N_HIDDEN = 20
     N_HIDDEN_BRAIN = 20
     GRAD_CLIP = 100
-    LEARNING_RATE = .05
+    LEARNING_RATE = .001
 
 
     def __init__(self, X_train, y_train, mask_train, X_test, y_test, mask_test, input_size, max_seq_len, idx2word):
