@@ -64,8 +64,8 @@ if __name__ == '__main__':
         data_type = args[1]
         print(" data type: ", data_type)
     else:
-        nn_type = "dynam_net"
-        data_type = "babi_full"
+        nn_type = "mem_net"
+        data_type = "wiki_qa"
 
 
     main(nn_type, data_type)
