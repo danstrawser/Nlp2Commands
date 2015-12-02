@@ -67,6 +67,7 @@ if __name__ == '__main__':
         nn_type = "dynam_net"
         data_type = "babi_full"
 
+
     main(nn_type, data_type)
 
 
