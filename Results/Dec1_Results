@@ -1,0 +1,59 @@
+LSTM:  reads memory altogether, question with context
+
+DynamMem:  I think you need to connect each input to the "brain" to all the outputs of the context input LSTM. 
+
+It looks like you "just" need to plug a softmax layer from the outputs of the bottom GRU to the top "brain" GRU.  This will select which facts are important.  
+
+
+But what is the input to the brain layer, how do you have both the question and the softmax be input?  
+
+Maybe run the question through a GRU, then take the softmaxs from the 
+
+
+Questions:  Does the whole sequential reading thing matter to the Dynam Mem Net?  
+
+If so, you could think of a way to include the memory along with that.  For now, just get attention out of Dynam Mem Net
+
+solution to the problem:  the number of units output of the dense layer could be the same as the input to the hidden units of the brain_layer 
+
+Or instead of a gated layer, you could use a gate layer, but how to implement this?  
+
+
+Or, you can concatenate the outputs of the first, second seq and put them through a gate layer.   
+
+
+BABI SIMPLE 
+
+Some results:  with the SliceLayer, the LSTM achieves ratio correct of 1 at Epoch 22
+With full dense, we achieve ratio correct of 1 at Epoch 10
+With GRU and full dense output, we achieve 1.0 in Epoch 14 (albeit, quite quickly).
+
+The dynamic memory works on Babi Simple, but it takes a much longer time. 
+
+BABI MEDIUM
+- LSTM solves in 56 iterations 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

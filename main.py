@@ -65,7 +65,8 @@ if __name__ == '__main__':
         print(" data type: ", data_type)
     else:
         nn_type = "dynam_net"
-        data_type = "babi_medium"
+        data_type = "babi_full"
+
 
     main(nn_type, data_type)
 
