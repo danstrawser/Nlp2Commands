@@ -1,0 +1,7 @@
+#!/bin/bash
+sudo apt-get update
+sudo apt-get -y dist-upgrade
+screen -S “theano”  
+sudo apt-get install -y gcc g++ gfortran build-essential git wget linux-image-generic libopenblas-dev python-dev python-pip python-nose python-numpy python-scipy  
+sudo pip install --upgrade --no-deps git+git://github.com/Theano/Theano.git  
+
