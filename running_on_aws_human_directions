@@ -1,3 +1,9 @@
+#In terminal: 
+cd /home/dan/Desktop/aws_key
+ssh -i DansKey-ubuntu-usoregon.pem "INSERT_AMAZON_MACHINE_URL"
+
+# Once connected to amazon machine:
+
 sudo mkdir project
 cd project 
 sudo apt-get install git
@@ -7,11 +13,26 @@ cd Nlp2Commands
 sudo chmod +x aws_bash
 ./aws_bash
 
+
+
+
 Also need these: 
 
 alias python=/usr/bin/python3
 apt-get install python-numpy
 
+sudo apt-get install packaging-dev
+
 Also Use
 
-sudo pip install Theano
+sudo pip3 install Theano
+
+pip3 install -r https://raw.githubusercontent.com/Lasagne/Lasagne/v0.1/requirements.txt
+
+pip3 install Lasagne==0.1
+
+sudo pip3 install nltk
+
+sudo pip3 install sklearn
+
+
