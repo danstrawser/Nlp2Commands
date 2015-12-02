@@ -33,6 +33,7 @@ class DynamicMemNet(object):
 
 
     def __init__(self, X_train, y_train, mask_train, X_test, y_test, mask_test, input_size, max_seq_len, idx2word):
+        
         self.X_train = X_train
         self.y_train = y_train
         self.mask_train = mask_train
@@ -51,6 +52,7 @@ class DynamicMemNet(object):
 
     # Note that you could want to create an embedding for input context
     def build(self, input_var=None):
+        print(" Initializing Dynamic Mem Net with Learning Rate: ", self.LEARNING_RATE)
         input_size, max_seqlen = self.input_size, self.max_seq_len
 
         y = T.vector('target_output')
