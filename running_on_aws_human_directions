@@ -4,4 +4,14 @@ sudo apt-get install git
 sudo git init
 sudo git clone https://github.com/dstrawse/Nlp2Commands.git
 cd Nlp2Commands
+sudo chmod +x aws_bash
+./aws_bash
 
+Also need these: 
+
+alias python=/usr/bin/python3
+apt-get install python-numpy
+
+Also Use
+
+sudo pip install Theano
