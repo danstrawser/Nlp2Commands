@@ -1,3 +1,4 @@
+from DMNLayer import DMNLayer
 __author__ = 'Dan'
 import numpy as np
 import theano
@@ -27,12 +28,16 @@ class DynamicMemNet(object):
 
     N_BATCH = 1
     N_HIDDEN = 20
+    N_HIDDEN_W2F = 20
     N_HIDDEN_BRAIN = 20
     GRAD_CLIP = 100
     LEARNING_RATE = .001
 
+    N_HIDDEN_H = 20
+    N_HIDDEN_M = 20
 
-    def __init__(self, X_train, y_train, mask_train, X_test, y_test, mask_test, input_size, max_seq_len, idx2word):
+
+    def __init__(self, X_train, y_train, mask_train, X_test, y_test, mask_test, input_size, max_seq_len, idx2word, max_question_len):
         
         self.X_train = X_train
         self.y_train = y_train
@@ -49,50 +54,58 @@ class DynamicMemNet(object):
         self.init_lr = .001     # Same as the MemNet
         self.lr= self.init_lr   # Same as the MemNet
         self.num_epochs = 100
+        
+        self.word_embedding_size = input_size
+        self.max_number_of_readings = 2
+        self.max_question_len = max_question_len
 
     # Note that you could want to create an embedding for input context
     def build(self, input_var=None):
         print(" Initializing Dynamic Mem Net with Learning Rate: ", self.LEARNING_RATE)
         input_size, max_seqlen = self.input_size, self.max_seq_len
-
+        vocab_size = self.input_size
+        word_embedding_size = self.word_embedding_size
+        max_question_len = self.max_question_len
+                
         y = T.vector('target_output')
         # Build the network
         l_in = lasagne.layers.InputLayer(shape=(self.N_BATCH, max_seqlen, input_size))
         l_mask = lasagne.layers.InputLayer(shape=(self.N_BATCH, max_seqlen))
-        l_recurrent_first_seq = lasagne.layers.GRULayer(l_in, self.N_HIDDEN, mask_input=l_mask,grad_clipping=self.GRAD_CLIP)  # output size is (1 = num_batches, 9 = seq_len, 100 = hidden units)
-        l_recurrent_second_seq = lasagne.layers.GRULayer(l_in, self.N_HIDDEN, mask_input=l_mask, grad_clipping=self.GRAD_CLIP)
+        
+        word_to_fact_layers = []
+        for idx in range(self.max_number_of_readings): # TODO:  This is not number of readings but words in a sentence
+            w2f_layer = lasagne.layers.GRULayer(l_in, self.N_HIDDEN_W2F, mask_input=l_mask, grad_clipping=self.GRAD_CLIP, only_return_final=True)     
+            word_to_fact_layers.append(w2f_layer)
+        
+        l_in_question = lasagne.layers.InputLayer(shape=(self.N_BATCH, max_question_len, word_embedding_size))
+        l_in_question_mask = lasagne.layers.InputLayer(shape=(self.N_BATCH, max_question_len))
+        
+        question_encoding_gru = lasagne.layers.GRULayer(l_in_question, self.N_HIDDEN_W2F, mask_input=l_in_question_mask, grad_clipping=self.GRAD_CLIP, only_return_final=True)
+        
+        # Note:  need to concatenate word2fact_layer and the question.  
+        facts = lasagne.layers.MergeLayer([fact for fact in word_to_fact_layers])
+        
+        #incoming, question_layer, num_hidden_units_h, num_hidden_units_m, sent_len
+        brain_layer = DMNLayer(facts, question_encoding_gru, self.N_HIDDEN_H, self.N_HIDDEN_M, max_seqlen)
+                
+        #brain_layer = lasagne.layers.GRULayer(episodes, grad_clipping=self.GRAD_CLIP, only_return_final=True)
+        answer_decoder = lasagne.layers.DenseLayer(brain_layer, num_units=vocab_size, W=lasagne.init.Normal(std=0.1), nonlinearity=lasagne.nonlinearities.softmax)
+             
+        #l_pred = lasagne.layers.DenseLayer(brain_layer, self.num_classes, W=lasagne.init.Normal(std=0.1), nonlinearity=lasagne.nonlinearities.softmax)
+        probas = lasagne.layers.get_output(answer_decoder)  # Get handle on the network
 
-        # l_forward_slice = lasagne.layers.SliceLayer(l_recurrent_first_seq, -1, 1)  # INSERTED
 
-        #self.num_classes = self.vocab_size
-        #l_pred = lasagne.layers.DenseLayer(l_recurrent_first_seq, num_units=self.num_classes, W=lasagne.init.Normal(std=0.1), nonlinearity=lasagne.nonlinearities.softmax)
-
-
-        l_out_first_seq = lasagne.layers.DenseLayer(l_recurrent_first_seq, num_units=max_seqlen * self.N_HIDDEN_BRAIN, W=lasagne.init.Normal(std=0.1), nonlinearity=lasagne.nonlinearities.softmax)  # Size of these is (batch_size = 1, seq_len = 9)
-        l_out_second_seq = lasagne.layers.DenseLayer(l_recurrent_first_seq, num_units=max_seqlen * self.N_HIDDEN_BRAIN, W=lasagne.init.Normal(std=0.1), nonlinearity=lasagne.nonlinearities.softmax)  # Could just try to have this have more units
-
-        l_out_first_seq = lasagne.layers.ReshapeLayer(l_out_first_seq, shape=(self.N_BATCH, self.N_HIDDEN_BRAIN, max_seqlen))
-        l_out_second_seq = lasagne.layers.ReshapeLayer(l_out_second_seq, shape=(self.N_BATCH, self.N_HIDDEN_BRAIN, max_seqlen))
-
-        input_to_brain = lasagne.layers.ConcatLayer([l_out_first_seq, l_out_second_seq], axis=2)
-
-        brain_layer = lasagne.layers.GRULayer(input_to_brain, self.N_HIDDEN_BRAIN)
-        # l_forward_slice = lasagne.layers.SliceLayer(brain_layer, -1, 1) # Output to dense softmax layer
-        #
-        self.num_classes = self.vocab_size
-        l_pred = lasagne.layers.DenseLayer(brain_layer, self.num_classes, W=lasagne.init.Normal(std=0.1), nonlinearity=lasagne.nonlinearities.softmax)
-
-        #probas = lasagne.layers.get_output(l_pred)  # Get handle on the network
+        assert(1 == 2)
 
         # Building the cost model and Thenao functions
-        #probas = T.clip(probas, 1e-7, 1.0-1e-7)
-        #pred = T.argmax(probas, axis=1)
+        probas = T.clip(probas, 1e-7, 1.0-1e-7)
+        pred = T.argmax(probas, axis=1)
         #cost = T.nnet.binary_crossentropy(probas, y).sum()
-        predicted_values = lasagne.layers.get_output(l_pred).flatten()
+        predicted_values = lasagne.layers.get_output(answer_decoder).flatten()
         cost = T.mean((predicted_values - y)**2)
-        test_prediction = lasagne.layers.get_output(l_pred, deterministic=True)
+        test_prediction = lasagne.layers.get_output(answer_decoder, deterministic=True)
 
-        params = lasagne.layers.get_all_params(l_pred, trainable=True)
+        params = lasagne.layers.get_all_params(answer_decoder, trainable=True)
         grads = T.grad(cost, params)
         scaled_grads = lasagne.updates.total_norm_constraint(grads, self.max_norm)
 
@@ -106,6 +119,35 @@ class DynamicMemNet(object):
 
         print(" finished compilation: ")
 
+
+        
+        
+        
+        # TODO:  Test that any of the above even runs
+#         l_recurrent_first_seq = lasagne.layers.GRULayer(l_in, self.N_HIDDEN, mask_input=l_mask,grad_clipping=self.GRAD_CLIP)  # output size is (1 = num_batches, 9 = seq_len, 100 = hidden units)
+#         l_recurrent_second_seq = lasagne.layers.GRULayer(l_in, self.N_HIDDEN, mask_input=l_mask, grad_clipping=self.GRAD_CLIP)
+# 
+#         # l_forward_slice = lasagne.layers.SliceLayer(l_recurrent_first_seq, -1, 1)  # INSERTED
+# 
+#         #self.num_classes = self.vocab_size
+#         #l_pred = lasagne.layers.DenseLayer(l_recurrent_first_seq, num_units=self.num_classes, W=lasagne.init.Normal(std=0.1), nonlinearity=lasagne.nonlinearities.softmax)
+# 
+# 
+#         l_out_first_seq = lasagne.layers.DenseLayer(l_recurrent_first_seq, num_units=max_seqlen * self.N_HIDDEN_BRAIN, W=lasagne.init.Normal(std=0.1), nonlinearity=lasagne.nonlinearities.softmax)  # Size of these is (batch_size = 1, seq_len = 9)
+#         l_out_second_seq = lasagne.layers.DenseLayer(l_recurrent_first_seq, num_units=max_seqlen * self.N_HIDDEN_BRAIN, W=lasagne.init.Normal(std=0.1), nonlinearity=lasagne.nonlinearities.softmax)  # Could just try to have this have more units
+# 
+#         l_out_first_seq = lasagne.layers.ReshapeLayer(l_out_first_seq, shape=(self.N_BATCH, self.N_HIDDEN_BRAIN, max_seqlen))
+#         l_out_second_seq = lasagne.layers.ReshapeLayer(l_out_second_seq, shape=(self.N_BATCH, self.N_HIDDEN_BRAIN, max_seqlen))
+# 
+#         input_to_brain = lasagne.layers.ConcatLayer([l_out_first_seq, l_out_second_seq], axis=2)
+# 
+#         brain_layer = lasagne.layers.GRULayer(input_to_brain, self.N_HIDDEN_BRAIN)
+#         # l_forward_slice = lasagne.layers.SliceLayer(brain_layer, -1, 1) # Output to dense softmax layer
+#         #
+#         self.num_classes = self.vocab_size
+#         l_pred = lasagne.layers.DenseLayer(brain_layer, self.num_classes, W=lasagne.init.Normal(std=0.1), nonlinearity=lasagne.nonlinearities.softmax)
+
+        
 
     def train(self):
         epoch = 0
