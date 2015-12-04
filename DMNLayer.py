@@ -355,7 +355,7 @@ class DMNLayer(MergeLayer):
             if self.grad_clipping:
                 hidden_update_facts = theano.gradient.grad_clip(
                     hidden_update_facts, -self.grad_clipping, self.grad_clipping)
-            hidden_update_facts = self.nonlinearity_hid(hidden_update)
+            hidden_update_facts = self.nonlinearity_hid(hidden_update_facts)
 
             # Compute (1 - u_t)h_{t - 1} + u_t c_t
             hid = (1 - updategate)*hid_previous_facts + updategate*hidden_update_facts # This is the GRU_fact output

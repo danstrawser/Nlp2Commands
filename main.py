@@ -48,7 +48,7 @@ def main(nn_type, data_type):
         mn.run('cnn_qa')
 
     elif nn_type == "dynam_net":
-        proc = BabiProcessor(data_type)
+        proc = BabiProcessor(data_type, "dynam_net")
         X_train, y_train, mask_train, X_test, y_test, mask_test, input_size, max_seq_len, idx2word = proc.process()
         dn = DynamicMemNet(X_train, y_train, mask_train, X_test, y_test, mask_test, input_size, max_seq_len, idx2word)
         dn.build()
@@ -64,8 +64,9 @@ if __name__ == '__main__':
         data_type = args[1]
         print(" data type: ", data_type)
     else:
+        print(" running")
         nn_type = "dynam_net"
-        data_type = "babi_full"
+        data_type = "babi_medium"
 
 
     main(nn_type, data_type)
