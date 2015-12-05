@@ -5,12 +5,14 @@ import theano.tensor as T
 import theano.typed_list
 from collections import OrderedDict
 import pickle
+import sys
 
 class DMNPureTheano(object):
 
     # We take as input a string of "facts"
     def __init__(self, num_fact_hidden_units, number_word_classes, number_fact_embeddings, dimension_fact_embeddings, num_episode_hidden_units, max_number_of_facts_read):
         
+        sys.setrecursionlimit(30000)
         load_from_pickle = 0
 
         if not load_from_pickle:
@@ -225,12 +227,12 @@ class DMNPureTheano(object):
             self.classify = theano.function(inputs=[idxs, mask, questions], outputs=y_pred)
             self.sentence_train = theano.function(inputs=[idxs, mask, questions, answer, self.lr],outputs=sentence_nll, updates=sentence_updates)
             
-            f = open("theano_fcns.p", "w")
+            f = open("theano_fcns.p", "wb")
             pickle.dump([self.classify, self.sentence_train], f)
             f.close()
             
         else:            
-            f = open("theano_fcns.p", "r")
+            f = open("theano_fcns.p", "rb")
             theano_fcns = pickle.load(f)
             self.classify = theano_fcns[0]
             self.sentence_train = theano_fcns[1]
