@@ -4,223 +4,237 @@ import theano
 import theano.tensor as T
 import theano.typed_list
 from collections import OrderedDict
-
+import pickle
 
 class DMNPureTheano(object):
 
     # We take as input a string of "facts"
     def __init__(self, num_fact_hidden_units, number_word_classes, number_fact_embeddings, dimension_fact_embeddings, num_episode_hidden_units, max_number_of_facts_read):
+        
+        load_from_pickle = 0
 
-        self.X_train, self.mask_train, self.question_train, self.Y_train, self.X_test, self.mask_test, self.question_test, self.Y_test, word2idx, idx2word, dimension_fact_embeddings = self.process_data()
-              
-        self.max_epochs = 500
-            
-        self.W_fact_embeddings_to_h = theano.shared(name='W_x',
-                                value=0.2 * np.random.uniform(-1.0, 1.0,
-                                (dimension_fact_embeddings, num_fact_hidden_units))
-                                .astype(theano.config.floatX))
-        
-        self.W_fact_reset_gate_h = theano.shared(name='W_fact_reset_gate_h',
-                                value=0.2 * np.random.uniform(-1.0, 1.0,
-                                (num_fact_hidden_units, num_fact_hidden_units))
-                                .astype(theano.config.floatX))
-        
-        self.W_fact_reset_gate_x = theano.shared(name='W_fact_reset_gate_x',
-                                value=0.2 * np.random.uniform(-1.0, 1.0,
-                                (dimension_fact_embeddings, num_fact_hidden_units))
-                                .astype(theano.config.floatX))
-        
-        self.W_fact_update_gate_h = theano.shared(name='W_fact_update_gate_h',
-                                value=0.2 * np.random.uniform(-1.0, 1.0,
-                                (num_fact_hidden_units, num_fact_hidden_units))
-                                .astype(theano.config.floatX))
-        
-        self.W_fact_update_gate_x = theano.shared(name='W_fact_update_gate_x',
-                                value=0.2 * np.random.uniform(-1.0, 1.0,
-                                (dimension_fact_embeddings, num_fact_hidden_units))
-                                .astype(theano.config.floatX)) 
-        
-        self.W_fact_hidden_gate_h = theano.shared(name='W_fact_hidden_gate_h',
-                                value=0.2 * np.random.uniform(-1.0, 1.0,
-                                (num_fact_hidden_units, num_fact_hidden_units))
-                                .astype(theano.config.floatX))
-        
-        self.W_fact_hidden_gate_x = theano.shared(name='W_fact_hidden_gate_x',
-                                value=0.2 * np.random.uniform(-1.0, 1.0,
-                                (dimension_fact_embeddings, num_fact_hidden_units))
-                                .astype(theano.config.floatX)) 
-        
-        self.W_episode_reset_gate_h = theano.shared(name='W_fact_reset_gate_h',
-                                value=0.2 * np.random.uniform(-1.0, 1.0,
-                                (num_episode_hidden_units, num_episode_hidden_units))
-                                .astype(theano.config.floatX))
-        
-        self.W_episode_reset_gate_x = theano.shared(name='W_fact_reset_gate_x',
-                                value=0.2 * np.random.uniform(-1.0, 1.0,
-                                (num_fact_hidden_units, num_episode_hidden_units))
-                                .astype(theano.config.floatX))
-        
-        self.W_episode_update_gate_h = theano.shared(name='W_fact_update_gate_h',
-                                value=0.2 * np.random.uniform(-1.0, 1.0,
-                                (num_episode_hidden_units, num_episode_hidden_units))
-                                .astype(theano.config.floatX))
-        
-        self.W_episode_update_gate_x = theano.shared(name='W_fact_update_gate_x',
-                                value=0.2 * np.random.uniform(-1.0, 1.0,
-                                (num_fact_hidden_units, num_episode_hidden_units))
-                                .astype(theano.config.floatX)) 
-  
-        self.W_episode_hidden_gate_h = theano.shared(name='W_fact_hidden_gate_h',
-                                value=0.2 * np.random.uniform(-1.0, 1.0,
-                                (num_episode_hidden_units, num_episode_hidden_units))
-                                .astype(theano.config.floatX))
-        
-        self.W_episode_hidden_gate_x = theano.shared(name='W_fact_hidden_gate_x',
-                                value=0.2 * np.random.uniform(-1.0, 1.0,
-                                (num_fact_hidden_units, num_episode_hidden_units))
-                                .astype(theano.config.floatX)) 
-        
-        self.W_h_facts = theano.shared(name='W_h_facts',
-                                value=0.2 * np.random.uniform(-1.0, 1.0,
-                                (num_fact_hidden_units, num_fact_hidden_units))
-                                .astype(theano.config.floatX))
-       
-        self.W_fact_to_episodes = theano.shared(name='W_fact_to_episodes',
-                               value=0.2 * np.random.uniform(-1.0, 1.0,
-                               (num_fact_hidden_units, num_episode_hidden_units))
-                                .astype(theano.config.floatX))
-        
-        self.b_facts_to_episodes = theano.shared(name='b_facts_to_episodes',
-                               value=np.zeros(num_episode_hidden_units,
-                               dtype=theano.config.floatX))
-              
-        self.W_episodes_to_answer = theano.shared(name='w_episode_to_answer',
-                               value=0.2 * np.random.uniform(-1.0, 1.0,
-                               (num_fact_hidden_units, number_word_classes))
-                                .astype(theano.config.floatX))
-        
-        self.b_episodes_to_answers = theano.shared(name='b_episodes_to_answers',
-                               value=np.zeros(number_word_classes,
-                               dtype=theano.config.floatX))
-        
-        self.h0_facts = theano.shared(name='h0_facts',
-                                value=np.zeros((number_fact_embeddings, num_fact_hidden_units),
-                                dtype=theano.config.floatX))
-        
-        self.h0_episodes = theano.shared(name='h0_episodes',
-                                value=np.zeros((max_number_of_facts_read, num_fact_hidden_units),
-                                dtype=theano.config.floatX))
-
-        self.W_dmn_b = theano.shared(name='W_dmn_b_gate',
-                                value=np.zeros((dimension_fact_embeddings, dimension_fact_embeddings),
-                                dtype=theano.config.floatX))
-        
-        size_z_dmn = 9
-        self.W_dmn_2 = theano.shared(name='W_dmn_2_gate',
-                                value=np.zeros((number_fact_embeddings, size_z_dmn),
-                                dtype=theano.config.floatX))
-        
-        self.W_dmn_1 = theano.shared(name='W_dmn_1_gate',
-                                value=np.zeros((number_fact_embeddings, number_fact_embeddings),
-                                dtype=theano.config.floatX))
-        
-        self.b_dmn_1 = theano.shared(name='b_dmn_1_gate',
-                                value=np.zeros((number_fact_embeddings, 1),
-                                dtype=theano.config.floatX))
-        
-        self.b_dmn_2 = theano.shared(name='b_dmn_2_gate',
-                                value=np.zeros((number_fact_embeddings, 1),
-                                dtype=theano.config.floatX))
-               
-        self.params = [self.W_fact_embeddings_to_h, self.W_fact_reset_gate_h, self.W_fact_reset_gate_x, 
-                       self.W_fact_update_gate_h, self.W_fact_update_gate_x, self.W_fact_hidden_gate_h, self.W_fact_hidden_gate_x,
-                       self.W_episode_reset_gate_h, self.W_episode_reset_gate_x, self.W_episode_update_gate_h, self.W_episode_update_gate_x,
-                       self.W_episode_hidden_gate_h, self.W_episode_hidden_gate_x, self.W_h_facts, self.W_fact_to_episodes, self.b_facts_to_episodes,
-                       self.W_episodes_to_answer, self.b_episodes_to_answers, self.h0_facts, self.h0_episodes,
-                       self.W_dmn_b, self.W_dmn_1, self.W_dmn_2, self.b_dmn_1, self.b_dmn_2]
+        if not load_from_pickle:
+    
+            self.X_train, self.mask_train, self.question_train, self.Y_train, self.X_test, self.mask_test, self.question_test, self.Y_test, word2idx, idx2word, dimension_fact_embeddings = self.process_data()
+                  
+            self.max_epochs = 500
                 
-        #recur_ts = T.iscalar('Recurrent_time_step_var')
-        recur_ts = theano.shared(0)
+            self.W_fact_embeddings_to_h = theano.shared(name='W_x',
+                                    value=0.2 * np.random.uniform(-1.0, 1.0,
+                                    (dimension_fact_embeddings, num_fact_hidden_units))
+                                    .astype(theano.config.floatX))
+            
+            self.W_fact_reset_gate_h = theano.shared(name='W_fact_reset_gate_h',
+                                    value=0.2 * np.random.uniform(-1.0, 1.0,
+                                    (num_fact_hidden_units, num_fact_hidden_units))
+                                    .astype(theano.config.floatX))
+            
+            self.W_fact_reset_gate_x = theano.shared(name='W_fact_reset_gate_x',
+                                    value=0.2 * np.random.uniform(-1.0, 1.0,
+                                    (dimension_fact_embeddings, num_fact_hidden_units))
+                                    .astype(theano.config.floatX))
+            
+            self.W_fact_update_gate_h = theano.shared(name='W_fact_update_gate_h',
+                                    value=0.2 * np.random.uniform(-1.0, 1.0,
+                                    (num_fact_hidden_units, num_fact_hidden_units))
+                                    .astype(theano.config.floatX))
+            
+            self.W_fact_update_gate_x = theano.shared(name='W_fact_update_gate_x',
+                                    value=0.2 * np.random.uniform(-1.0, 1.0,
+                                    (dimension_fact_embeddings, num_fact_hidden_units))
+                                    .astype(theano.config.floatX)) 
+            
+            self.W_fact_hidden_gate_h = theano.shared(name='W_fact_hidden_gate_h',
+                                    value=0.2 * np.random.uniform(-1.0, 1.0,
+                                    (num_fact_hidden_units, num_fact_hidden_units))
+                                    .astype(theano.config.floatX))
+            
+            self.W_fact_hidden_gate_x = theano.shared(name='W_fact_hidden_gate_x',
+                                    value=0.2 * np.random.uniform(-1.0, 1.0,
+                                    (dimension_fact_embeddings, num_fact_hidden_units))
+                                    .astype(theano.config.floatX)) 
+            
+            self.W_episode_reset_gate_h = theano.shared(name='W_fact_reset_gate_h',
+                                    value=0.2 * np.random.uniform(-1.0, 1.0,
+                                    (num_episode_hidden_units, num_episode_hidden_units))
+                                    .astype(theano.config.floatX))
+            
+            self.W_episode_reset_gate_x = theano.shared(name='W_fact_reset_gate_x',
+                                    value=0.2 * np.random.uniform(-1.0, 1.0,
+                                    (num_fact_hidden_units, num_episode_hidden_units))
+                                    .astype(theano.config.floatX))
+            
+            self.W_episode_update_gate_h = theano.shared(name='W_fact_update_gate_h',
+                                    value=0.2 * np.random.uniform(-1.0, 1.0,
+                                    (num_episode_hidden_units, num_episode_hidden_units))
+                                    .astype(theano.config.floatX))
+            
+            self.W_episode_update_gate_x = theano.shared(name='W_fact_update_gate_x',
+                                    value=0.2 * np.random.uniform(-1.0, 1.0,
+                                    (num_fact_hidden_units, num_episode_hidden_units))
+                                    .astype(theano.config.floatX)) 
+      
+            self.W_episode_hidden_gate_h = theano.shared(name='W_fact_hidden_gate_h',
+                                    value=0.2 * np.random.uniform(-1.0, 1.0,
+                                    (num_episode_hidden_units, num_episode_hidden_units))
+                                    .astype(theano.config.floatX))
+            
+            self.W_episode_hidden_gate_x = theano.shared(name='W_fact_hidden_gate_x',
+                                    value=0.2 * np.random.uniform(-1.0, 1.0,
+                                    (num_fact_hidden_units, num_episode_hidden_units))
+                                    .astype(theano.config.floatX)) 
+            
+            self.W_h_facts = theano.shared(name='W_h_facts',
+                                    value=0.2 * np.random.uniform(-1.0, 1.0,
+                                    (num_fact_hidden_units, num_fact_hidden_units))
+                                    .astype(theano.config.floatX))
+           
+            self.W_fact_to_episodes = theano.shared(name='W_fact_to_episodes',
+                                   value=0.2 * np.random.uniform(-1.0, 1.0,
+                                   (num_fact_hidden_units, num_episode_hidden_units))
+                                    .astype(theano.config.floatX))
+            
+            self.b_facts_to_episodes = theano.shared(name='b_facts_to_episodes',
+                                   value=np.zeros(num_episode_hidden_units,
+                                   dtype=theano.config.floatX))
+                  
+            self.W_episodes_to_answer = theano.shared(name='w_episode_to_answer',
+                                   value=0.2 * np.random.uniform(-1.0, 1.0,
+                                   (num_fact_hidden_units, number_word_classes))
+                                    .astype(theano.config.floatX))
+            
+            self.b_episodes_to_answers = theano.shared(name='b_episodes_to_answers',
+                                   value=np.zeros(number_word_classes,
+                                   dtype=theano.config.floatX))
+            
+            self.h0_facts = theano.shared(name='h0_facts',
+                                    value=np.zeros((number_fact_embeddings, num_fact_hidden_units),
+                                    dtype=theano.config.floatX))
+            
+            self.h0_episodes = theano.shared(name='h0_episodes',
+                                    value=np.zeros((max_number_of_facts_read, num_fact_hidden_units),
+                                    dtype=theano.config.floatX))
+    
+            self.W_dmn_b = theano.shared(name='W_dmn_b_gate',
+                                    value=np.zeros((dimension_fact_embeddings, dimension_fact_embeddings),
+                                    dtype=theano.config.floatX))
+            
+    #         self.W_dmn_b = theano.shared(name='W_dmn_b_gate',
+    #                                 value=0,dtype=theano.config.floatX)#         
+            #self.W_dmn_b = T.scalar('W_dmn_b_gate', dtype=theano.config.floatX)
+            #self.W_dmn_b = theano.shared(np.cast['float32'])(0)
+            self.W_dmn_b = theano.shared(np.float64(0))
+            
+            
+            size_z_dmn = 9
+            self.W_dmn_2 = theano.shared(name='W_dmn_2_gate',
+                                    value=np.zeros((number_fact_embeddings, size_z_dmn),
+                                    dtype=theano.config.floatX))
+            
+            self.W_dmn_1 = theano.shared(name='W_dmn_1_gate',
+                                    value=np.zeros((number_fact_embeddings, number_fact_embeddings),
+                                    dtype=theano.config.floatX))
+            
+            self.b_dmn_1 = theano.shared(name='b_dmn_1_gate',
+                                    value=np.zeros((number_fact_embeddings, 1),
+                                    dtype=theano.config.floatX))
+            
+            self.b_dmn_2 = theano.shared(name='b_dmn_2_gate',
+                                    value=np.zeros((number_fact_embeddings, 1),
+                                    dtype=theano.config.floatX))
+                   
+            self.params = [self.W_fact_embeddings_to_h, self.W_fact_reset_gate_h, self.W_fact_reset_gate_x, 
+                           self.W_fact_update_gate_h, self.W_fact_update_gate_x, self.W_fact_hidden_gate_h, self.W_fact_hidden_gate_x,
+                           self.W_episode_reset_gate_h, self.W_episode_reset_gate_x, self.W_episode_update_gate_h, self.W_episode_update_gate_x,
+                           self.W_episode_hidden_gate_h, self.W_episode_hidden_gate_x, self.W_fact_to_episodes, self.b_facts_to_episodes,
+                           self.W_episodes_to_answer, self.b_episodes_to_answers, self.h0_facts, self.h0_episodes,
+                           self.W_dmn_b, self.W_dmn_1, self.W_dmn_2, self.b_dmn_1, self.b_dmn_2]
+                    
+            #recur_ts = T.iscalar('Recurrent_time_step_var')
+            recur_ts = theano.shared(0)
+                            
+            idxs = T.imatrix()
+            mask = T.matrix('mask', dtype=theano.config.floatX)
+            questions = T.vector("question", dtype=theano.config.floatX)
+            x = self.W_fact_embeddings_to_h[idxs].reshape((idxs.shape[0], dimension_fact_embeddings))
+            answer = T.ivector("answers")
+            
+            fact_sequence = theano.shared(value=np.zeros((num_fact_hidden_units, max_number_of_facts_read), dtype=theano.config.floatX), name="fact_sequence",borrow=False)
+    
+            def recurrence(m, x_t, h_t, m_t_episode):
+                reset_gate_fact = T.nnet.sigmoid(T.dot(x_t, self.W_fact_reset_gate_x) + T.dot(h_t, self.W_fact_reset_gate_h))
+                update_gate_fact = T.nnet.sigmoid(T.dot(x_t, self.W_fact_update_gate_x) + T.dot(h_t, self.W_fact_update_gate_h))
+                
+                hidden_update_in = T.nnet.sigmoid(T.dot(x_t, self.W_fact_hidden_gate_x) + reset_gate_fact * T.dot(h_t, self.W_fact_hidden_gate_h))
+            
+                h_t_plus = (1 - update_gate_fact) * h_t + update_gate_fact * hidden_update_in
+                h_t_plus = m[:, None] * h_t_plus + (1 - m[:, None]) * h_t
+                z_dmn = T.concatenate([x_t, m_t_episode, questions, x_t * questions, abs(x_t - questions), abs(x_t - m_t_episode),
+                                            T.cast(x_t * self.W_dmn_b * questions, theano.config.floatX), T.cast(x_t * self.W_dmn_b * m_t_episode, theano.config.floatX)], axis=0)
+                
+    #             
+    #             print(" first dot prod  ", x_t * self.W_dmn_b * questions)
+    #             print(' second dot prod : ', x_t * self.W_dmn_b * m_t_episode)
+    #             print(" first cast ", T.cast(x_t * self.W_dmn_b * questions, theano.config.floatX))
+    #             print(" second cast ", T.cast(x_t * self.W_dmn_b * m_t_episode, theano.config.floatX))
+                            
+    #             z_dmn = T.concatenate([x_t, m_t_episode, questions, x_t * questions, abs(x_t - questions), abs(x_t - m_t_episode), T.dot(x_t, T.dot(self.W_dmn_b, questions)),
+    #                         T.dot(x_t, T.dot(self.W_dmn_b, m_t_episode))], axis=0)            
+                G_dmn = T.nnet.sigmoid(T.dot(self.W_dmn_2, T.tanh(T.dot(self.W_dmn_1, z_dmn)) + self.b_dmn_1) + self.b_dmn_2)
+                           
+                h_t_plus = G_dmn * h_t_plus + (1 - G_dmn) * h_t
+                s_t = T.nnet.sigmoid(T.dot(h_t_plus, self.W_fact_to_episodes) + self.b_facts_to_episodes)            
+                
+                return [h_t_plus, s_t]
+            
+            def recurrent_episodes(x_t, h_t_episode):
+                
+                [h_facts, s_facts], _ = theano.scan(fn=recurrence, sequences=[mask, x], outputs_info=[self.h0_facts, None],
+                                                    non_sequences=h_t_episode[-1], n_steps=number_fact_embeddings)
+                         
+                s_t = s_facts[-1]  
                         
-        idxs = T.imatrix()
-        mask = T.matrix('mask', dtype=theano.config.floatX)
-        questions = T.matrix("question", dtype=theano.config.floatX)
-        x = self.W_fact_embeddings_to_h[idxs].reshape((idxs.shape[0], dimension_fact_embeddings))
-        answer = T.ivector("answers")
-        
-        fact_sequence = theano.shared(value=np.zeros((num_fact_hidden_units, max_number_of_facts_read), dtype=theano.config.floatX), name="fact_sequence",borrow=False)
-
-        def recurrence(m, x_t, h_t, m_t_episode):
-            reset_gate_fact = T.nnet.sigmoid(T.dot(x_t, self.W_fact_reset_gate_x) + T.dot(h_t, self.W_fact_reset_gate_h))
-            update_gate_fact = T.nnet.sigmoid(T.dot(x_t, self.W_fact_update_gate_x) + T.dot(h_t, self.W_fact_update_gate_h))
+                reset_gate_episode = T.nnet.sigmoid(T.dot(s_t, self.W_episode_reset_gate_x) + T.dot(h_t_episode, self.W_episode_reset_gate_h))
+                update_gate_episode = T.nnet.sigmoid(T.dot(s_t, self.W_episode_update_gate_x) + T.dot(h_t_episode, self.W_episode_update_gate_h))
+                
+                hidden_update_in_episode = T.nnet.sigmoid(T.dot(s_t, self.W_episode_hidden_gate_x) + reset_gate_episode * T.dot(h_t_episode, self.W_episode_hidden_gate_h))
             
-            hidden_update_in = T.nnet.sigmoid(T.dot(x_t, self.W_fact_hidden_gate_x) + reset_gate_fact * T.dot(h_t, self.W_fact_hidden_gate_h))
-        
-            h_t_plus = (1 - update_gate_fact) * h_t + update_gate_fact * hidden_update_in
-            
-            h_t_plus = m[:, None] * h_t_plus + (1 - m[:, None]) * h_t
-            
-            cur = T.dot(x_t, T.dot(self.W_dmn_b, questions))
-            
-            cand = T.dot(x_t, T.dot(self.W_dmn_b, m_t_episode))
-            
-            
-            print(" n dim x_t ", x_t.ndim)
-            print(" m_t ", m_t_episode.ndim)
-            print(" question ", questions.ndim)
-            print(" first mult ", T.dot(x_t, T.dot(self.W_dmn_b, questions)).ndim)
-            print(" second mult: ", T.dot(x_t, T.dot(self.W_dmn_b, m_t_episode)))
-            
-            z_dmn = T.concatenate([x_t, m_t_episode, questions, x_t * questions, abs(x_t - questions), abs(x_t - m_t_episode), T.dot(x_t, T.dot(self.W_dmn_b, questions)),
-                        T.dot(x_t, T.dot(self.W_dmn_b, m_t_episode))], axis=0)
-            
-            
-            G_dmn = T.nnet.sigmoid(T.dot(self.W_dmn_2, T.tanh(T.dot(self.W_dmn_1, z_dmn)) + self.b_dmn_1) + self.b_dmn_2)
+                h_t = (1 - update_gate_episode) * h_t_episode + update_gate_episode * hidden_update_in_episode
+                                              
+                output_answer = T.nnet.softmax(T.dot(h_t, self.W_episodes_to_answer) + self.b_episodes_to_answers)
+                 
+                return [h_t, output_answer]
                         
-            h_t_plus = G_dmn * h_t_plus + (1 - G_dmn) * h_t
+            [h_episodes, s_episodes], scan_updates = theano.scan(fn=recurrent_episodes,
+                                                                 sequences=[fact_sequence],
+                                                                 outputs_info=[self.h0_episodes, None],
+                                                                 n_steps=max_number_of_facts_read)
                         
-            s_t = T.nnet.sigmoid(T.dot(h_t_plus, self.W_fact_to_episodes) + self.b_facts_to_episodes)            
+            p_y_given_x_sentence = s_episodes[:, 0, :]  # Why does this have the dimensions that it does?  
             
-            return [h_t_plus, s_t]
-        
-        def recurrent_episodes(x_t, h_t_episode):
+            y_pred = T.argmax(p_y_given_x_sentence, axis=1)                  
+            self.lr = T.scalar('lr')
+            sentence_nll = -T.mean(T.log(p_y_given_x_sentence)
+                                   [T.arange(x.shape[0]), answer])  # Note:  x shape
+            sentence_gradients = T.grad(sentence_nll, self.params, disconnected_inputs="warn")
+            sentence_updates = OrderedDict((p, p - self.lr*g)
+                                           for p, g in
+                                           zip(self.params, sentence_gradients))
             
-            [h_facts, s_facts], _ = theano.scan(fn=recurrence, sequences=[mask, x], outputs_info=[self.h0_facts, None],
-                                                non_sequences=h_t_episode, n_steps=number_fact_embeddings)
-                     
-            s_t = s_facts[-1]  
-                    
-            reset_gate_episode = T.nnet.sigmoid(T.dot(s_t, self.W_episode_reset_gate_x) + T.dot(h_t_episode, self.W_episode_reset_gate_h))
-            update_gate_episode = T.nnet.sigmoid(T.dot(s_t, self.W_episode_update_gate_x) + T.dot(h_t_episode, self.W_episode_update_gate_h))
             
-            hidden_update_in_episode = T.nnet.sigmoid(T.dot(s_t, self.W_episode_hidden_gate_x) + reset_gate_episode * T.dot(h_t_episode, self.W_episode_hidden_gate_h))
-        
-            h_t = (1 - update_gate_episode) * h_t_episode + update_gate_episode * hidden_update_in_episode
-                                          
-            output_answer = T.nnet.softmax(T.dot(h_t, self.W_episodes_to_answer) + self.b_episodes_to_answers)
-             
-            return [h_t, output_answer]
-                    
-        [h_episodes, s_episodes], scan_updates = theano.scan(fn=recurrent_episodes,
-                                                             sequences=[fact_sequence],
-                                                             outputs_info=[self.h0_episodes, None],
-                                                             n_steps=max_number_of_facts_read)
-                    
-        p_y_given_x_sentence = s_episodes[:, 0, :]  # Why does this have the dimensions that it does?  
-        
-        y_pred = T.argmax(p_y_given_x_sentence, axis=1)                  
-        self.lr = T.scalar('lr')
-        sentence_nll = -T.mean(T.log(p_y_given_x_sentence)
-                               [T.arange(x.shape[0]), answer])  # Note:  x shape
-        sentence_gradients = T.grad(sentence_nll, self.params, disconnected_inputs="warn")
-        sentence_updates = OrderedDict((p, p - self.lr*g)
-                                       for p, g in
-                                       zip(self.params, sentence_gradients))
-        
-        self.classify = theano.function(inputs=[idxs, mask, questions], outputs=y_pred)
-        self.sentence_train = theano.function(inputs=[idxs, mask, questions, answer, self.lr],outputs=sentence_nll, updates=sentence_updates)
-                    
-        
+            self.classify = theano.function(inputs=[idxs, mask, questions], outputs=y_pred)
+            self.sentence_train = theano.function(inputs=[idxs, mask, questions, answer, self.lr],outputs=sentence_nll, updates=sentence_updates)
+            
+            f = open("theano_fcns.p", "w")
+            pickle.dump([self.classify, self.sentence_train], f)
+            f.close()
+            
+        else:            
+            f = open("theano_fcns.p", "r")
+            theano_fcns = pickle.load(f)
+            self.classify = theano_fcns[0]
+            self.sentence_train = theano_fcns[1]
+            
     def train(self, training_examples, test_examples):
         lr = 0.001
         
