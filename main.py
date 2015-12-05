@@ -8,6 +8,7 @@ from lstm import LSTM
 from mem_network import MemNet
 from wqa_processor import WikiProcessor
 from cnn_processor import CNNProcessor
+from DMNPureTheano import DMNPureTheano
 from dynamic_mem_net import DynamicMemNet
 from babi_processor import BabiProcessor
 import sys
@@ -49,10 +50,17 @@ def main(nn_type, data_type):
 
     elif nn_type == "dynam_net":
         proc = BabiProcessor(data_type, "dynam_net")
-        X_train, y_train, mask_train, X_test, y_test, mask_test, input_size, max_seq_len, idx2word = proc.process()
-        dn = DynamicMemNet(X_train, y_train, mask_train, X_test, y_test, mask_test, input_size, max_seq_len, idx2word)
+        X_train, Q_train, Y_train, mask_train, X_test, Q_test, Y_test, mask_test, input_size, max_seqlen, idx2word, max_queslen = proc.process()
+        dn = DynamicMemNet(X_train, Q_train, Y_train, mask_train, X_test, Q_test, Y_test, mask_test, input_size, max_seqlen, idx2word, max_queslen)
         dn.build()
         dn.train()
+    elif nn_type == "dynam_net_theano":
+        #num_fact_hidden_units, number_classes, number_fact_embeddings, dimension_fact_embeddings, num_episode_hidden_units
+        dmn_t = DMNPureTheano(20, 20, 20, 20, 20, 3)
+        #dmn_t.train()
+        print("Finished DMN Theano")
+        
+        
 
 if __name__ == '__main__':
     # See function train for all possible parameter and there definition.
@@ -65,7 +73,7 @@ if __name__ == '__main__':
         print(" data type: ", data_type)
     else:
         print(" running")
-        nn_type = "dynam_net"
+        nn_type = "dynam_net_theano"
         data_type = "babi_medium"
 
 

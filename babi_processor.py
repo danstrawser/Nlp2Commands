@@ -21,12 +21,10 @@ class BabiProcessor(object):
         
         if self.nn_type == "dynam_net":
             assert(self.type == "babi_medium")
-            X_train_words, Questions_Train, Y_train_words, max_seqlen = self._gen_dmn_medium_vecs(self.filename_train, max_seqlen=0)
-            X_test_words, Questions_Test, Y_test_words, max_seqlen = self._gen_dmn_medium_vecs(self.filename_test, max_seqlen)
+            X_train_words, Questions_Train, Y_train_words, max_seqlen, max_queslen = self._gen_dmn_medium_vecs(self.filename_train, max_seqlen=0, max_queslen=0)
+            X_test_words, Questions_Test, Y_test_words, max_seqlen, max_queslen = self._gen_dmn_medium_vecs(self.filename_test, max_seqlen, max_queslen)
             X_train, Q_Train, Y_train, mask_train, X_test, Q_test, Y_test, mask_test, word2idx, idx2word = self._gen_idxs(X_train_words, Y_train_words, X_test_words, Y_test_words, max_seqlen, Questions_Train, Questions_Test)
-            assert(1 == 2)
-            
-            return X_train, Q_Train, Y_train, mask_train, X_test, Q_test, Y_test, mask_test, len(word2idx), max_seqlen, idx2word
+            return X_train, Q_Train, Y_train, mask_train, X_test, Q_test, Y_test, mask_test, len(word2idx), max_seqlen, idx2word, max_queslen
             
         if self.type == "babi_simple":
             X_train_words, Y_train_words, max_seqlen = self._gen_babi_simple_vecs(self.filename_train, max_seqlen=0)
@@ -143,7 +141,7 @@ class BabiProcessor(object):
 
         return X_words, Y_words, max_seqlen
     
-    def _gen_dmn_medium_vecs(self, filename_train, max_seqlen):
+    def _gen_dmn_medium_vecs(self, filename_train, max_seqlen, max_queslen):
         X_words, Questions, Y_words = [], [], []
 
         with open(filename_train, encoding='utf-8') as f:
@@ -153,10 +151,10 @@ class BabiProcessor(object):
                     cur_article = []
                 cur_article.append(line.strip())
                 if "?" in line.strip():
-                    max_seqlen = self._generate_answer_question_pair_dmn(line.strip(), cur_article, X_words, Questions, Y_words, max_seqlen)
+                    max_seqlen, max_queslen = self._generate_answer_question_pair_dmn(line.strip(), cur_article, X_words, Questions, Y_words, max_seqlen, max_queslen)
                     max_seqlen = self._gen_medium_babi_pair_dmn(cur_article, X_words, idx % self.LEN_BABI_ARTICLE, max_seqlen)
 
-        return X_words, Questions, Y_words, max_seqlen    
+        return X_words, Questions, Y_words, max_seqlen, max_queslen    
     
     def _gen_babi_simple_vecs(self, filename, max_seqlen):
         X_words, Y_words = [], []
@@ -235,7 +233,7 @@ class BabiProcessor(object):
         return max_seqlen
 
 
-    def _generate_answer_question_pair_dmn(self, question, article, X_train_words, Questions, Y_train_words, max_seqlen):
+    def _generate_answer_question_pair_dmn(self, question, article, X_train_words, Questions, Y_train_words, max_seqlen, max_queslen):
         tokenizer = RegexpTokenizer(r'\w+')
         answer =  re.split(r'\t+', question)[1]
         question_txt = tokenizer.tokenize(question)[1:-2]
@@ -243,13 +241,15 @@ class BabiProcessor(object):
         ref = int(re.split(r'\t+', question)[-1]) - 1
         seq = tokenizer.tokenize(article[ref])[1:] 
 
+        if len(question_txt) > max_queslen:
+            max_queslen = len(question_txt)
         if len(seq) > max_seqlen:
             max_seqlen = len(seq)
         X_train_words.append(seq)
         Y_train_words.append(answer)
-        return max_seqlen
+        return max_seqlen, max_queslen
 
-    def _generate_answer_question_pair(self, question, article, X_train_words, Y_train_words, max_seqlen):
+    def _generate_answer_question_pair(self, question, article, X_train_words, Y_train_words, max_seqlen, max_queslen):
 
         tokenizer = RegexpTokenizer(r'\w+')
         answer =  re.split(r'\t+', question)[1]
@@ -261,4 +261,4 @@ class BabiProcessor(object):
             max_seqlen = len(seq)
         X_train_words.append(seq)
         Y_train_words.append(answer)
-        return max_seqlen
+        return max_seqlen, max_queslen

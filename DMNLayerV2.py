@@ -10,10 +10,8 @@ from lasagne.layers import MergeLayer
 from lasagne.layers import Gate
 import lasagne.nonlinearities
 
-__all__ = ["DMNLayer"]
 
-
-class DMNLayer(MergeLayer):
+class DMNLayerV2(MergeLayer):
     r"""
     lasagne.layers.recurrent.GRULayer(incoming, num_units,
     resetgate=lasagne.layers.Gate(W_cell=None),
@@ -116,12 +114,12 @@ class DMNLayer(MergeLayer):
                  learn_init=False,
                  gradient_steps=-1,
                  grad_clipping=0,
-                 unroll_scan=False,
+                 unroll_scan=True,
                  precompute_input=True,
                  mask_input=None,
                  only_return_final=False,
                  **kwargs):
-
+        
         # This layer inherits from a MergeLayer, because it can have two
         # inputs - the layer input, and the mask.  We will just provide the
         # layer input as incomings, unless a mask input was provided.
@@ -130,7 +128,7 @@ class DMNLayer(MergeLayer):
             incomings.append(mask_input)
        
         # Initialize parent layer
-        super(DMNLayer, self).__init__(incomings, **kwargs)
+        super(DMNLayerV2, self).__init__(incomings, **kwargs)
         self.learn_init = learn_init
         self.num_hidden_units_h = num_hidden_units_h
         self.num_hidden_units_m = num_hidden_units_m
@@ -170,8 +168,6 @@ class DMNLayer(MergeLayer):
                                    regularizable=False),
                     gate.nonlinearity)
 
-        # TODO:  DS:  You will also have to edit here by adding the extra layers that you need.
-
         # Add in all parameters from gates
         (self.W_in_to_updategate, self.W_hid_to_updategate, self.b_updategate,
          self.nonlinearity_updategate) = add_gate_params(updategate_facts,
@@ -182,7 +178,7 @@ class DMNLayer(MergeLayer):
         (self.W_in_to_hidden_update, self.W_hid_to_hidden_update,
          self.b_hidden_update, self.nonlinearity_hid) = add_gate_params(
              hidden_update_facts, 'hidden_update', num_hidden_units_h)
-         
+
         # These parameters are for the brain GRU
         (self.W_brain_in_to_updategate, self.W_brain_hid_to_updategate, self.b_brain_updategate,
          self.nonlinearity_brain_updategate) = add_gate_params(updategate_brain, 'updategate', num_hidden_units_m)
@@ -193,7 +189,6 @@ class DMNLayer(MergeLayer):
         (self.W_brain_in_to_hidden_update, self.W_brain_hid_to_hidden_update,
          self.b_brain_hidden_update, self.nonlinearity_brain_hid_update) = add_gate_params(hidden_update_brain, 'hidden_update', num_hidden_units_m)
 
-        
         size_fact_embedding = 20  # TODO DS: change these from constants, just put here for now for 
         size_question_embedding = size_fact_embedding
         size_dmn_gate_vector = 9
@@ -205,10 +200,8 @@ class DMNLayer(MergeLayer):
         self.W_dmn_2 = self.add_param(lasagne.init.Normal(0.1), (size_hidden_state, size_hidden_state), name="W_dmn_2")
                 
         self.b_dmn_1 = self.add_param(lasagne.init.Normal(0.1), (size_hidden_state, 1), name="b_dmn_1")
-        self.b_dmn_2 = self.add_param(lasagne.init.Normal(0.1), (size_hidden_state, 1), name="b_dmn_2")        
-                    
-                    
-                         
+        self.b_dmn_2 = self.add_param(lasagne.init.Normal(0.1), (size_hidden_state, 1), name="b_dmn_2")  
+
         # Initialize hidden state
         if isinstance(hid_init, T.TensorVariable):
             if hid_init.ndim != 2:
@@ -220,7 +213,7 @@ class DMNLayer(MergeLayer):
             self.hid_init = self.add_param(
                 hid_init, (1, self.num_hidden_units_h + self.num_hidden_units_m), name="hid_init",
                 trainable=learn_init, regularizable=False)
-       
+
     def get_output_shape_for(self, input_shapes):
         # The shape of the input to this layer will be the first element
         # of input_shapes, whether or not a mask input is being used.
@@ -254,23 +247,17 @@ class DMNLayer(MergeLayer):
         layer_output : theano.TensorType
             Symbolic output variable.
         """
-        
         # Retrieve the layer input
         input = inputs[0]
-        
-        print("259 input: ", input)
-        print(" 259 input dim: ", input.ndim)
         # Retrieve the mask when it is supplied
         mask = inputs[1] if len(inputs) > 1 else None
 
         # Treat all dimensions after the second as flattened feature dimensions
-        # if input.ndim > 3:
-        #    input = T.flatten(input, 3)
-                              
+        if input.ndim > 3:
+            input = T.flatten(input, 3)
+
         # Because scan iterates over the first dimension we dimshuffle to
         # (n_time_steps, n_batch, n_features)
-                
-        print("263")
         input = input.dimshuffle(1, 0, 2)
         seq_len, num_batch, _ = input.shape
 
@@ -284,15 +271,12 @@ class DMNLayer(MergeLayer):
         W_hid_stacked = T.concatenate(
             [self.W_hid_to_resetgate, self.W_hid_to_updategate,
              self.W_hid_to_hidden_update], axis=1)
-        
-#         W_dmn_stacked = T.concatenate(
-#             [self.W_dmn_b, self.W_dmn_1, self.W_dmn_2], axis=1)
-#         
+
         # Stack gate biases into a (3*num_units) vector
         b_stacked = T.concatenate(
             [self.b_resetgate, self.b_updategate,
              self.b_hidden_update], axis=0)
-
+        
         # Stacking for brain layer
         W_brain_in_stacked = T.concatenate(
             [self.W_brain_in_to_resetgate, self.W_brain_in_to_updategate,
@@ -303,6 +287,7 @@ class DMNLayer(MergeLayer):
         b_brain_stacked = T.concatenate(
             [self.b_brain_resetgate, self.b_brain_updategate,
              self.b_brain_hidden_update], axis=0)
+                
 
         if self.precompute_input:
             # precompute_input inputs*W. W_in is (n_features, 3*num_units).
@@ -320,16 +305,15 @@ class DMNLayer(MergeLayer):
         # Create single recurrent computation step function
         # input__n is the n'th vector of the input
         def step(input_n, hid_previous_total, *args):
-            print("317 into step")
-            print(" type input n: ", type(input_n))
             
             hid_previous_facts = hid_previous_total[0:self.num_hidden_units_h]
             hid_previous_brain = hid_previous_total[self.num_hidden_units_h:]
             
             self.cur_sequence_idx += 1  # Updates where we are at in the sequence
-                                
+            
             # Compute W_{hr} h_{t - 1}, W_{hu} h_{t - 1}, and W_{hc} h_{t - 1}
             hid_input_facts = T.dot(hid_previous_facts, W_hid_stacked)
+
 
             if self.grad_clipping:
                 input_n = theano.gradient.grad_clip(
@@ -346,23 +330,17 @@ class DMNLayer(MergeLayer):
             updategate = slice_w_h(hid_input_facts, 1) + slice_w_h(input_n, 1)
             resetgate = self.nonlinearity_resetgate(resetgate)
             updategate = self.nonlinearity_updategate(updategate)
-
+            
             # DS Edit: DynamMemNet modifiers
             m_dmn = hid_previous_brain  # Note that this should have size 
             c_dmn = input_n  # This is a TesnorType<float64, row>
             q_dmn = self.question_layer  # This is a lasagne recurrent GRU layer
-                        
-            print(" entering 344")
-            # DS Note:  I believe this has size 9 x size(m_dmn)==size(cdmn)
-#             z_dmn = [c_dmn, m_dmn, q_dmn, c_dmn * q_dmn, abs(c_dmn - q_dmn), abs(c_dmn - m_dmn), T.dot(c_dmn.T, T.dot(self.W_dmn_b, q_dmn)), 
-#                         T.dot(c_dmn.T, T.dot(self.W_dmn_b, m_dmn))]
-#             
+
             z_dmn = T.concatenate([c_dmn, m_dmn, q_dmn, c_dmn * q_dmn, abs(c_dmn - q_dmn), abs(c_dmn - m_dmn), T.dot(c_dmn.T, T.dot(self.W_dmn_b, q_dmn)),
-                        T.dot(c_dmn.T, T.dot(self.W_dmn_b, m_dmn))], axis=1)
+                         T.dot(c_dmn.T, T.dot(self.W_dmn_b, m_dmn))], axis=1)
             G_dmn = nonlinearities.sigmoid(T.dot(self.W_dmn_2, nonlinearities.tanh(T.dot(self.W_dmn_1, z_dmn)) + self.b_dmn_1) + self.b_dmn_2)
             # Note, you also need W_b for the c and q elements.
-            
-            # Compute W_{xc}x_t + r_t \odot (W_{hc} h_{t - 1})
+            #something_else = T.dot(hid_previous_facts, W_hid_stacked)
             hidden_update_in = slice_w_h(input_n, 2)
             hidden_update_hid = slice_w_h(hid_input_facts, 2)
             hidden_update_facts = hidden_update_in + resetgate * hidden_update_hid
@@ -373,58 +351,53 @@ class DMNLayer(MergeLayer):
 
             # Compute (1 - u_t)h_{t - 1} + u_t c_t
             hid = (1 - updategate) * hid_previous_facts + updategate * hidden_update_facts  # This is the GRU_fact output
-            output_dmn = G_dmn * hid + (1 - G_dmn) * hid_previous_facts  # This is the output of the Dynamic Memory Net modified GRU, Eq. (5)
+            #output_dmn = G_dmn * hid + (1 - G_dmn) * hid_previous_facts  # This is the output of the Dynamic Memory Net modified GRU, Eq. (5)
+            output_dmn = hid
+                        
+#             if self.cur_sequence_idx == self.max_seqlen:
+#                 hid_input_brain = T.dot(hid_previous_brain, W_brain_hid_stacked)            
+#             
+#                 if self.grad_clipping:
+#                     input_to_brain = theano.gradient.grad_clip(
+#                         output_dmn, -self.grad_clipping, self.grad_clipping)
+#                     hid_input_brain = theano.gradient.grad_clip(
+#                         hid_input_brain, -self.grad_clipping, self.grad_clipping)
+#                 else:
+#                     input_to_brain = output_dmn
+#                     
+#                 if not self.precompute_input:
+#                     # Compute W_{xr}x_t + b_r, W_{xu}x_t + b_u, and W_{xc}x_t + b_c
+#                     input_to_brain = T.dot(input_to_brain, W_brain_in_stacked) + b_brain_stacked  # DS Note:  accomplishes the multiplication AND adds bias
+#             
+#                 # Reset and update gates
+#                 resetgate_brain = slice_w_m(hid_input_brain, 0) + slice_w_m(input_to_brain, 0)
+#                 updategate_brain = slice_w_m(hid_input_brain, 1) + slice_w_m(input_to_brain, 1)
+#                 resetgate_brain = self.nonlinearity_brain_resetgate(resetgate_brain)
+#                 updategate_brain = self.nonlinearity_brain_updategate(updategate_brain)
+#             
+#                 hidden_update_in_brain = slice_w_m(input_to_brain, 2)
+#                 hidden_update_brain = slice_w_m(hid_input_brain, 2)
+#                 hidden_update_brain = hidden_update_in_brain + resetgate_brain * hidden_update_brain
+#                 
+#                 if self.grad_clipping:
+#                     hidden_update_brain = theano.gradient.grad_clip(hidden_update_brain, -self.grad_clipping, self.grad_clipping)
+#                 hidden_update_brain = self.nonlinearity_brain_hid_update(hidden_update_brain)
+#                 
+#                 hid_brain = (1 - updategate_brain) * hid_previous_brain + updategate_brain * hidden_update_brain
+#             
+#             else:                
+#             
+            hid_brain = hid_previous_brain
+                              
+            return T.concatenate([output_dmn, hid_brain], axis=1)
             
-            # UPDATE THE BRAIN
-            # We update the brain parameters if the current idx is equal to the sent len
-            if self.cur_sequence_idx == self.max_seqlen:
-                hid_input_brain = T.dot(hid_previous_brain, W_brain_hid_stacked)            
-            
-                if self.grad_clipping:
-                    input_to_brain = theano.gradient.grad_clip(
-                        output_dmn, -self.grad_clipping, self.grad_clipping)
-                    hid_input_brain = theano.gradient.grad_clip(
-                        hid_input_brain, -self.grad_clipping, self.grad_clipping)
-                else:
-                    input_to_brain = output_dmn
-
-                if not self.precompute_input:
-                    # Compute W_{xr}x_t + b_r, W_{xu}x_t + b_u, and W_{xc}x_t + b_c
-                    input_to_brain = T.dot(input_to_brain, W_brain_in_stacked) + b_brain_stacked  # DS Note:  accomplishes the multiplication AND adds bias
-    
-                # Reset and update gates
-                resetgate_brain = slice_w_m(hid_input_brain, 0) + slice_w_m(input_to_brain, 0)
-                updategate_brain = slice_w_m(hid_input_brain, 1) + slice_w_m(input_to_brain, 1)
-                resetgate_brain = self.nonlinearity_brain_resetgate(resetgate_brain)
-                updategate_brain = self.nonlinearity_brain_updategate(updategate_brain)
-
-                hidden_update_in_brain = slice_w_m(input_to_brain, 2)
-                hidden_update_brain = slice_w_m(hid_input_brain, 2)
-                
-                hidden_update_brain = hidden_update_in_brain + resetgate_brain * hidden_update_brain
-                
-                if self.grad_clipping:
-                    hidden_update_brain = theano.gradient.grad_clip(hidden_update_brain, -self.grad_clipping, self.grad_clipping)
-                hidden_update_brain = self.nonlinearity_brain_hid_update(hidden_update_brain)
-                
-                hid_brain = (1 - updategate_brain) * hid_previous_brain + updategate_brain * hidden_update_brain                
-            else:                
-                hid_brain = hid_previous_brain
-            
-            # TODO: DS:  ERROR IS HERE
-            output_dmn = T.concatenate([output_dmn, hid_brain], axis=1) 
-           
-            print(" 412 out of step") 
-            return output_dmn
-
         def step_masked(input_n, mask_n, hid_previous, *args):
-            print(" 412")
             hid = step(input_n, hid_previous, *args)
-            print(" 414")
+
             # Skip over any input with mask 0 by copying the previous
             # hidden state; proceed normally for any input with mask 1.
             not_mask = 1 - mask_n
-            hid = hid * mask_n + hid_previous * not_mask
+            hid = hid*mask_n + hid_previous*not_mask
 
             return hid
 
@@ -435,12 +408,9 @@ class DMNLayer(MergeLayer):
             mask = mask.dimshuffle(1, 0, 'x')
             sequences = [input, mask]
             step_fun = step_masked
-        else:            
-            print("431 mask is none")
-            print(" this is input: ", input)
-            sequences = [input]  # Used in theano scan
+        else:
+            sequences = [input]
             step_fun = step
-            print(" 437 out of dmn") 
 
         if isinstance(self.hid_init, T.TensorVariable):
             hid_init = self.hid_init
@@ -449,20 +419,17 @@ class DMNLayer(MergeLayer):
             hid_init = T.dot(T.ones((num_batch, 1)), self.hid_init)
 
         # The hidden-to-hidden weight matrix is always used in step
-        non_seqs = [W_hid_stacked]
+        non_seqs = [W_hid_stacked, W_brain_in_stacked, W_brain_hid_stacked, self.W_dmn_1, self.W_dmn_2, self.W_dmn_b]
         # When we aren't precomputing the input outside of scan, we need to
         # provide the input weights and biases to the step function
         if not self.precompute_input:
             non_seqs += [W_in_stacked, b_stacked]
 
-        if self.unroll_scan:
-        #if 1==1:
-            print(" Trying unroll scan")
+        #if self.unroll_scan:
+        if 1 == 2:
             # Retrieve the dimensionality of the incoming layer
             input_shape = self.input_shapes[0]
             # Explicitly unroll the recurrence instead of using scan
-            print(" this is input shape 1: " )
-                        
             hid_out = lasagne.utils.unroll_scan(
                 fn=step_fun,
                 sequences=sequences,
@@ -470,14 +437,11 @@ class DMNLayer(MergeLayer):
                 go_backwards=self.backwards,
                 non_sequences=non_seqs,
                 n_steps=input_shape[1])[0]
-                
-            print("471 ")
         else:
             # Scan op iterates over first dimension of input and repeatedly
             # applies the step function
-            print("462 not unroll scan")
-            print(" sequences: ", sequences)
-            hid_out, theano_updates = theano.scan(
+            print("442")
+            hid_out, self.theano_updates = theano.scan(
                 fn=step_fun,
                 sequences=sequences,
                 go_backwards=self.backwards,
@@ -485,8 +449,7 @@ class DMNLayer(MergeLayer):
                 non_sequences=non_seqs,
                 truncate_gradient=self.gradient_steps,
                 strict=True)[0]
-            
-            print(" 474")
+            print(" Got past 450")
 
         # When it is requested that we only return the final sequence step,
         # we need to slice it out immediately after scan is applied
