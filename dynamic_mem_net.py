@@ -208,3 +208,20 @@ class DynamicMemNet(object):
             pass
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

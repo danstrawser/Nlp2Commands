@@ -10,13 +10,16 @@ class DMNPureTheano(object):
 
     # We take as input a string of "facts"
     def __init__(self, num_fact_hidden_units, number_word_classes, number_fact_embeddings, dimension_fact_embeddings, num_episode_hidden_units, max_number_of_facts_read):
+
+        self.X_train, self.mask_train, self.question_train, self.Y_train, self.X_test, self.mask_test, self.question_test, self.Y_test, word2idx, idx2word, dimension_fact_embeddings = self.process_data()
+              
         self.max_epochs = 500
             
         self.W_fact_embeddings_to_h = theano.shared(name='W_x',
                                 value=0.2 * np.random.uniform(-1.0, 1.0,
                                 (dimension_fact_embeddings, num_fact_hidden_units))
                                 .astype(theano.config.floatX))
-            
+        
         self.W_fact_reset_gate_h = theano.shared(name='W_fact_reset_gate_h',
                                 value=0.2 * np.random.uniform(-1.0, 1.0,
                                 (num_fact_hidden_units, num_fact_hidden_units))
@@ -76,7 +79,7 @@ class DMNPureTheano(object):
                                 value=0.2 * np.random.uniform(-1.0, 1.0,
                                 (num_fact_hidden_units, num_episode_hidden_units))
                                 .astype(theano.config.floatX)) 
-                
+        
         self.W_h_facts = theano.shared(name='W_h_facts',
                                 value=0.2 * np.random.uniform(-1.0, 1.0,
                                 (num_fact_hidden_units, num_fact_hidden_units))
@@ -107,22 +110,47 @@ class DMNPureTheano(object):
         self.h0_episodes = theano.shared(name='h0_episodes',
                                 value=np.zeros((max_number_of_facts_read, num_fact_hidden_units),
                                 dtype=theano.config.floatX))
-               
-        self.params = [self.W_fact_embeddings_to_h, self.W_fact_to_episodes, 
-                       self.b_facts_to_episodes, self.W_episodes_to_answer, self.b_episodes_to_answers, self.h0_facts]   
-                           
+
+        self.W_dmn_b = theano.shared(name='W_dmn_b_gate',
+                                value=np.zeros((dimension_fact_embeddings, dimension_fact_embeddings),
+                                dtype=theano.config.floatX))
         
+        size_z_dmn = 9
+        self.W_dmn_2 = theano.shared(name='W_dmn_2_gate',
+                                value=np.zeros((number_fact_embeddings, size_z_dmn),
+                                dtype=theano.config.floatX))
+        
+        self.W_dmn_1 = theano.shared(name='W_dmn_1_gate',
+                                value=np.zeros((number_fact_embeddings, number_fact_embeddings),
+                                dtype=theano.config.floatX))
+        
+        self.b_dmn_1 = theano.shared(name='b_dmn_1_gate',
+                                value=np.zeros((number_fact_embeddings, 1),
+                                dtype=theano.config.floatX))
+        
+        self.b_dmn_2 = theano.shared(name='b_dmn_2_gate',
+                                value=np.zeros((number_fact_embeddings, 1),
+                                dtype=theano.config.floatX))
+               
+        self.params = [self.W_fact_embeddings_to_h, self.W_fact_reset_gate_h, self.W_fact_reset_gate_x, 
+                       self.W_fact_update_gate_h, self.W_fact_update_gate_x, self.W_fact_hidden_gate_h, self.W_fact_hidden_gate_x,
+                       self.W_episode_reset_gate_h, self.W_episode_reset_gate_x, self.W_episode_update_gate_h, self.W_episode_update_gate_x,
+                       self.W_episode_hidden_gate_h, self.W_episode_hidden_gate_x, self.W_h_facts, self.W_fact_to_episodes, self.b_facts_to_episodes,
+                       self.W_episodes_to_answer, self.b_episodes_to_answers, self.h0_facts, self.h0_episodes,
+                       self.W_dmn_b, self.W_dmn_1, self.W_dmn_2, self.b_dmn_1, self.b_dmn_2]
+                
         #recur_ts = T.iscalar('Recurrent_time_step_var')
         recur_ts = theano.shared(0)
                         
         idxs = T.imatrix()
-        mask = T.matrix('mask', dtype=theano.config.floatX)        
+        mask = T.matrix('mask', dtype=theano.config.floatX)
+        questions = T.matrix("question", dtype=theano.config.floatX)
         x = self.W_fact_embeddings_to_h[idxs].reshape((idxs.shape[0], dimension_fact_embeddings))
         answer = T.ivector("answers")
         
         fact_sequence = theano.shared(value=np.zeros((num_fact_hidden_units, max_number_of_facts_read), dtype=theano.config.floatX), name="fact_sequence",borrow=False)
 
-        def recurrence(m, x_t, h_t):
+        def recurrence(m, x_t, h_t, m_t_episode):
             reset_gate_fact = T.nnet.sigmoid(T.dot(x_t, self.W_fact_reset_gate_x) + T.dot(h_t, self.W_fact_reset_gate_h))
             update_gate_fact = T.nnet.sigmoid(T.dot(x_t, self.W_fact_update_gate_x) + T.dot(h_t, self.W_fact_update_gate_h))
             
@@ -132,24 +160,42 @@ class DMNPureTheano(object):
             
             h_t_plus = m[:, None] * h_t_plus + (1 - m[:, None]) * h_t
             
+            cur = T.dot(x_t, T.dot(self.W_dmn_b, questions))
+            
+            cand = T.dot(x_t, T.dot(self.W_dmn_b, m_t_episode))
+            
+            
+            print(" n dim x_t ", x_t.ndim)
+            print(" m_t ", m_t_episode.ndim)
+            print(" question ", questions.ndim)
+            print(" first mult ", T.dot(x_t, T.dot(self.W_dmn_b, questions)).ndim)
+            print(" second mult: ", T.dot(x_t, T.dot(self.W_dmn_b, m_t_episode)))
+            
+            z_dmn = T.concatenate([x_t, m_t_episode, questions, x_t * questions, abs(x_t - questions), abs(x_t - m_t_episode), T.dot(x_t, T.dot(self.W_dmn_b, questions)),
+                        T.dot(x_t, T.dot(self.W_dmn_b, m_t_episode))], axis=0)
+            
+            
+            G_dmn = T.nnet.sigmoid(T.dot(self.W_dmn_2, T.tanh(T.dot(self.W_dmn_1, z_dmn)) + self.b_dmn_1) + self.b_dmn_2)
+                        
+            h_t_plus = G_dmn * h_t_plus + (1 - G_dmn) * h_t
+                        
             s_t = T.nnet.sigmoid(T.dot(h_t_plus, self.W_fact_to_episodes) + self.b_facts_to_episodes)            
+            
             return [h_t_plus, s_t]
         
         def recurrent_episodes(x_t, h_t_episode):
             
-            [h_facts, s_facts], _ = theano.scan(fn=recurrence, sequences=[mask, x], outputs_info=[self.h0_facts, None], 
-                                                n_steps=number_fact_embeddings)
+            [h_facts, s_facts], _ = theano.scan(fn=recurrence, sequences=[mask, x], outputs_info=[self.h0_facts, None],
+                                                non_sequences=h_t_episode, n_steps=number_fact_embeddings)
                      
             s_t = s_facts[-1]  
-        
+                    
             reset_gate_episode = T.nnet.sigmoid(T.dot(s_t, self.W_episode_reset_gate_x) + T.dot(h_t_episode, self.W_episode_reset_gate_h))
             update_gate_episode = T.nnet.sigmoid(T.dot(s_t, self.W_episode_update_gate_x) + T.dot(h_t_episode, self.W_episode_update_gate_h))
             
             hidden_update_in_episode = T.nnet.sigmoid(T.dot(s_t, self.W_episode_hidden_gate_x) + reset_gate_episode * T.dot(h_t_episode, self.W_episode_hidden_gate_h))
         
             h_t = (1 - update_gate_episode) * h_t_episode + update_gate_episode * hidden_update_in_episode
-                            
-                            
                                           
             output_answer = T.nnet.softmax(T.dot(h_t, self.W_episodes_to_answer) + self.b_episodes_to_answers)
              
@@ -171,8 +217,8 @@ class DMNPureTheano(object):
                                        for p, g in
                                        zip(self.params, sentence_gradients))
         
-        self.classify = theano.function(inputs=[idxs, mask], outputs=y_pred)
-        self.sentence_train = theano.function(inputs=[idxs, mask, answer, self.lr],outputs=sentence_nll, updates=sentence_updates)
+        self.classify = theano.function(inputs=[idxs, mask, questions], outputs=y_pred)
+        self.sentence_train = theano.function(inputs=[idxs, mask, questions, answer, self.lr],outputs=sentence_nll, updates=sentence_updates)
                     
         
     def train(self, training_examples, test_examples):
@@ -195,17 +241,9 @@ class DMNPureTheano(object):
                 for test_idxs in test_examples:
                                        
                     y_pred = self.classify(test_idxs)
-        
-                    
-                    
-                    
-                    
-                    
+                            
         except:
             KeyboardInterrupt
-        
-        
-        
         
         
     def adadelta(self, lr, tparams, grads, x, mask, y, cost):
@@ -273,6 +311,100 @@ class DMNPureTheano(object):
 
 
 
+    def process_data(self):
 
+        filename_train = 'data/simple_dmn_theano/data_train.txt'
+        filename_test = 'data/simple_dmn_theano/data_test.txt'
 
+        X_train, mask_train, Question_train, Y_train, X_test, mask_test, Question_test, Y_test = [], [], [], [], [], [], [], []
 
+        cur_idx = 0
+        word2idx = {}
+        idx2word = {}
+        
+        max_mask_len = 3
+
+        with open(filename_train, encoding='utf-8') as f:
+            cur_sentence = []                        
+            for idx, line in enumerate(f):
+                if "?" not in line:
+                    cur_sentence.append(line.strip())                   
+                else:
+                    Y_train.append(line[2:].strip())
+                    Question_train.append("where")                    
+                    cur_mask = np.zeros((1, max_mask_len))
+                    cur_mask[0:len(cur_sentence)] = 1
+                    mask_train.append(cur_mask)
+                    X_train.append(cur_sentence) # Since a question marks the end of the current sentence
+                    cur_sentence = []
+
+        with open(filename_test, encoding='utf-8') as f:
+            cur_sentence = []                        
+            for idx, line in enumerate(f):
+                if "?" not in line:
+                    cur_sentence.append(line.strip())                   
+                else:
+                    Y_test.append(line[2:].strip())  
+                    Question_test.append("where")                  
+                    cur_mask = np.zeros((1, max_mask_len))
+                    cur_mask[0:len(cur_sentence)] = 1
+                    mask_test.append(cur_mask)
+                    X_test.append(cur_sentence) # Since a question marks the end of the current sentence
+                    cur_sentence = []
+
+        for l in X_train + X_test:
+            for s in l: 
+                if s not in word2idx: 
+                    word2idx[s] = cur_idx
+                    idx2word[cur_idx] = s
+                    cur_idx += 1
+        
+        for y in Y_test + Y_train: 
+            if y not in word2idx: 
+                word2idx[y] = cur_idx
+                idx2word[cur_idx] = y
+                cur_idx += 1
+        
+        word2idx["where"] = cur_idx
+        idx2word[cur_idx] = "where" 
+        cur_idx += 1       
+        
+        X_train_vec, Question_train_vec, Y_train_vec, X_test_vec, Question_test_vec, Y_test_vec = [], [], [], [], [], []
+        
+        for s in X_train:
+            cur_sentence = []
+            for f in s:
+                new_vec = np.zeros((len(word2idx)))
+                new_vec[word2idx[f]] = 1
+                cur_sentence.append(new_vec)
+            X_train_vec.append(cur_sentence)
+            
+        for s in X_train:
+            cur_sentence = []
+            for f in s:
+                new_vec = np.zeros((len(word2idx)))
+                new_vec[word2idx[f]] = 1
+                cur_sentence.append(new_vec)
+            X_test_vec.append(cur_sentence)
+        
+        for y in Y_train:
+            new_vec = np.zeros((len(word2idx)))
+            new_vec[word2idx[y]] = 1
+            Y_train_vec.append(new_vec)
+            
+        for y in Y_test:
+            new_vec = np.zeros((len(word2idx)))
+            new_vec[word2idx[y]] = 1
+            Y_test_vec.append(new_vec)
+    
+        for q in Question_train:
+            new_vec = np.zeros((len(word2idx)))
+            new_vec[word2idx[q]] = 1
+            Question_train_vec.append(new_vec)
+       
+        for q in Question_test:
+            new_vec = np.zeros((len(word2idx)))
+            new_vec[word2idx[q]] = 1
+            Question_test_vec.append(new_vec)
+            
+        return X_train_vec, mask_train, Question_train_vec, Y_train_vec, X_test_vec, mask_test, Question_test_vec, Y_test_vec, word2idx, idx2word, len(word2idx)
