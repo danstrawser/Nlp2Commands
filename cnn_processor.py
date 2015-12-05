@@ -12,8 +12,8 @@ class CNNProcessor(object):
         self.test_directory = 'test'
         assert(type_of_data == "full" or type_of_data == "simplified" or type_of_data == "medium")
         self.type_of_data = type_of_data
-        self.MAX_NUM_TRAINING_FILES = 6000
-        self.MAX_NUM_TEST_FILES = 100
+        self.MAX_NUM_TRAINING_FILES = 10000
+        self.MAX_NUM_TEST_FILES = 150
 
     def process(self):
         test_lines, train_lines, max_seqlen = [], [], 0
@@ -66,7 +66,7 @@ class CNNProcessor(object):
 
         if seqlen > max_seqlen:
             max_seqlen = seqlen
-        lines.append({'answer': re.sub("@", '', answer), 'text': re.sub("@", '', question), 'refs': [0], 'id': cur_idx, 'type': 'q'})
+        lines.append({'answer': re.sub("@", '', answer), 'text': re.sub("@", '', question), 'refs': [1], 'id': cur_idx, 'type': 'q'})
 
     def _generate_simplified_line(self, lines, article_text, question, answer, max_seqlen):
         cur_idx, seqlen = 1, 0
@@ -77,7 +77,7 @@ class CNNProcessor(object):
                 seqlen += 1
         if seqlen > max_seqlen:
             max_seqlen = seqlen
-        lines.append({'answer': re.sub("@", '', answer), 'text': re.sub("@", '', question), 'refs': [0], 'id': cur_idx, 'type': 'q'})
+        lines.append({'answer': re.sub("@", '', answer), 'text': re.sub("@", '', question), 'refs': [1], 'id': cur_idx, 'type': 'q'})
         return max_seqlen
 
     def _generate_line(self, lines, article_text, question, answer, max_seqlen):
@@ -88,7 +88,7 @@ class CNNProcessor(object):
             cur_seq_len += 1
         if cur_seq_len > max_seqlen:
             max_seqlen = cur_seq_len
-        lines.append({'answer': answer, 'text': question, 'refs': [0], 'id': cur_idx, 'type': 'q'})
+        lines.append({'answer': answer, 'text': question, 'refs': [1], 'id': cur_idx, 'type': 'q'})
         return max_seqlen
 
     def _word2idx(self, lines):

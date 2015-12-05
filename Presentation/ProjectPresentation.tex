@@ -1,0 +1,33 @@
+\documentclass{beamer}
+\usetheme{Warsaw}
+\setbeamertemplate{headline}{}
+\usepackage{graphicx}
+\usepackage{mathtools}
+\usepackage{bbm}
+\usepackage[space]{grffile}
+\setbeamertemplate{caption}[numbered]
+
+
+\newcommand{\presentationType}{1}
+
+\DeclareMathOperator*{\argmax}{\arg\!\max}
+\DeclareMathOperator*{\argmin}{\arg\!\min}
+
+\DeclarePairedDelimiter\norm{\lVert}{\rVert}%
+
+\title[Crisis]{End-to-End QA Systems:  Evaluating Neural Network Models for Question Answering Systems}
+\author{Dan Strawser}
+%
+\AtBeginSection{\frame{\sectionpage}}
+
+\begin{document}
+\frame{\titlepage}
+
+\begin{frame}{Abstract}
+Question answering systems form the basis for many natural language processing tasks.  Recently, recurrent neural network models have shown much promise.  Certain networks such as Memory Networks, and Dynamic Memory Networks have shown promise on the Babi Tasks. However, the size of this dataset is limited.  In this work, we evaluate them against larger corpora such as the Wiki QA dataset and Google CNN QA dataset.  
+\end{frame}
+
+
+
+
+\end{document}

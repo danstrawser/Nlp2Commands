@@ -31,8 +31,8 @@ class WikiProcessor(object):
                 for file_num in range(max_file_num):
                     article = []
                     with open(self.filename + dir + "/data/set" + str(cur_directory) + "/" + "a" + str(file_num + 1) + ".txt.clean", encoding='utf-8') as f:
-                        [article.append(line.strip()) for line in f if line.strip()]
-                    title = article[0].replace(" ","_")
+                        [article.append(line.strip().lower()) for line in f if line.strip()]
+                    title = article[0].replace(" ","_").lower()
                     docs[title] = {}
                     docs[title]['article'] = article[1:]
                     docs[title]['questions'] = {}
@@ -40,12 +40,13 @@ class WikiProcessor(object):
 
         for dir in nums:
             questions = []
-            with open(self.filename + dir + "/" + question_filename,encoding='utf-8') as f:
+
+            with open(self.filename + dir + "/" + question_filename, encoding='utf-8') as f:
                 for line in f:
-                    questions.append(re.split(r'\t+', line))
+                    questions.append(re.split(r'\t+', line.lower()))
             for q in questions[1:]:
                 docs[q[0]]['questions'][q[1]] = {'answer': -1, 'difficulty': -1}
-                docs[q[0]]['questions'][q[1]]['answer'] = q[2] #.translate(string.maketrans("",""), string.punctuation)
+                docs[q[0]]['questions'][q[1]]['answer'] = q[2].lower()  #.translate(string.maketrans("",""), string.punctuation)
                 docs[q[0]]['questions'][q[1]]['difficulty'] = q[3]
 
         if extract_yes_no:
@@ -90,7 +91,7 @@ class WikiProcessor(object):
 
             for q in docs[d]['questions'].keys():
                 a = docs[d]['questions'][q]
-                lines.append({'answer': a['answer'], 'text': q, 'type': 'q', 'refs': [0], 'id': cur_line})
+                lines.append({'answer': a['answer'], 'text': q, 'type': 'q', 'refs': [1], 'id': cur_line})
                 cur_line += 1
             if cur_line > max_seqlen:
                 max_seqlen = cur_line
@@ -105,7 +106,6 @@ class WikiProcessor(object):
                 if dic['answer'].lower() == 'yes' or dic['answer'].lower() == 'no':
                     updated_questions[q] = {'answer':dic['answer'], 'difficulty':dic['difficulty']}
             docs[d]['questions'] = updated_questions
-
 
     def _word2idx(self, lines, docs):
         word2idx, idx2word = {}, {}

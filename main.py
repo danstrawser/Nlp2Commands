@@ -37,13 +37,13 @@ def main(nn_type, data_type):
         network, l_mask, l_in = lstm.build_model(input_size, max_seq_len)
         lstm.optimize(network, l_mask, l_in)
 
-    elif nn_type == "mem_net":
+    elif nn_type == "mem_net" and data_type == "babi":
         mn = MemNet()
         mn.run('babi')
-    elif nn_type == "mem_net_qa":
+    elif nn_type == "mem_net" and data_type == "wiki_qa":
         mn = MemNet()
-        mn.run('wiki_qa')
-    elif nn_type == "mem_net_cnn":
+        mn.run(data_type)
+    elif nn_type == "mem_net" and data_type == "cnn":
         mn = MemNet()
         mn.run('cnn_qa')
 
@@ -65,7 +65,7 @@ if __name__ == '__main__':
         print(" data type: ", data_type)
     else:
         nn_type = "mem_net"
-        data_type = "wiki_qa"
+        data_type = "cnn"
 
 
     main(nn_type, data_type)

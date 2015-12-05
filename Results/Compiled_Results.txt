@@ -1,0 +1,22 @@
+
+- LSTM: 
+	- Simple: 100%
+	- Medium: 100%
+	- Full: 18%
+			
+		
+- MemNet: 
+	- Simple: 100%
+	- Medium: 100%
+	- Full: 100%
+	
+	Wiki_QA:
+	- Yes/No: 75.2% correct	
+		
+	CNN (simple): 
+	- 51% error 
+		
+	Dynam MemNet
+	- Simple: 100%
+	- Medium: 100%
+	- Full: Unknown

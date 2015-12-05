@@ -172,10 +172,11 @@ class Model:
         vocab, word_to_idx, idx_to_word, max_seqlen, max_sentlen = self.get_vocab(lines)
 
         if data_source == 'wiki_qa':
-            proc = WikiProcessor('C:/Users/Dan/Desktop/Crore/6.864/Project/Data/wiki_qa/')
+            proc = WikiProcessor('data/wiki_qa/')
             vocab, train_lines, test_lines, word_to_idx, idx_to_word, max_seqlen, max_sentlen = proc.process()
             lines = np.concatenate([train_lines, test_lines], axis=0)
         elif data_source == 'cnn_qa':
+            print(" CNN running... ")
             proc = CNNProcessor("simplified")
             vocab, train_lines, test_lines, word_to_idx, idx_to_word, max_seqlen, max_sentlen = proc.process()
             lines = np.concatenate([train_lines, test_lines], axis=0)
@@ -372,13 +373,13 @@ class Model:
             print('TRAIN', '=' * 40)
             train_f1, train_errors = self.compute_f1(self.data['train'])
             print('TRAIN_ERROR:', (1-train_f1)*100)
-            if False or True:
-                for i, pred in train_errors[:10]:
-                    print('context: ', self.to_words(self.data['train']['C'][i]))
-                    print('question: ', self.to_words([self.data['train']['Q'][i]]))
-                    print('correct answer: ', self.data['train']['Y'][i])
-                    print('predicted answer: ', pred)
-                    print('---' * 20)
+            # if False or True:
+            #     for i, pred in train_errors[:10]:
+            #         print('context: ', self.to_words(self.data['train']['C'][i]))
+            #         print('question: ', self.to_words([self.data['train']['Q'][i]]))
+            #         print('correct answer: ', self.data['train']['Y'][i])
+            #         print('predicted answer: ', pred)
+            #         print('---' * 20)
 
             if prev_train_f1 is not None and train_f1 < prev_train_f1 and self.nonlinearity is None:
                 prev_weights = lasagne.layers.helper.get_all_param_values(self.network)
@@ -502,7 +503,7 @@ class Model:
             if line['type'] == 'q':  # Line is, for example:  {'answer': 'bathroom', 'text': 'Where is Mary', 'refs': [1], 'type': 'q', 'id': 3})
                 id = line['id']-1
                 indices = [offset+idx+1 for idx in range(i-id, i) if lines[idx]['type'] == 's'][::-1][:50000]
-                line['refs'] = [indices.index(offset+i+1-id+ref) for ref in line['refs']] # multiply refs by 2 for your version
+                #line['refs'] = [indices.index(offset+i+1-id+ ref) for ref in line['refs']] # multiply refs by 2 for your version
                 C.append(indices)  # Indices are past statements that COULD BE relevant to answering the question, they increment for the entire data set but are only relevant for the past 15 statements.
                 Q.append(offset+i+1)  # This is the actual question index
                 Y.append(line['answer'])  # Answer string
@@ -546,7 +547,7 @@ def main():
     parser.add_argument('--batch_size', type=int, default=15, help='Batch size')
     parser.add_argument('--embedding_size', type=int, default=20, help='Embedding size')
     parser.add_argument('--max_norm', type=float, default=40.0, help='Max norm')
-    parser.add_argument('--lr', type=float, default=0.02, help='Learning rate')
+    parser.add_argument('--lr', type=float, default=0.001, help='Learning rate')
     parser.add_argument('--num_hops', type=int, default=3, help='Num hops')
     parser.add_argument('--adj_weight_tying', type='bool', default=True, help='Whether to use adjacent weight tying')
     parser.add_argument('--linear_start', type='bool', default=False, help='Whether to start with linear activations')
@@ -593,8 +594,8 @@ class MemNet(object):
         print('*' * 80)
 
         if args.train_file == '' or args.test_file == '':
-            args.train_file = 'Data/babi_tasks/tasks_1-20_v1-2/en/qa1_single-supporting-fact_train.txt'
-            args.test_file = 'Data/babi_tasks/tasks_1-20_v1-2/en/qa1_single-supporting-fact_test.txt'
+            args.train_file = 'data/babi_tasks/tasks_1-20_v1-2/en/qa1_single-supporting-fact_train.txt'
+            args.test_file = 'data/babi_tasks/tasks_1-20_v1-2/en/qa1_single-supporting-fact_test.txt'
             #args.train_file = glob.glob('data/en/qa%d_*train.txt' % args.task)[0]
             #args.test_file = glob.glob('data/en/qa%d_*test.txt' % args.task)[0]
         args.data_source = data_source
