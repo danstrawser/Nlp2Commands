@@ -56,7 +56,9 @@ class DMNPureTheano2(object):
 
         # x basically represents the embeddings of the words IN the current sentence.  So it is shape
         x = self.emb[idxs].reshape((idxs.shape[0], de*cs))
-        y_sentence = T.ivector('y_sentence')  # labels
+
+        #y_sentence = T.ivector('y_sentence')  # labels
+        y_sentence = T.iscalar('y_sentence')
 
         def recurrence(x_t, h_tm1):
             h_t = T.nnet.sigmoid(T.dot(x_t, self.wx) + T.dot(h_tm1, self.wh) + self.bh)
@@ -66,13 +68,11 @@ class DMNPureTheano2(object):
         [h, s], _ = theano.scan(fn=recurrence, sequences=x, outputs_info=[self.h0, None], n_steps=x.shape[0])
 
         # I believe the dimensions of p_y_given_x_sentence are ( time, num_classes)
-        p_y_given_x_sentence = s[:, 0, :]  # I believe the output indexing here is (num_classes, time, number_embeddings)
-
-        
+        p_y_given_x_sentence = s[-1, 0, :]  # I believe the output indexing here is (num_classes, time, number_embeddings)
 
         # DS Note:  it makes sense that the classes would be the second dimension because we are taking argmax of axis=1
         # Which is what we would want for predicting the most likely class
-        y_pred = T.argmax(p_y_given_x_sentence, axis=1)
+        y_pred = T.argmax(p_y_given_x_sentence, axis=0)
 
         lr = T.scalar('lr')
 
@@ -83,7 +83,10 @@ class DMNPureTheano2(object):
         # y_sentence is an ivector which is (I'm assuming) the tags for the sentence, i.e. [23, 234, 66, 66, 21].
         # and then you get p_y_given_x_sentence for these tag values.  This is because you want to maximize these values only.
         # This is the most cryptic line in the whole thing:
-        sentence_nll = -T.mean(T.log(p_y_given_x_sentence)[T.arange(x.shape[0]), y_sentence])
+
+        #sentence_nll = -T.mean(T.log(p_y_given_x_sentence)[T.arange(x.shape[0]), y_sentence])
+        sentence_nll = -T.mean(T.log(p_y_given_x_sentence)[y_sentence])
+
         sentence_gradients = T.grad(sentence_nll, self.params)  # Returns gradients of the nll w.r.t the params
 
         sentence_updates = OrderedDict((p, p - lr*g) for p, g in zip(self.params, sentence_gradients))  # computes the update for each of the params.
@@ -102,7 +105,7 @@ class DMNPureTheano2(object):
         for e in range(max_epochs):
 
             for idx in range(len(self.X_train)):
-                x, q, y = self.X_train[idx], self.question_train[idx], self.Y_train[idx]
+                x, q, y = self.X_train[idx], self.question_train[idx], self.Y_train[idx][-1]
                 ll = self.sentence_train(x, y, lr)
 
             for idx in range(len(self.X_test)):
@@ -113,12 +116,12 @@ class DMNPureTheano2(object):
                 if e == 9:
                     print(" this is x: ", x)
                     print(" this is prediction : ", predictions_test)
-                    print(" this is true: ", y)
+                    print(" this is true: ", y[-1])
 
 
 
 
-
+        assert(1 == 2)
 
 
 
