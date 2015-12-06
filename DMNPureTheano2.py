@@ -21,7 +21,6 @@ class DMNPureTheano2(object):
 
         self.X_train, self.mask_train, self.question_train, self.Y_train, self.X_test, self.mask_test, self.question_test, self.Y_test, word2idx, idx2word, dimension_fact_embeddings = self.process_data("embeddings")
 
-
         number_word_classes = max(idx2word.keys(), key=int)
         dimension_fact_embeddings = 5
 
@@ -51,7 +50,9 @@ class DMNPureTheano2(object):
 
         self.params = [self.emb, self.wx, self.wh, self.w, self.bh, self.b, self.h0]
 
-        idxs = T.imatrix() # as many columns as words in the context window and as many lines as words in the sentence
+        mask = T.ivector("mask")
+
+        idxs = T.imatrix("indices") # as many columns as words in the context window and as many lines as words in the sentence
         # x = self.emb[idxs].reshape((idxs.shape[0], de*cs))
 
         # x basically represents the embeddings of the words IN the current sentence.  So it is shape
@@ -60,12 +61,16 @@ class DMNPureTheano2(object):
         #y_sentence = T.ivector('y_sentence')  # labels
         y_sentence = T.iscalar('y_sentence')
 
-        def recurrence(x_t, h_tm1):
+        def recurrence(m_t, x_t, h_tm1):
+
             h_t = T.nnet.sigmoid(T.dot(x_t, self.wx) + T.dot(h_tm1, self.wh) + self.bh)
+            h_t = m_t * h_t + (1 - m_t) * h_tm1
+
             s_t = T.nnet.softmax(T.dot(h_t, self.w) + self.b)
+
             return [h_t, s_t]
 
-        [h, s], _ = theano.scan(fn=recurrence, sequences=x, outputs_info=[self.h0, None], n_steps=x.shape[0])
+        [h, s], _ = theano.scan(fn=recurrence, sequences=[mask, x], outputs_info=[self.h0, None], n_steps=x.shape[0])
 
         # I believe the dimensions of p_y_given_x_sentence are ( time, num_classes)
         p_y_given_x_sentence = s[-1, 0, :]  # I believe the output indexing here is (num_classes, time, number_embeddings)
@@ -91,10 +96,9 @@ class DMNPureTheano2(object):
 
         sentence_updates = OrderedDict((p, p - lr*g) for p, g in zip(self.params, sentence_gradients))  # computes the update for each of the params.
 
-        self.classify = theano.function(inputs=[idxs], outputs=y_pred)
+        self.classify = theano.function(inputs=[idxs, mask], outputs=y_pred)
 
-        self.sentence_train = theano.function(inputs=[idxs, y_sentence, lr], outputs=sentence_nll, updates=sentence_updates)
-
+        self.sentence_train = theano.function(inputs=[idxs, mask, y_sentence, lr], outputs=sentence_nll, updates=sentence_updates)
 
 
     def train(self):
@@ -105,37 +109,25 @@ class DMNPureTheano2(object):
         for e in range(max_epochs):
 
             for idx in range(len(self.X_train)):
-                x, q, y = self.X_train[idx], self.question_train[idx], self.Y_train[idx][-1]
-                ll = self.sentence_train(x, y, lr)
+                x, m, q, y = self.X_train[idx], self.mask_train[idx], self.question_train[idx], self.Y_train[idx]
+                ll = self.sentence_train(x, m, y, lr)
+
+            correct = 0
+            total_tests = 0
 
             for idx in range(len(self.X_test)):
-                x, q, y = self.X_test[idx], self.question_test[idx], self.Y_test[idx]
+                x, m, q, y = self.X_test[idx], self.mask_test[idx], self.question_test[idx], self.Y_test[idx]
 
-                predictions_test = self.classify(x)
+                predictions_test = self.classify(x, m)
 
-                if e == 9:
-                    print(" this is x: ", x)
-                    print(" this is prediction : ", predictions_test)
-                    print(" this is true: ", y[-1])
+                if predictions_test == y:
+                    correct += 1
+                total_tests += 1
 
-
+            print(" ratio correct: ", correct / total_tests)
 
 
         assert(1 == 2)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
         # idxs, mask, questions, answer
@@ -244,8 +236,8 @@ class DMNPureTheano2(object):
 
     def process_data(self, type_of_embedding):
 
-        filename_train = 'data/simple_dmn_theano/data_train.txt'
-        filename_test = 'data/simple_dmn_theano/data_test.txt'
+        filename_train = 'data/simple_dmn_theano/data_train_masked.txt'
+        filename_test = 'data/simple_dmn_theano/data_test_masked.txt'
 
         X_train, mask_train, Question_train, Y_train, X_test, mask_test, Question_test, Y_test = [], [], [], [], [], [], [], []
 
@@ -263,7 +255,7 @@ class DMNPureTheano2(object):
                 else:
                     Y_train.append(line[2:].strip())
                     Question_train.append("where")                    
-                    cur_mask = np.zeros((1, max_mask_len))
+                    cur_mask = np.zeros(max_mask_len, dtype='int32')
                     cur_mask[0:len(cur_sentence)] = 1
                     mask_train.append(cur_mask)
                     X_train.append(cur_sentence) # Since a question marks the end of the current sentence
@@ -277,7 +269,7 @@ class DMNPureTheano2(object):
                 else:
                     Y_test.append(line[2:].strip())  
                     Question_test.append("where")                  
-                    cur_mask = np.zeros((1, max_mask_len))
+                    cur_mask = np.zeros(max_mask_len, dtype='int32')
                     cur_mask[0:len(cur_sentence)] = 1
                     mask_test.append(cur_mask)
                     X_test.append(cur_sentence) # Since a question marks the end of the current sentence
@@ -332,7 +324,7 @@ class DMNPureTheano2(object):
         
         for y in Y_train:
             if type_of_embedding == "embeddings":
-                new_vec = [word2idx[y], word2idx[y], word2idx[y]]
+                new_vec = word2idx[y]
             else:
                 new_vec = np.zeros((len(word2idx)))
                 new_vec[word2idx[y]] = 1
@@ -340,7 +332,7 @@ class DMNPureTheano2(object):
             
         for y in Y_test:
             if type_of_embedding == "embeddings":
-                new_vec = [word2idx[y], word2idx[y], word2idx[y]]
+                new_vec = word2idx[y]
             else:
                 new_vec = np.zeros((len(word2idx)))
                 new_vec[word2idx[y]] = 1
