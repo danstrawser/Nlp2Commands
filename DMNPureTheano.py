@@ -1,4 +1,5 @@
 from theano.compile.mode import FAST_COMPILE
+from numpy import dtype
 __author__ = 'Dan'
 import numpy as np
 import theano 
@@ -168,10 +169,13 @@ class DMNPureTheano(object):
                            self.W_episodes_to_answer, self.b_episodes_to_answers, self.h0_facts, self.h0_episodes,
                            self.W_dmn_b, self.W_dmn_1, self.W_dmn_2, self.b_dmn_1, self.b_dmn_2]
                            
-            idxs = T.imatrix()
+            idxs = T.lmatrix()
             mask = T.matrix('mask', dtype=theano.config.floatX)
             questions = T.vector("question", dtype=theano.config.floatX)
-            x = self.W_fact_embeddings_to_h[idxs].reshape((idxs.shape[0], dimension_fact_embeddings))
+            
+            #x = self.W_fact_embeddings_to_h[idxs].reshape((idxs.shape[0], dimension_fact_embeddings))
+            idxs.tag.test_value = np.random.randint(2, size=(3,dimension_fact_embeddings))
+            
             answer = T.ivector("answers")
             
             fact_sequence = theano.shared(value=np.zeros((num_fact_hidden_units, max_number_of_facts_read), dtype=theano.config.floatX), name="fact_sequence",borrow=False)
@@ -223,19 +227,23 @@ class DMNPureTheano(object):
                                                                  outputs_info=[self.h0_episodes, None],
                                                                  n_steps=max_number_of_facts_read)
                         
+    
+            
             #p_y_given_x_sentence = s_episodes[:, -1, :]  # Why does this have the dimensions that it does?  
-            p_y_given_x_sentence = T.nnet.Softmax(s_episodes[-1])
+            p_y_given_x_sentence = T.nnet.softmax(s_episodes[-1])
             y_pred = T.argmax(p_y_given_x_sentence, axis=0)           
                    
             self.lr = T.scalar('lr')
             
             sentence_nll = -T.mean(T.log(p_y_given_x_sentence)
-                                   [T.arange(x.shape[0]), answer])  # Note:  x shape
+                                   [T.arange(s_episodes.shape[0]), answer])  # Note:  x shape
+            
+            
             
             sentence_gradients = T.grad(sentence_nll, self.params, disconnected_inputs="warn")
-            sentence_updates = OrderedDict((p, p - self.lr*g)
-                                           for p, g in
-                                           zip(self.params, sentence_gradients))
+            
+            sentence_updates = OrderedDict((p, p - self.lr*g) for p, g in zip(self.params, sentence_gradients))
+                        
                         
             self.classify = theano.function(inputs=[idxs, mask, questions], outputs=y_pred, allow_input_downcast=True, on_unused_input='warn')
             self.sentence_train = theano.function(inputs=[idxs, mask, questions, answer, self.lr],outputs=sentence_nll, updates=sentence_updates, allow_input_downcast=True, on_unused_input='warn')
