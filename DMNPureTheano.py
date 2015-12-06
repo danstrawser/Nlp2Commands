@@ -161,14 +161,29 @@ class DMNPureTheano(object):
             self.b_dmn_2 = theano.shared(name='b_dmn_2_gate',
                                     value=np.zeros((max_fact_seqlen, 1),
                                     dtype=theano.config.floatX))
-                   
+
+
+
+            nv, de, cs = dimension_fact_embeddings, dimension_fact_embeddings, 1
+            embeddings = theano.shared(0.2 * np.random.uniform(-1.0, 1.0, (nv+1, de)).astype(theano.config.floatX)) # add one for PADDING at the end
+
+            idxs = T.imatrix() # as many columns as words in the context window and as many lines as words in the sentence
+            x = self.emb[idxs].reshape((idxs.shape[0], de*cs))
+
+
+
+
+
             self.params = [self.W_fact_embeddings_to_h, self.W_fact_reset_gate_h, self.W_fact_reset_gate_x, 
                            self.W_fact_update_gate_h, self.W_fact_update_gate_x, self.W_fact_hidden_gate_h, self.W_fact_hidden_gate_x,
                            self.W_episode_reset_gate_h, self.W_episode_reset_gate_x, self.W_episode_update_gate_h, self.W_episode_update_gate_x,
                            self.W_episode_hidden_gate_h, self.W_episode_hidden_gate_x, self.W_fact_to_episodes, self.b_facts_to_episodes,
                            self.W_episodes_to_answer, self.b_episodes_to_answers, self.h0_facts, self.h0_episodes,
                            self.W_dmn_b, self.W_dmn_1, self.W_dmn_2, self.b_dmn_1, self.b_dmn_2]
-                           
+
+
+
+
             idxs = T.lmatrix()
             mask = T.matrix('mask', dtype=theano.config.floatX)
             questions = T.vector("question", dtype=theano.config.floatX)
@@ -234,9 +249,9 @@ class DMNPureTheano(object):
             y_pred = T.argmax(p_y_given_x_sentence, axis=0)           
                    
             self.lr = T.scalar('lr')
-            
-            sentence_nll = -T.mean(T.log(p_y_given_x_sentence)
-                                   [T.arange(s_episodes.shape[0]), answer])  # Note:  x shape
+
+
+            sentence_nll = -T.mean(T.log(p_y_given_x_sentence)[T.arange(s_episodes.shape[0]), answer])  # Note:  x shape
             
             
             
