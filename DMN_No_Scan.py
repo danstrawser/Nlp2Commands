@@ -73,9 +73,21 @@ class DMN_No_Scan(object):
         self.W_episode_hidden_gate_h = theano.shared(name='W_episode_hidden_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, num_hidden_units_episodes)).astype(theano.config.floatX))
         self.W_episode_hidden_gate_x = theano.shared(name='W_episode_hidden_gate_x', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, dimension_fact_embeddings)).astype(theano.config.floatX))
 
+        num_rows_z_dmn = 2
+        inner_dmn_dimension = 8
+        self.W_dmn_1 = theano.shared(name='W_dmn_1', value=0.2 * np.random.uniform(-1.0, 1.0, (inner_dmn_dimension , num_rows_z_dmn)).astype(theano.config.floatX))
+        self.W_dmn_2 = theano.shared(name='W_dmn_2', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, inner_dmn_dimension)).astype(theano.config.floatX))
+
+        self.b_dmn_1 = theano.shared(name='b_dmn_1', value=0.2 * np.random.uniform(-1.0, 1.0, num_hidden_units_facts).astype(theano.config.floatX))
+        self.b_dmn_2 = theano.shared(name='b_dmn_2', value=0.2 * np.random.uniform(-1.0, 1.0, num_hidden_units_facts).astype(theano.config.floatX))
+        self.W_dmn_b = theano.shared(name='W_dmn_2', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, num_hidden_units_questions)).astype(theano.config.floatX))
+
         self.params = [self.emb, self.W_out, self.b_out, self.W_fact_reset_gate_h, self.W_fact_reset_gate_x, self.W_fact_update_gate_h,
                        self.W_fact_update_gate_x, self.W_fact_hidden_gate_h, self.W_fact_hidden_gate_x, self.W_fact_to_episode, self.b_fact_to_episode,
-                       self.W_episode_reset_gate_h, self.W_episode_reset_gate_x, self.W_episode_update_gate_h, self.W_episode_update_gate_x, self.W_episode_hidden_gate_h, self.W_episode_hidden_gate_x]
+                       self.W_episode_reset_gate_h, self.W_episode_reset_gate_x, self.W_episode_update_gate_h, self.W_episode_update_gate_x, self.W_episode_hidden_gate_h, self.W_episode_hidden_gate_x,
+                       self.W_dmn_1, self.W_dmn_2, self.b_dmn_1, self.b_dmn_2]
+
+        question_encoding = self.GRU_question(dimension_fact_embeddings, num_hidden_units_questions, num_hidden_units_episodes, max_queslen)
 
         def slice_w(x, n):
             return x[n*num_hidden_units_facts:(n+1)*num_hidden_units_facts]
@@ -96,6 +108,12 @@ class DMN_No_Scan(object):
             hidden_update = slice_w(input_n, 2) + resetgate * slice_w(hid_input, 2)
             hidden_update = T.tanh(hidden_update)
             h_cur = (1 - updategate) * hidden_update + updategate * hidden_update
+
+            z_dmn = T.concatenate(([question_encoding], [x_cur]), axis=0)
+
+            G_dmn = T.nnet.sigmoid(T.dot(self.W_dmn_2, T.tanh(T.dot(self.W_dmn_1, z_dmn)) + self.b_dmn_1) + self.b_dmn_2)
+            h_cur = T.dot(G_dmn, h_cur) + T.dot((1 - G_dmn), h_prev)
+
 
             h_cur = f_mask * h_cur + (1 - f_mask) * h_prev
             # h_cur = T.tanh(T.dot(self.W_fact_to_hidden, x_cur) + T.dot(self.W_hidden_to_hidden, h_prev))
@@ -145,8 +163,8 @@ class DMN_No_Scan(object):
         sentence_updates = OrderedDict((p, p - lr*g) for p, g in zip(self.params, sentence_gradients))  # computes the update for each of the params.
 
         print("Compiling fcns...")
-        self.classify = theano.function(inputs=[fact_idxs, fact_mask], outputs=y_pred)
-        self.sentence_train = theano.function(inputs=[fact_idxs, fact_mask, y_sentence, lr], outputs=sentence_nll, updates=sentence_updates)
+        self.classify = theano.function(inputs=[fact_idxs, fact_mask, self.question_idxs, self.question_mask], outputs=y_pred)
+        self.sentence_train = theano.function(inputs=[fact_idxs, fact_mask, self.question_idxs, self.question_mask, y_sentence, lr], outputs=sentence_nll, updates=sentence_updates)
         print("Done compiling!")
 
 
@@ -168,38 +186,44 @@ class DMN_No_Scan(object):
         self.params.extend((self.W_question_reset_gate_h, self.W_question_reset_gate_x, self.W_question_update_gate_h, self.W_question_update_gate_x, self.W_question_hidden_gate_h, self.W_question_hidden_gate_x,
                             self.W_question_to_vector, self.b_question_to_vector, self.h0_questions))
 
-        question_idxs = T.lmatrix("question_indices") # as many columns as words in the context window and as many lines as words in the sentence
-        question_mask = T.lvector("question_mask")
-        q = self.emb[question_idxs].reshape((question_idxs.shape[0], dimension_fact_embedding)) # x basically represents the embeddings of the words IN the current sentence.  So it is shape
+        self.question_idxs = T.lmatrix("question_indices") # as many columns as words in the context window and as many lines as words in the sentence
+        self.question_mask = T.lvector("question_mask")
+        q = self.emb[self.question_idxs].reshape((self.question_idxs.shape[0], dimension_fact_embedding)) # x basically represents the embeddings of the words IN the current sentence.  So it is shape
 
         def slice_w(x, n):
             return x[n*num_hidden_units_questions:(n+1)*num_hidden_units_questions]
 
-        def question_gru_recursion(m_t, x_t, h_tm1):
-            pass
+        def question_gru_recursion(x_cur, h_prev, q_mask):
+
+            W_in_stacked = T.concatenate([self.W_question_reset_gate_x, self.W_question_update_gate_x, self.W_question_hidden_gate_x], axis=1)
+            W_hid_stacked = T.concatenate([self.W_question_reset_gate_h, self.W_question_update_gate_h, self.W_question_hidden_gate_h], axis=1)
+
+            input_n = T.dot(x_cur, W_in_stacked)
+            hid_input = T.dot(h_prev, W_hid_stacked)
+
+            resetgate = slice_w(hid_input, 0) + slice_w(input_n, 0)
+            updategate = slice_w(hid_input, 1) + slice_w(input_n, 1)
+            resetgate = T.tanh(resetgate)
+            updategate = T.tanh(updategate)
+
+            hidden_update = slice_w(input_n, 2) + resetgate * slice_w(hid_input, 2)
+            hidden_update = T.tanh(hidden_update)
+            h_cur = (1 - updategate) * hidden_update + updategate * hidden_update
+
+            h_cur = q_mask * h_cur + (1 - q_mask) * h_prev
+            # h_cur = T.tanh(T.dot(self.W_fact_to_hidden, x_cur) + T.dot(self.W_hidden_to_hidden, h_prev))
+            return h_cur
 
         state = self.h0_questions
         for jdx in range(max_question_len):
-                state = question_gru_recursion(q[jdx], state, question_mask[jdx])
+            state = question_gru_recursion(q[jdx], state, self.question_mask[jdx])
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+        return T.tanh(T.dot(self.W_question_to_vector, state) + self.b_question_to_vector)
 
 
     def train(self):
         # self.X_train, self.mask_train, self.question_train, self.Y_train, self.X_test, self.mask_test, self.question_test, self.Y_test, word2idx, idx2word, dimension_fact_embeddings = self.process_data()
-        lr = 0.6
+        lr = .4
         max_epochs = 100
 
         print(" Starting training...")
@@ -209,7 +233,7 @@ class DMN_No_Scan(object):
             ll = 0
             for idx in range(len(self.X_train)):
                 x, m, q, mask_question, y = self.X_train[idx], self.mask_train[idx], self.question_train[idx], self.question_train_mask[idx], self.Y_train[idx]
-                ll += self.sentence_train(x, m, y, lr)
+                ll += self.sentence_train(x, m, q, mask_question, y, lr)
 
             correct = 0
             total_tests = 0
@@ -217,7 +241,7 @@ class DMN_No_Scan(object):
             for idx in range(len(self.X_test)):
                 x, m, q, mask_question, y = self.X_test[idx], self.mask_test[idx], self.question_test[idx], self.question_test_mask[idx], self.Y_test[idx]
 
-                predictions_test = self.classify(x, m)
+                predictions_test = self.classify(x, m, q, mask_question)
 
                 # if idx == 15 or idx == 16 or idx == 17:
                 #     print(" prediction test: ", predictions_test)
