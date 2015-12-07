@@ -223,7 +223,7 @@ class DMN_No_Scan(object):
 
     def train(self):
         # self.X_train, self.mask_train, self.question_train, self.Y_train, self.X_test, self.mask_test, self.question_test, self.Y_test, word2idx, idx2word, dimension_fact_embeddings = self.process_data()
-        lr = .4
+        lr = .1
         max_epochs = 100
 
         print(" Starting training...")
