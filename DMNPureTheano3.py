@@ -18,14 +18,15 @@ class DMNPureTheano3(object):
 
         self.X_train, self.mask_train, self.question_train, self.question_train_mask, self.Y_train, self.X_test, self.mask_test, self.question_test, self.question_test_mask, self.Y_test, word2idx, idx2word, dimension_fact_embeddings, max_queslen = self.process_data("embeddings")
 
-        number_word_classes = max(idx2word.keys(), key=int)
-        dimension_fact_embeddings = 5
+        number_word_classes = max(idx2word.keys(), key=int) + 1
+        dimension_fact_embeddings = 7
 
         nv, de, cs = dimension_fact_embeddings, dimension_fact_embeddings, 1
         max_number_of_facts_read = 3
         nc = number_word_classes
         ne = number_word_classes # Using one hot, the number of embeddings is the same as the dimension of the fact embeddings
-        nh = 10 # Dimension of the hidden layer
+
+        nh = 7 # Dimension of the hidden layer
         num_hidden_units = nh
         num_hidden_units_facts = num_hidden_units
         num_hidden_units_episodes = num_hidden_units_facts
@@ -60,19 +61,20 @@ class DMNPureTheano3(object):
         self.b_episode_to_answer = theano.shared(name='b_episode_to_answer', value=0.2 * np.random.uniform(-1.0, 1.0, number_word_classes).astype(theano.config.floatX))
         self.h0_episodes = theano.shared(name='h0_episodes', value=np.zeros(num_hidden_units_episodes, dtype=theano.config.floatX))
 
-        num_rows_z_dmn = 3
+        num_rows_z_dmn = 7
         inner_dmn_dimension = 8
         self.W_dmn_1 = theano.shared(name='W_dmn_1', value=0.2 * np.random.uniform(-1.0, 1.0, (inner_dmn_dimension , num_rows_z_dmn)).astype(theano.config.floatX))
         self.W_dmn_2 = theano.shared(name='W_dmn_2', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, inner_dmn_dimension)).astype(theano.config.floatX))
 
         self.b_dmn_1 = theano.shared(name='b_dmn_1', value=0.2 * np.random.uniform(-1.0, 1.0, num_hidden_units_facts).astype(theano.config.floatX))
         self.b_dmn_2 = theano.shared(name='b_dmn_2', value=0.2 * np.random.uniform(-1.0, 1.0, num_hidden_units_facts).astype(theano.config.floatX))
-
+        self.W_dmn_b = theano.shared(name='W_dmn_2', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, num_hidden_units_questions)).astype(theano.config.floatX))
 
         self.params = [self.emb, self.w, self.b, self.W_fact_reset_gate_h, self.W_fact_reset_gate_x,
                        self.W_fact_update_gate_x, self.W_fact_update_gate_h, self.W_fact_hidden_gate_x, self.W_fact_hidden_gate_h,
                        self.W_episode_reset_gate_h, self.W_episode_reset_gate_x, self.W_episode_update_gate_h, self.W_episode_update_gate_x,
-                       self.W_episode_hidden_gate_h, self.W_episode_hidden_gate_x, self.W_episode_to_answer, self.b_episode_to_answer]
+                       self.W_episode_hidden_gate_h, self.W_episode_hidden_gate_x, self.W_episode_to_answer, self.b_episode_to_answer,
+                       self.W_dmn_1, self.W_dmn_2, self.b_dmn_1, self.b_dmn_2]
 
         fact_mask = T.lvector("fact_mask")
         fact_idxs = T.lmatrix("fact_indices") # as many columns as words in the context window and as many lines as words in the sentence
@@ -88,10 +90,20 @@ class DMNPureTheano3(object):
             hidden_update_in_fact = T.nnet.sigmoid(T.dot(x_t, self.W_fact_hidden_gate_x) + reset_gate_fact * T.dot(h_tm1, self.W_fact_hidden_gate_h))
             h_t = (1 - update_gate_fact) * h_tm1 + update_gate_fact * hidden_update_in_fact
 
-            z_dmn = T.concatenate([x_t, m_tm1, question], axis=0)
+            z_dmn = T.concatenate(([x_t], [m_tm1], [question], [x_t * question], [x_t * m_tm1], [abs(x_t - question)], [abs(x_t - m_tm1)]), axis=0)
+                                   # [T.dot(x_t.T, T.dot(self.W_dmn_b, question))], [T.dot(x_t.T, T.dot(self.W_dmn_b, m_tm1))]), axis=0)
+
+            #print(" z dmn: ", z_dmn.ndim)
+            # What has shape 8,3:  W_dmn_1
+
+            # This will (hopefully) have size (num_hidden_fact_units, num_hidden_fact_units)
             G_dmn = T.nnet.sigmoid(T.dot(self.W_dmn_2, T.tanh(T.dot(self.W_dmn_1, z_dmn)) + self.b_dmn_1) + self.b_dmn_2)
 
-            h_t = G_dmn * h_t + (1 - G_dmn) * h_tm1
+            #print(" G dim: ", G_dmn.ndim)
+
+            h_t = T.dot(G_dmn, h_t) + T.dot((1 - G_dmn), h_tm1)
+
+            #print(" h_t dim: ", h_t.ndim)
 
             h_t = mask_t * h_t + (1 - mask_t) * h_tm1
 
@@ -175,7 +187,6 @@ class DMNPureTheano3(object):
 
             print("epoch , " , e, " training ll: ", ll, " ratio correct: ", correct / total_tests)
 
-        assert(1 == 2)
 
     def GRU_question(self, dimension_fact_embedding, num_hidden_units_questions, num_hidden_units_episodes, max_question_len):
 
@@ -191,6 +202,9 @@ class DMNPureTheano3(object):
         self.b_question_to_vector = theano.shared(name='b_question_to_vector', value=0.2 * np.random.uniform(-1.0, 1.0, num_hidden_units_episodes).astype(theano.config.floatX))
 
         self.h0_questions = theano.shared(name='h0_questions', value=np.zeros(num_hidden_units_questions, dtype=theano.config.floatX))
+
+        self.params.extend((self.W_question_reset_gate_h, self.W_question_reset_gate_x, self.W_question_update_gate_h, self.W_question_update_gate_x, self.W_question_hidden_gate_h, self.W_question_hidden_gate_x,
+                            self.W_question_to_vector, self.b_question_to_vector, self.h0_questions))
 
         question_idxs = T.lmatrix("question_indices") # as many columns as words in the context window and as many lines as words in the sentence
         question_mask = T.lvector("question_mask")
@@ -268,6 +282,8 @@ class DMNPureTheano3(object):
                     X_test.append(cur_sentence)
                     Y_test.append(next(f)[2:])
                     cur_sentence = []
+
+        max_factlen = max_mask_len
 
         for l in X_train:
             cur_mask = np.zeros(max_mask_len, dtype='int32')
@@ -372,6 +388,35 @@ class DMNPureTheano3(object):
                     #new_vec[word2idx[f]] = 1
                 cur_question.append(new_vec)
             Question_test_vec.append(np.asmatrix(cur_question))
+
+        # Ensure we have all the same length
+        new_question_train_vec = []
+        for q in Question_train_vec:
+            for added_el in range(len(q), max_queslen):
+                q = np.concatenate((q, [[0]]), axis=0)
+            new_question_train_vec.append(q)
+        Question_train_vec = new_question_train_vec
+
+        new_question_test_vec = []
+        for q in Question_test_vec:
+            for added_el in range(len(q), max_queslen):
+                q = np.concatenate((q, [[0]]), axis=0)
+            new_question_test_vec.append(q)
+        Question_test_vec = new_question_test_vec
+
+        new_x_train_vec = []
+        for f in X_train_vec:
+            for added_el in range(len(f), max_factlen):
+                f = np.concatenate((f, [[0]]), axis=0)
+            new_x_train_vec.append(f)
+        X_train_vec = new_x_train_vec
+
+        new_x_test_vec = []
+        for f in X_test_vec:
+            for added_el in range(len(f), max_factlen):
+                f = np.concatenate((f, [[0]]), axis=0)
+            new_x_test_vec.append(f)
+        X_test_vec = new_x_test_vec
 
         assert(len(X_test_vec) == len(Y_test_vec))
             
