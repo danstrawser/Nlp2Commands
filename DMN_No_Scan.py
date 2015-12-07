@@ -149,6 +149,54 @@ class DMN_No_Scan(object):
         self.sentence_train = theano.function(inputs=[fact_idxs, fact_mask, y_sentence, lr], outputs=sentence_nll, updates=sentence_updates)
         print("Done compiling!")
 
+
+    def GRU_question(self, dimension_fact_embedding, num_hidden_units_questions, num_hidden_units_episodes, max_question_len):
+
+        # GRU Parameters
+        self.W_question_reset_gate_h = theano.shared(name='W_question_reset_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_questions, num_hidden_units_questions)).astype(theano.config.floatX))
+        self.W_question_reset_gate_x = theano.shared(name='W_question_reset_gate_x', value=0.2 * np.random.uniform(-1.0, 1.0, (dimension_fact_embedding, num_hidden_units_questions)).astype(theano.config.floatX))
+        self.W_question_update_gate_h = theano.shared(name='W_question_update_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_questions, num_hidden_units_questions)).astype(theano.config.floatX))
+        self.W_question_update_gate_x = theano.shared(name='W_question_update_gate_x', value=0.2 * np.random.uniform(-1.0, 1.0, (dimension_fact_embedding, num_hidden_units_questions)).astype(theano.config.floatX))
+        self.W_question_hidden_gate_h = theano.shared(name='W_question_hidden_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_questions, num_hidden_units_questions)).astype(theano.config.floatX))
+        self.W_question_hidden_gate_x = theano.shared(name='W_question_hidden_gate_x', value=0.2 * np.random.uniform(-1.0, 1.0, (dimension_fact_embedding, num_hidden_units_questions)).astype(theano.config.floatX))
+
+        self.W_question_to_vector = theano.shared(name='W_question_to_vector', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_questions, num_hidden_units_episodes)).astype(theano.config.floatX))
+        self.b_question_to_vector = theano.shared(name='b_question_to_vector', value=0.2 * np.random.uniform(-1.0, 1.0, num_hidden_units_episodes).astype(theano.config.floatX))
+
+        self.h0_questions = theano.shared(name='h0_questions', value=np.zeros(num_hidden_units_questions, dtype=theano.config.floatX))
+
+        self.params.extend((self.W_question_reset_gate_h, self.W_question_reset_gate_x, self.W_question_update_gate_h, self.W_question_update_gate_x, self.W_question_hidden_gate_h, self.W_question_hidden_gate_x,
+                            self.W_question_to_vector, self.b_question_to_vector, self.h0_questions))
+
+        question_idxs = T.lmatrix("question_indices") # as many columns as words in the context window and as many lines as words in the sentence
+        question_mask = T.lvector("question_mask")
+        q = self.emb[question_idxs].reshape((question_idxs.shape[0], dimension_fact_embedding)) # x basically represents the embeddings of the words IN the current sentence.  So it is shape
+
+        def slice_w(x, n):
+            return x[n*num_hidden_units_questions:(n+1)*num_hidden_units_questions]
+
+        def question_gru_recursion(m_t, x_t, h_tm1):
+            pass
+
+        state = self.h0_questions
+        for jdx in range(max_question_len):
+                state = question_gru_recursion(q[jdx], state, question_mask[jdx])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def train(self):
         # self.X_train, self.mask_train, self.question_train, self.Y_train, self.X_test, self.mask_test, self.question_test, self.Y_test, word2idx, idx2word, dimension_fact_embeddings = self.process_data()
         lr = 0.6
