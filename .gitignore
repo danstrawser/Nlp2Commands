@@ -10,6 +10,8 @@
 /__pycache__/
 /raiman_lstm/
 /pics/
+/data/rc-data/data/cnn_2/questions/training_improved/
+/data/rc-data/data/cnn_2/questions/training_improved
 /data/
 
 ## Ignore Visual Studio temporary files, build results, and
