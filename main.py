@@ -10,6 +10,7 @@ from wqa_processor import WikiProcessor
 from cnn_processor import CNNProcessor
 from DMNPureTheano import DMNPureTheano
 from DMNPureTheano2 import DMNPureTheano2
+from DMNPureTheano3 import DMNPureTheano3
 from dynamic_mem_net import DynamicMemNet
 from babi_processor import BabiProcessor
 import sys
@@ -57,11 +58,10 @@ def main(nn_type, data_type):
         dn.train()
     elif nn_type == "dynam_net_theano":
         #num_fact_hidden_units, number_classes, number_fact_embeddings, dimension_fact_embeddings, num_episode_hidden_units
-        dmn_t = DMNPureTheano2(20, 20, 20, 20, 2)
+        dmn_t = DMNPureTheano3(20, 20, 20, 20, 2)
         dmn_t.train()
         print("Finished DMN Theano")
-        
-        
+
 
 if __name__ == '__main__':
     # See function train for all possible parameter and there definition.

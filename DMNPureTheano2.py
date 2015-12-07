@@ -29,6 +29,7 @@ class DMNPureTheano2(object):
         nc = number_word_classes
         ne = number_word_classes # Using one hot, the number of embeddings is the same as the dimension of the fact embeddings
         nh = 10 # Dimension of the hidden layer
+        num_hidden_units = nh
 
         # Size:  diemsnion of the embedding x the number of hidden units.  This is because it gets used for x_t * self.wx, where x_t is a word embedding
         self.wx = theano.shared(name='wx', value=0.2 * np.random.uniform(-1.0, 1.0, (de * cs, nh)).astype(theano.config.floatX))
@@ -47,8 +48,22 @@ class DMNPureTheano2(object):
 
         self.emb = theano.shared(name='embeddings_prob', value=0.2 * np.random.uniform(-1.0, 1.0, (ne, de)).astype(theano.config.floatX))
 
+        # GRU Parameters
+        self.W_reset_gate_h = theano.shared(name='W_reset_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units, num_hidden_units)).astype(theano.config.floatX))
 
-        self.params = [self.emb, self.wx, self.wh, self.w, self.bh, self.b, self.h0]
+        self.W_reset_gate_x = theano.shared(name='W_reset_gate_x', value=0.2 * np.random.uniform(-1.0, 1.0, (dimension_fact_embeddings, num_hidden_units)).astype(theano.config.floatX))
+
+        self.W_update_gate_h = theano.shared(name='W_update_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units, num_hidden_units)).astype(theano.config.floatX))
+
+        self.W_update_gate_x = theano.shared(name='W_update_gate_x', value=0.2 * np.random.uniform(-1.0, 1.0, (dimension_fact_embeddings, num_hidden_units)).astype(theano.config.floatX))
+
+        self.W_hidden_gate_h = theano.shared(name='W_hidden_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units, num_hidden_units)).astype(theano.config.floatX))
+
+        self.W_hidden_gate_x = theano.shared(name='W_hidden_gate_x', value=0.2 * np.random.uniform(-1.0, 1.0, (dimension_fact_embeddings, num_hidden_units)).astype(theano.config.floatX))
+
+
+        self.params = [self.emb, self.w, self.b, self.h0, self.W_reset_gate_h, self.W_reset_gate_x,
+                       self.W_update_gate_x, self.W_update_gate_h, self.W_hidden_gate_x, self.W_hidden_gate_h]
 
         mask = T.ivector("mask")
 
@@ -61,16 +76,20 @@ class DMNPureTheano2(object):
         #y_sentence = T.ivector('y_sentence')  # labels
         y_sentence = T.iscalar('y_sentence')
 
-        def recurrence(m_t, x_t, h_tm1):
+        def gru_recursion(m_t, x_t, h_tm1):
 
-            h_t = T.nnet.sigmoid(T.dot(x_t, self.wx) + T.dot(h_tm1, self.wh) + self.bh)
+            reset_gate_episode = T.nnet.sigmoid(T.dot(x_t, self.W_reset_gate_x) + T.dot(h_tm1, self.W_reset_gate_h))
+            update_gate_episode = T.nnet.sigmoid(T.dot(x_t, self.W_update_gate_x) + T.dot(h_tm1, self.W_update_gate_h))
+            hidden_update_in_episode = T.nnet.sigmoid(T.dot(x_t, self.W_hidden_gate_x) + reset_gate_episode * T.dot(h_tm1, self.W_hidden_gate_h))
+            h_t = (1 - update_gate_episode) * h_tm1 + update_gate_episode * hidden_update_in_episode
+
             h_t = m_t * h_t + (1 - m_t) * h_tm1
 
             s_t = T.nnet.softmax(T.dot(h_t, self.w) + self.b)
 
             return [h_t, s_t]
 
-        [h, s], _ = theano.scan(fn=recurrence, sequences=[mask, x], outputs_info=[self.h0, None], n_steps=x.shape[0])
+        [h, s], _ = theano.scan(fn=gru_recursion, sequences=[mask, x], outputs_info=[self.h0, None], n_steps=x.shape[0])
 
         # I believe the dimensions of p_y_given_x_sentence are ( time, num_classes)
         p_y_given_x_sentence = s[-1, 0, :]  # I believe the output indexing here is (num_classes, time, number_embeddings)
