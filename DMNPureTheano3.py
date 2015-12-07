@@ -74,10 +74,10 @@ class DMNPureTheano3(object):
                        self.W_episode_reset_gate_h, self.W_episode_reset_gate_x, self.W_episode_update_gate_h, self.W_episode_update_gate_x,
                        self.W_episode_hidden_gate_h, self.W_episode_hidden_gate_x, self.W_episode_to_answer, self.b_episode_to_answer]
 
-        fact_mask = T.ivector("fact_mask")
-        fact_idxs = T.imatrix("fact_indices") # as many columns as words in the context window and as many lines as words in the sentence
+        fact_mask = T.lvector("fact_mask")
+        fact_idxs = T.lmatrix("fact_indices") # as many columns as words in the context window and as many lines as words in the sentence
         x = self.emb[fact_idxs].reshape((fact_idxs.shape[0], de*cs)) # x basically represents the embeddings of the words IN the current sentence.  So it is shape
-        y_sentence = T.iscalar('y_sentence')
+        y_sentence = T.lscalar('y_sentence')
 
         question_idxs, question_mask, question = self.GRU_question(dimension_fact_embeddings, num_hidden_units_questions, num_hidden_units_episodes, max_queslen)
 
@@ -192,8 +192,8 @@ class DMNPureTheano3(object):
 
         self.h0_questions = theano.shared(name='h0_questions', value=np.zeros(num_hidden_units_questions, dtype=theano.config.floatX))
 
-        question_idxs = T.imatrix("question_indices") # as many columns as words in the context window and as many lines as words in the sentence
-        question_mask = T.ivector("question_mask")
+        question_idxs = T.lmatrix("question_indices") # as many columns as words in the context window and as many lines as words in the sentence
+        question_mask = T.lvector("question_mask")
         q = self.emb[question_idxs].reshape((question_idxs.shape[0], dimension_fact_embedding)) # x basically represents the embeddings of the words IN the current sentence.  So it is shape
 
         def question_gru_recursion(m_t, x_t, h_tm1):
@@ -270,22 +270,22 @@ class DMNPureTheano3(object):
                     cur_sentence = []
 
         for l in X_train:
-            cur_mask = np.zeros(max_mask_len)
+            cur_mask = np.zeros(max_mask_len, dtype='int32')
             cur_mask[0:len(l)] = 1
             mask_train.append(cur_mask)
 
         for l in X_test:
-            cur_mask = np.zeros(max_mask_len)
+            cur_mask = np.zeros(max_mask_len, dtype="int32")
             cur_mask[0:len(l)] = 1
             mask_test.append(cur_mask)
 
         for l in Question_train:
-            cur_mask = np.zeros(max_queslen)
+            cur_mask = np.zeros(max_queslen, dtype='int32')
             cur_mask[0:len(l)] = 1
             Question_train_mask.append(cur_mask)
 
         for l in Question_test:
-            cur_mask = np.zeros(max_queslen)
+            cur_mask = np.zeros(max_queslen, dtype='int32')
             cur_mask[0:len(l)] = 1
             Question_test_mask.append(cur_mask)
 
