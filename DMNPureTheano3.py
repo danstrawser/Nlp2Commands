@@ -1,6 +1,7 @@
+__author__ = 'Dan'
+
 from theano.compile.mode import FAST_COMPILE
 from numpy import dtype
-__author__ = 'Dan'
 import numpy as np
 import theano 
 import theano.tensor as T
@@ -157,7 +158,7 @@ class DMNPureTheano3(object):
 
     def train(self):
         # self.X_train, self.mask_train, self.question_train, self.Y_train, self.X_test, self.mask_test, self.question_test, self.Y_test, word2idx, idx2word, dimension_fact_embeddings = self.process_data()
-        lr = 0.2
+        lr = 0.4
         max_epochs = 100
 
         print(" Starting training...")

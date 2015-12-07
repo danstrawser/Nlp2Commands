@@ -44,17 +44,18 @@ else:
     err = 0
     state = h0
     for i in range(t):
-        args = [x[i]] + state
+        # I think this line concatenates the hidden state and input:
+        args = [x[i]] + state  # x is the tensor3, state is first the initial state, then updated by the RNN
         state = rnn_step(*args)
         err += ((state[-1] - targets[i]) ** 2).mean() / t
     updates = theano.OrderedUpdates()
 
 print("allocating...")
-g_out = init(n, n)
-x_val = rand(t, m, n)
+g_out = init(n, n)  # initiates shared variable with size number of units per hidden layer
+x_val = rand(t, m, n)  # initialize data random, with t=seq_len, m=batch_size, n=hidden_units
 targets_val = rand(t, m, n)
 w_val = rand(n, n)
-h0_val = [rand(m, n) for i in range(depth)]
+h0_val = [rand(m, n) for i in range(depth)] # I believe this is depth per layer
 
 print("compiling...")
 f = theano.function([x, w, targets] + h0, err, updates=updates + [(g_out, T.grad(err, w))])
