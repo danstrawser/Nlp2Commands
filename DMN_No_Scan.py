@@ -337,11 +337,11 @@ class DMN_No_Scan(object):
 
     def preprocess_babi_set_for_dmn(self):
 
-        filename_train = 'simple_dmn_theano/qa1_single-supporting-fact_train.txt'
-        filename_test = 'simple_dmn_theano/qa1_single-supporting-fact_test.txt'
+        filename_train = 'qa1_single-supporting-fact_train.txt'
+        filename_test = 'qa1_single-supporting-fact_test.txt'
 
-        filename_output_train = 'simple_dmn_theano/babi_train1.txt'
-        filename_output_test = 'simple_dmn_theano/babi_test1.txt'
+        filename_output_train = 'babi_train1.txt'
+        filename_output_test = 'babi_test1.txt'
 
         self._write_file(filename_train, filename_output_train)
         self._write_file(filename_test, filename_output_test)
@@ -389,8 +389,8 @@ class DMN_No_Scan(object):
 
     def process_data(self, type_of_embedding):
 
-        filename_train = 'simple_dmn_theano/babi_train1.txt'
-        filename_test = 'simple_dmn_theano/babi_test1.txt'
+        filename_train = 'babi_train1.txt'
+        filename_test = 'babi_test1.txt'
 
         X_train, mask_sentences_train, mask_articles_train, Question_train, Question_train_mask, Y_train, X_test, mask_sentences_test, mask_articles_test, Question_test, Question_test_mask, Y_test, max_queslen = [], [], [], [], [], [], [], [], [], [], [], [], 0
 
