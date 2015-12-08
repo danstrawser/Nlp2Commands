@@ -72,6 +72,7 @@ if __name__ == '__main__':
     if len(args) == 2:
         nn_type = args[0]
         data_type = args[1]
+        print(" nn type: ", nn_type)
         print(" data type: ", data_type)
     else:
         print(" running")
