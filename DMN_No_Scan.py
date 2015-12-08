@@ -31,7 +31,7 @@ class DMN_No_Scan(object):
         max_fact_seqlen = max_article_len
         dimension_word_embeddings = 10
         max_number_of_facts_read = 1
-        self.initialization_randomization = 2
+        self.initialization_randomization = 1
 
         nh = 7 # Dimension of the hidden layer
         num_hidden_units = nh
@@ -277,7 +277,7 @@ class DMN_No_Scan(object):
 
     def train(self):
         # self.X_train, self.mask_train, self.question_train, self.Y_train, self.X_test, self.mask_test, self.question_test, self.Y_test, word2idx, idx2word, dimension_fact_embeddings = self.process_data()
-        lr = .003
+        lr = .001
         max_epochs = 20000
 
         print(" Starting training...")
@@ -369,14 +369,13 @@ class DMN_No_Scan(object):
                             if cur_name not in sent:
                                 written_sents.append(sent)
                                 break
-#                         if len(written_sents) > 1:
-#                             if random.random() < 0.5:
-#                                 tmp = written_sents[0]
-#                                 written_sents[0] = written_sents[1]
-#                                 written_sents[1] = tmp
+                        if len(written_sents) > 1:
+                            if random.random() < 0.5:
+                                tmp = written_sents[0]
+                                written_sents[0] = written_sents[1]
+                                written_sents[1] = tmp
                         for w in written_sents:
-                            b.write(w)
-                            break
+                            b.write(w)                            
                     else:
                         for sent in cur_article:
                             b.write(sent)
