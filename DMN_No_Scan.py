@@ -21,9 +21,8 @@ class DMN_No_Scan(object):
     def __init__(self, num_fact_hidden_units, number_word_classes, dimension_fact_embeddings, num_episode_hidden_units, max_number_of_facts_read):
         print(" Starting dmn no scan... ")
         #self.preprocess_babi_set_for_dmn()
-               
         self.X_train, self.mask_sentences_train, self.mask_articles_train, self.question_train, self.question_train_mask, self.Y_train, self.X_test, self.mask_sentences_test, self.mask_articles_test, self.question_test, self.question_test_mask, self.Y_test, word2idx, self.idx2word, dimension_fact_embeddings, max_queslen, max_sentlen, max_article_len = self.process_data("embeddings")
-
+       
         print(" Building model... ")
         number_word_classes = max(self.idx2word.keys(), key=int) + 1
         max_fact_seqlen = max_article_len
@@ -292,7 +291,9 @@ class DMN_No_Scan(object):
                 predictions_test = self.classify(x, sentence_mask, word_mask, q, mask_question)
 
                 if idx % 10 == 0:
-                    print(" this is predction: ", self.idx2word[predictions_test], " and this y: ", self.idx2word[y])
+                    print(" idx 2 word: ", self.idx2word[0])
+                    print(" predictions test: ", predictions_test, " and y: ", y)
+                    print(" this is predction: ", self.idx2word[int(predictions_test)], " and this y: ", self.idx2word[int(y)])
                     
                     
                 # if idx == 15 or idx == 16 or idx == 17:
@@ -381,7 +382,7 @@ class DMN_No_Scan(object):
                 if "?" not in line and "@" not in line:
                     cur_sentence = []
                     for w in tokenizer.tokenize(line):
-                        cur_sentence.append(w.lower())
+                        cur_sentence.append(w.strip().lower())
                     cur_article.append(cur_sentence)
                     if len(cur_sentence) > max_sentence_len:
                         max_sentence_len = len(cur_sentence)
@@ -394,11 +395,11 @@ class DMN_No_Scan(object):
                     if len(question_phrase) > max_queslen:
                         max_queslen = len(question_phrase)
                     for w in question_phrase:
-                        cur_question.append(w)
+                        cur_question.append(w.strip())
 
                     Question_train.append((cur_question))
                     X_train.append(cur_article)
-                    Y_train.append(next(f)[2:])
+                    Y_train.append(next(f)[2:].strip())
                     cur_article = []
 
         with open(filename_test, encoding='utf-8') as f:
@@ -407,7 +408,7 @@ class DMN_No_Scan(object):
                 if "?" not in line and "@" not in line:
                     cur_sentence = []
                     for w in tokenizer.tokenize(line):
-                        cur_sentence.append(w.lower())
+                        cur_sentence.append(w.strip().lower())
                     cur_article.append(cur_sentence)
                     if len(cur_sentence) > max_sentence_len:
                         max_sentence_len = len(cur_sentence)
@@ -419,11 +420,11 @@ class DMN_No_Scan(object):
                     if len(question_phrase) > max_queslen:
                         max_queslen = len(question_phrase)
                     for w in question_phrase:
-                        cur_question.append(w)
+                        cur_question.append(w.strip())
 
                     Question_test.append((cur_question))
                     X_test.append(cur_article)
-                    Y_test.append(next(f)[2:])
+                    Y_test.append(next(f)[2:].strip())
                     cur_article = []
 
         for article in X_train:
