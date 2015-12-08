@@ -337,8 +337,8 @@ class DMN_No_Scan(object):
 
     def preprocess_babi_set_for_dmn(self):
 
-        filename_train = 'data/simple_dmn_theano/qa1_single-supporting-fact_train.txt'
-        filename_test = 'data/simple_dmn_theano/qa1_single-supporting-fact_test.txt'
+        filename_train = 'simple_dmn_theano/qa1_single-supporting-fact_train.txt'
+        filename_test = 'simple_dmn_theano/qa1_single-supporting-fact_test.txt'
 
         filename_output_train = 'simple_dmn_theano/babi_train1.txt'
         filename_output_test = 'simple_dmn_theano/babi_test1.txt'
