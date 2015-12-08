@@ -3,11 +3,13 @@ __author__ = 'Dan'
 from theano.compile.mode import FAST_COMPILE
 from numpy import dtype
 import numpy as np
-import theano 
+import re
+import theano
 import theano.tensor as T
 import theano.typed_list
 from collections import OrderedDict
 from nltk.tokenize import RegexpTokenizer
+import random
 import pickle
 import sys
 import os
@@ -18,12 +20,13 @@ class DMN_No_Scan(object):
     # We take as input a string of "facts"
     def __init__(self, num_fact_hidden_units, number_word_classes, dimension_fact_embeddings, num_episode_hidden_units, max_number_of_facts_read):
         print(" Starting dmn no scan... ")
+        self.preprocess_babi_set_for_dmn()
+        assert(1 == 2)
 
         self.X_train, self.mask_sentences_train, self.mask_articles_train, self.question_train, self.question_train_mask, self.Y_train, self.X_test, self.mask_sentences_test, self.mask_articles_test, self.question_test, self.question_test_mask, self.Y_test, word2idx, self.idx2word, dimension_fact_embeddings, max_queslen, max_sentlen, max_article_len = self.process_data("embeddings")
-        number_word_classes = max(self.idx2word.keys(), key=int) + 1
 
         print(" Building model... ")
-
+        number_word_classes = max(self.idx2word.keys(), key=int) + 1
         max_fact_seqlen = max_article_len
         dimension_word_embeddings = 8
         nv, de, cs = dimension_fact_embeddings, dimension_fact_embeddings, 1
@@ -268,8 +271,8 @@ class DMN_No_Scan(object):
 
     def train(self):
         # self.X_train, self.mask_train, self.question_train, self.Y_train, self.X_test, self.mask_test, self.question_test, self.Y_test, word2idx, idx2word, dimension_fact_embeddings = self.process_data()
-        lr = .002
-        max_epochs = 100
+        lr = .005
+        max_epochs = 1000
 
         print(" Starting training...")
 
@@ -296,6 +299,59 @@ class DMN_No_Scan(object):
                 total_tests += 1
 
             print("epoch , " , e, " training ll: ", ll, " ratio correct: ", correct / total_tests)
+
+
+
+    def preprocess_babi_set_for_dmn(self):
+
+        filename_train = 'data/simple_dmn_theano/qa1_single-supporting-fact_train.txt'
+        filename_test = 'data/simple_dmn_theano/qa1_single-supporting-fact_test.txt'
+
+        filename_output_train = 'data/simple_dmn_theano/babi_train.txt'
+        filename_output_test = 'data/simple_dmn_theano/babi_test.txt'
+
+        self._write_file(filename_train, filename_output_train)
+        self._write_file(filename_test, filename_output_test)
+
+    def _write_file(self, filename_input, filename_output):
+        max_babi_article_len = 15
+        version = "simple"
+
+        with open(filename_input, encoding='utf-8') as a, open(filename_output, 'w+') as b:
+            cur_idx, cur_qa_set, cur_article = 0, [], []
+            for line in a:
+                if "?" not in line:
+                    cur_article.append((''.join([i for i in line if not i.isdigit()]))[1:])
+                else:
+                    answer_question = re.split(r'\t+', line.strip())
+                    cur_name = answer_question[0].split()[3][:-1]
+
+                    if version == "simple":
+                        written_sents = []
+                        for sent in reversed(cur_article):
+                            if cur_name in sent:
+                                written_sents.append(sent)
+                                break
+                        for sent in reversed(cur_article):
+                            if cur_name not in sent:
+                                written_sents.append(sent)
+                                break
+                        if len(written_sents) > 1:
+                            if random.random() < 0.5:
+                                tmp = written_sents[0]
+                                written_sents[0] = written_sents[1]
+                                written_sents[1] = tmp
+                        for w in written_sents:
+                            b.write(w)
+                    else:
+                        for sent in cur_article:
+                            b.write(sent)
+
+                    b.write("@ " + answer_question[0][2:-2] +"\n")
+                    b.write("? " + answer_question[1] + "\n")
+                cur_idx += 1
+                if cur_idx == max_babi_article_len:
+                    cur_idx, cur_qa_set, cur_article = 0, [], []
 
 
     def process_data(self, type_of_embedding):
@@ -501,6 +557,7 @@ class DMN_No_Scan(object):
         #         f = np.concatenate((f, [[0]]), axis=0)
         #     new_x_test_vec.append(f)
         # X_test_vec = new_x_test_vec
+
         assert(len(X_test_vec) == len(Y_test_vec))
 
         return X_train_vec, mask_sentences_train, mask_articles_train, Question_train_vec, Question_train_mask, Y_train_vec, X_test_vec, mask_sentences_train, mask_articles_train, Question_test_vec, Question_test_mask, Y_test_vec, word2idx, idx2word, len(word2idx), max_queslen, max_sentence_len, max_article_len

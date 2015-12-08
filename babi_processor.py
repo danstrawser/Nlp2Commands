@@ -23,6 +23,19 @@ class BabiProcessor(object):
             assert(self.type == "babi_medium")
             X_train_words, Questions_Train, Y_train_words, max_seqlen, max_queslen = self._gen_dmn_medium_vecs(self.filename_train, max_seqlen=0, max_queslen=0)
             X_test_words, Questions_Test, Y_test_words, max_seqlen, max_queslen = self._gen_dmn_medium_vecs(self.filename_test, max_seqlen, max_queslen)
+
+            self.X_train, self.mask_sentences_train, self.mask_articles_train, self.question_train, self.question_train_mask, self.Y_train, self.X_test, self.mask_sentences_test, self.mask_articles_test, self.question_test, self.question_test_mask, self.Y_test, word2idx, self.idx2word, dimension_fact_embeddings, max_queslen, max_sentlen, max_article_len
+
+
+
+
+            for x, q, y in zip(X_train_words, Questions_Train, Y_train_words):
+                print(" one x: ", x)
+                print(" here is q: ", q)
+                print(" and y: ", y)
+
+            assert(1 == 2) # 30 Babi
+
             X_train, Q_Train, Y_train, mask_train, X_test, Q_test, Y_test, mask_test, word2idx, idx2word = self._gen_idxs(X_train_words, Y_train_words, X_test_words, Y_test_words, max_seqlen, Questions_Train, Questions_Test)
             return X_train, Q_Train, Y_train, mask_train, X_test, Q_test, Y_test, mask_test, len(word2idx), max_seqlen, idx2word, max_queslen
             
