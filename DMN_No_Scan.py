@@ -270,7 +270,7 @@ class DMN_No_Scan(object):
 
     def train(self):
         # self.X_train, self.mask_train, self.question_train, self.Y_train, self.X_test, self.mask_test, self.question_test, self.Y_test, word2idx, idx2word, dimension_fact_embeddings = self.process_data()
-        lr = .001
+        lr = .008
         max_epochs = 2000
 
         print(" Starting training...")
@@ -307,8 +307,8 @@ class DMN_No_Scan(object):
         filename_train = 'data/simple_dmn_theano/qa1_single-supporting-fact_train.txt'
         filename_test = 'data/simple_dmn_theano/qa1_single-supporting-fact_test.txt'
 
-        filename_output_train = 'data/simple_dmn_theano/babi_train.txt'
-        filename_output_test = 'data/simple_dmn_theano/babi_test.txt'
+        filename_output_train = 'data/babi_train.txt'
+        filename_output_test = 'data/babi_test.txt'
 
         self._write_file(filename_train, filename_output_train)
         self._write_file(filename_test, filename_output_test)
@@ -356,8 +356,8 @@ class DMN_No_Scan(object):
 
     def process_data(self, type_of_embedding):
 
-        filename_train = 'data/simple_dmn_theano/babi_train.txt'
-        filename_test = 'data/simple_dmn_theano/babi_test.txt'
+        filename_train = 'data/babi_train.txt'
+        filename_test = 'data/babi_test.txt'
 
         X_train, mask_sentences_train, mask_articles_train, Question_train, Question_train_mask, Y_train, X_test, mask_sentences_test, mask_articles_test, Question_test, Question_test_mask, Y_test, max_queslen = [], [], [], [], [], [], [], [], [], [], [], [], 0
 
