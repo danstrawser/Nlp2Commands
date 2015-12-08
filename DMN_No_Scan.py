@@ -10,6 +10,7 @@ import theano.typed_list
 from collections import OrderedDict
 from nltk.tokenize import RegexpTokenizer
 import random
+from random import shuffle
 import pickle
 import sys
 import os
@@ -19,16 +20,18 @@ class DMN_No_Scan(object):
 
     # We take as input a string of "facts"
     def __init__(self, num_fact_hidden_units, number_word_classes, dimension_fact_embeddings, num_episode_hidden_units, max_number_of_facts_read):
-        print(" Starting dmn no scan... ")
-        #self.preprocess_babi_set_for_dmn()
+        print(" Starting dmn no scidxsan... ")
+        
+        self.preprocess_babi_set_for_dmn()
+        
         self.X_train, self.mask_sentences_train, self.mask_articles_train, self.question_train, self.question_train_mask, self.Y_train, self.X_test, self.mask_sentences_test, self.mask_articles_test, self.question_test, self.question_test_mask, self.Y_test, word2idx, self.idx2word, dimension_fact_embeddings, max_queslen, max_sentlen, max_article_len = self.process_data("embeddings")
-       
+               
         print(" Building model... ")
         number_word_classes = max(self.idx2word.keys(), key=int) + 1
         max_fact_seqlen = max_article_len
         dimension_word_embeddings = 10
         max_number_of_facts_read = 1
-        self.initialization_randomization = 1
+        self.initialization_randomization = 2
 
         nh = 7 # Dimension of the hidden layer
         num_hidden_units = nh
@@ -266,37 +269,64 @@ class DMN_No_Scan(object):
 
         return T.tanh(T.dot(self.W_question_to_vector, state) + self.b_question_to_vector)
 
+    def idx2sentence(self, x):
+        cur_sent = ""
+        for w in x:             
+            cur_sent += " " + self.idx2word[int(w)]
+        return cur_sent
 
     def train(self):
         # self.X_train, self.mask_train, self.question_train, self.Y_train, self.X_test, self.mask_test, self.question_test, self.Y_test, word2idx, idx2word, dimension_fact_embeddings = self.process_data()
-        lr = .001
+        lr = .003
         max_epochs = 20000
 
         print(" Starting training...")
 
         last_ll = 1000
         for e in range(max_epochs):
-
+            
+            shuffled_idxs = [i for i in range(len(self.X_train))]           
+            shuffle(shuffled_idxs)
             ll = 0
-            for idx in range(len(self.X_train)):
+            num_train_correct, tot_num_train = 0, 0
+            
+            for idx in shuffled_idxs:
                 x, word_mask, sentence_mask, q, mask_question, y = self.X_train[idx], self.mask_sentences_train[idx], self.mask_articles_train[idx], self.question_train[idx], self.question_train_mask[idx], self.Y_train[idx]
                 ll += self.sentence_train(x, sentence_mask, word_mask, q, mask_question, y, lr)
+            
+            shuffle(shuffled_idxs)
+            for idx in shuffled_idxs:
+                x, word_mask, sentence_mask, q, mask_question, y = self.X_train[idx], self.mask_sentences_train[idx], self.mask_articles_train[idx], self.question_train[idx], self.question_train_mask[idx], self.Y_train[idx]
+                predictions_test = self.classify(x, sentence_mask, word_mask, q, mask_question)
+                if predictions_test == y:
+                    num_train_correct += 1
+                tot_num_train += 1
+
+#                 if e == 3 and 100 <= idx <= 104:
+#                     print( " x train: ", self.idx2sentence(x[0]))
+#                     print(" word mask: ", word_mask)
+#                     print(" sentnece mask: ", sentence_mask)
+#                     print(" q: ", self.idx2sentence(q))
+
+            print(" ratio training data predicted correctly: ", num_train_correct / tot_num_train)
 
             correct = 0
             total_tests = 0
-
             for idx in range(len(self.X_test)):
                 x, word_mask, sentence_mask, q, mask_question, y = self.X_test[idx], self.mask_sentences_test[idx], self.mask_articles_test[idx], self.question_test[idx], self.question_test_mask[idx], self.Y_test[idx]
-
                 predictions_test = self.classify(x, sentence_mask, word_mask, q, mask_question)
 
-                if e % 10 == 0 and predictions_test != y:
-                    print(" this is predction: ", self.idx2word[int(predictions_test)], " and this y: ", self.idx2word[int(y)])
-                    
-                    
-                # if idx == 15 or idx == 16 or idx == 17:
-                #     print(" prediction test: ", predictions_test)
-                #     print(" y : ", y)
+#                 if e % 5 == 0:
+#                     if predictions_test != y:
+#                         print(" wrong, this is question: ", self.idx2sentence(q))
+#                         print(" Wrong, this is sentence: ", self.idx2sentence(x[0]))
+#                         print(" sentence mask: ", sentence_mask)
+#                         print(" word mask: ", word_mask)
+#                                                 
+#                         print(" Wrong! this is predction: ", self.idx2word[int(predictions_test)], " and this y: ", self.idx2word[int(y)])
+#                     else:
+#                         print("This is predction: ", self.idx2word[int(predictions_test)], " and this y: ", self.idx2word[int(y)])
+#                     
                 if predictions_test == y:
                     correct += 1
                 total_tests += 1
@@ -310,8 +340,8 @@ class DMN_No_Scan(object):
         filename_train = 'data/simple_dmn_theano/qa1_single-supporting-fact_train.txt'
         filename_test = 'data/simple_dmn_theano/qa1_single-supporting-fact_test.txt'
 
-        filename_output_train = 'data/babi_train.txt'
-        filename_output_test = 'data/babi_test.txt'
+        filename_output_train = 'simple_dmn_theano/babi_train1.txt'
+        filename_output_test = 'simple_dmn_theano/babi_test1.txt'
 
         self._write_file(filename_train, filename_output_train)
         self._write_file(filename_test, filename_output_test)
@@ -365,10 +395,13 @@ class DMN_No_Scan(object):
 
         X_train, mask_sentences_train, mask_articles_train, Question_train, Question_train_mask, Y_train, X_test, mask_sentences_test, mask_articles_test, Question_test, Question_test_mask, Y_test, max_queslen = [], [], [], [], [], [], [], [], [], [], [], [], 0
 
-        cur_idx = 0
+        cur_idx = 1
         word2idx = {}
         idx2word = {}
         tokenizer = RegexpTokenizer(r'\w+')
+
+        word2idx["<BLANK>"] = 0
+        idx2word[0] = "<BLANK>"
 
         max_article_len = 0
         max_sentence_len = 0
@@ -393,13 +426,13 @@ class DMN_No_Scan(object):
                     if len(question_phrase) > max_queslen:
                         max_queslen = len(question_phrase)
                     for w in question_phrase:
-                        cur_question.append(w.strip())
+                        cur_question.append(w.strip().lower())
 
                     Question_train.append((cur_question))
                     X_train.append(cur_article)
                     Y_train.append(next(f)[2:].strip())
                     cur_article = []
-
+                    
         with open(filename_test, encoding='utf-8') as f:
             cur_article = []
             for line in f:
@@ -418,7 +451,7 @@ class DMN_No_Scan(object):
                     if len(question_phrase) > max_queslen:
                         max_queslen = len(question_phrase)
                     for w in question_phrase:
-                        cur_question.append(w.strip())
+                        cur_question.append(w.strip().lower())
 
                     Question_test.append((cur_question))
                     X_test.append(cur_article)
@@ -564,7 +597,7 @@ class DMN_No_Scan(object):
 
         assert(len(X_test_vec) == len(Y_test_vec))
 
-        return X_train_vec, mask_sentences_train, mask_articles_train, Question_train_vec, Question_train_mask, Y_train_vec, X_test_vec, mask_sentences_train, mask_articles_train, Question_test_vec, Question_test_mask, Y_test_vec, word2idx, idx2word, len(word2idx), max_queslen, max_sentence_len, max_article_len
+        return X_train_vec, mask_sentences_train, mask_articles_train, Question_train_vec, Question_train_mask, Y_train_vec, X_test_vec, mask_sentences_test, mask_articles_test, Question_test_vec, Question_test_mask, Y_test_vec, word2idx, idx2word, len(word2idx), max_queslen, max_sentence_len, max_article_len
 
 
 
