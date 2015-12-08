@@ -290,9 +290,7 @@ class DMN_No_Scan(object):
 
                 predictions_test = self.classify(x, sentence_mask, word_mask, q, mask_question)
 
-                if idx % 10 == 0:
-                    print(" idx 2 word: ", self.idx2word[0])
-                    print(" predictions test: ", predictions_test, " and y: ", y)
+                if e % 10 == 0 and predictions_test != y:
                     print(" this is predction: ", self.idx2word[int(predictions_test)], " and this y: ", self.idx2word[int(y)])
                     
                     
