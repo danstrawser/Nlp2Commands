@@ -21,7 +21,6 @@ class DMN_No_Scan(object):
     def __init__(self, num_fact_hidden_units, number_word_classes, dimension_fact_embeddings, num_episode_hidden_units, max_number_of_facts_read):
         print(" Starting dmn no scan... ")
         self.preprocess_babi_set_for_dmn()
-        assert(1 == 2)
 
         self.X_train, self.mask_sentences_train, self.mask_articles_train, self.question_train, self.question_train_mask, self.Y_train, self.X_test, self.mask_sentences_test, self.mask_articles_test, self.question_test, self.question_test_mask, self.Y_test, word2idx, self.idx2word, dimension_fact_embeddings, max_queslen, max_sentlen, max_article_len = self.process_data("embeddings")
 
@@ -271,11 +270,12 @@ class DMN_No_Scan(object):
 
     def train(self):
         # self.X_train, self.mask_train, self.question_train, self.Y_train, self.X_test, self.mask_test, self.question_test, self.Y_test, word2idx, idx2word, dimension_fact_embeddings = self.process_data()
-        lr = .005
-        max_epochs = 1000
+        lr = .001
+        max_epochs = 2000
 
         print(" Starting training...")
 
+        last_ll = 1000
         for e in range(max_epochs):
 
             ll = 0
@@ -298,8 +298,8 @@ class DMN_No_Scan(object):
                     correct += 1
                 total_tests += 1
 
-            print("epoch , " , e, " training ll: ", ll, " ratio correct: ", correct / total_tests)
-
+            print("epoch , " , e, " training ll: ", ll, " ll improvement: ", last_ll - ll, " ratio correct: ", correct / total_tests)
+            last_ll = ll
 
 
     def preprocess_babi_set_for_dmn(self):
@@ -356,8 +356,8 @@ class DMN_No_Scan(object):
 
     def process_data(self, type_of_embedding):
 
-        filename_train = 'data/simple_dmn_theano/data_train_questioned.txt'
-        filename_test = 'data/simple_dmn_theano/data_test_questioned.txt'
+        filename_train = 'data/simple_dmn_theano/babi_train.txt'
+        filename_test = 'data/simple_dmn_theano/babi_test.txt'
 
         X_train, mask_sentences_train, mask_articles_train, Question_train, Question_train_mask, Y_train, X_test, mask_sentences_test, mask_articles_test, Question_test, Question_test_mask, Y_test, max_queslen = [], [], [], [], [], [], [], [], [], [], [], [], 0
 
