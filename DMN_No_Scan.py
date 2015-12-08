@@ -27,9 +27,9 @@ class DMN_No_Scan(object):
         print(" Building model... ")
         number_word_classes = max(self.idx2word.keys(), key=int) + 1
         max_fact_seqlen = max_article_len
-        dimension_word_embeddings = 8
+        dimension_word_embeddings = 10
         nv, de, cs = dimension_fact_embeddings, dimension_fact_embeddings, 1
-        max_number_of_facts_read = 2
+        max_number_of_facts_read = 1
 
         nh = 7 # Dimension of the hidden layer
         num_hidden_units = nh

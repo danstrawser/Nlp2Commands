@@ -20,6 +20,14 @@ sudo chmod +x aws_bash2
 
 
 
+
+
+
+
+
+
+
+
 Also need these: 
 
 alias python=/usr/bin/python3
