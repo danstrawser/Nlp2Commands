@@ -20,16 +20,16 @@ class DMN_No_Scan(object):
     # We take as input a string of "facts"
     def __init__(self, num_fact_hidden_units, number_word_classes, dimension_fact_embeddings, num_episode_hidden_units, max_number_of_facts_read):
         print(" Starting dmn no scan... ")
-        self.preprocess_babi_set_for_dmn()
-
+        #self.preprocess_babi_set_for_dmn()
+               
         self.X_train, self.mask_sentences_train, self.mask_articles_train, self.question_train, self.question_train_mask, self.Y_train, self.X_test, self.mask_sentences_test, self.mask_articles_test, self.question_test, self.question_test_mask, self.Y_test, word2idx, self.idx2word, dimension_fact_embeddings, max_queslen, max_sentlen, max_article_len = self.process_data("embeddings")
 
         print(" Building model... ")
         number_word_classes = max(self.idx2word.keys(), key=int) + 1
         max_fact_seqlen = max_article_len
         dimension_word_embeddings = 10
-        nv, de, cs = dimension_fact_embeddings, dimension_fact_embeddings, 1
         max_number_of_facts_read = 1
+        self.initialization_randomization = 0.5
 
         nh = 7 # Dimension of the hidden layer
         num_hidden_units = nh
@@ -38,7 +38,7 @@ class DMN_No_Scan(object):
         num_hidden_units_questions = num_hidden_units_episodes
         num_hidden_units_words = num_hidden_units_questions
 
-        self.emb = theano.shared(name='embeddings_prob', value=0.2 * np.random.uniform(-1.0, 1.0, (number_word_classes, dimension_word_embeddings)).astype(theano.config.floatX))
+        self.emb = theano.shared(name='embeddings_prob', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (number_word_classes, dimension_word_embeddings)).astype(theano.config.floatX))
 
         self.h0_facts_reading_1 = theano.shared(name='h0_facts', value=np.zeros(nh, dtype=theano.config.floatX))
         self.h0_facts_reading_2 = theano.shared(name='h0_facts', value=np.zeros(nh, dtype=theano.config.floatX))
@@ -53,53 +53,53 @@ class DMN_No_Scan(object):
         #x = self.emb[word_idxs].reshape((word_idxs.shape[0], de*cs)) # x basically represents the embeddings of the words IN the current sentence.  So it is shape
         y_sentence = T.lscalar('y_sentence')
 
-        #self.W_fact_to_hidden = theano.shared(name='W_fact_reset_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (dimension_fact_embeddings, num_hidden_units_facts)).astype(theano.config.floatX))
-        #self.W_hidden_to_hidden = theano.shared(name='W_fact_reset_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, num_hidden_units_facts)).astype(theano.config.floatX))
+        #self.W_fact_to_hidden = theano.shared(name='W_fact_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (dimension_fact_embeddings, num_hidden_units_facts)).astype(theano.config.floatX))
+        #self.W_hidden_to_hidden = theano.shared(name='W_fact_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, num_hidden_units_facts)).astype(theano.config.floatX))
 
         # GRU Word Parameters
-        self.W_word_reset_gate_h = theano.shared(name='W_word_reset_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_words, num_hidden_units_words)).astype(theano.config.floatX))
-        self.W_word_reset_gate_x = theano.shared(name='W_word_reset_gate_x', value=0.2 * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_words)).astype(theano.config.floatX))
-        self.W_word_update_gate_h = theano.shared(name='W_word_update_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_words, num_hidden_units_words)).astype(theano.config.floatX))
-        self.W_word_update_gate_x = theano.shared(name='W_word_update_gate_x', value=0.2 * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_words)).astype(theano.config.floatX))
-        self.W_word_hidden_gate_h = theano.shared(name='W_word_hidden_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_words, num_hidden_units_words)).astype(theano.config.floatX))
-        self.W_word_hidden_gate_x = theano.shared(name='W_word_hidden_gate_x', value=0.2 * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_words)).astype(theano.config.floatX))
+        self.W_word_reset_gate_h = theano.shared(name='W_word_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_words, num_hidden_units_words)).astype(theano.config.floatX))
+        self.W_word_reset_gate_x = theano.shared(name='W_word_reset_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_words)).astype(theano.config.floatX))
+        self.W_word_update_gate_h = theano.shared(name='W_word_update_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_words, num_hidden_units_words)).astype(theano.config.floatX))
+        self.W_word_update_gate_x = theano.shared(name='W_word_update_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_words)).astype(theano.config.floatX))
+        self.W_word_hidden_gate_h = theano.shared(name='W_word_hidden_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_words, num_hidden_units_words)).astype(theano.config.floatX))
+        self.W_word_hidden_gate_x = theano.shared(name='W_word_hidden_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_words)).astype(theano.config.floatX))
 
-        self.W_word_to_fact_vector = theano.shared(name='W_word_to_fact_vector', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_words, num_hidden_units_episodes)).astype(theano.config.floatX))
-        self.b_word_to_fact_vector = theano.shared(name='b_word_to_fact_vector', value=0.2 * np.random.uniform(-1.0, 1.0, num_hidden_units_episodes).astype(theano.config.floatX))
+        self.W_word_to_fact_vector = theano.shared(name='W_word_to_fact_vector', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_words, num_hidden_units_episodes)).astype(theano.config.floatX))
+        self.b_word_to_fact_vector = theano.shared(name='b_word_to_fact_vector', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, num_hidden_units_episodes).astype(theano.config.floatX))
 
         self.h0_words = theano.shared(name='h0_episodes', value=np.zeros(num_hidden_units_words, dtype=theano.config.floatX))
 
         # GRU Fact Parameters
-        self.W_fact_reset_gate_h = theano.shared(name='W_fact_reset_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, num_hidden_units_facts)).astype(theano.config.floatX))
-        self.W_fact_reset_gate_x = theano.shared(name='W_fact_reset_gate_x', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, dimension_fact_embeddings)).astype(theano.config.floatX))
-        self.W_fact_update_gate_h = theano.shared(name='W_fact_update_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, num_hidden_units_facts)).astype(theano.config.floatX))
-        self.W_fact_update_gate_x = theano.shared(name='W_fact_update_gate_x', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, dimension_fact_embeddings)).astype(theano.config.floatX))
-        self.W_fact_hidden_gate_h = theano.shared(name='W_fact_hidden_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, num_hidden_units_facts)).astype(theano.config.floatX))
-        self.W_fact_hidden_gate_x = theano.shared(name='W_fact_hidden_gate_x', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, dimension_fact_embeddings)).astype(theano.config.floatX))
+        self.W_fact_reset_gate_h = theano.shared(name='W_fact_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, num_hidden_units_facts)).astype(theano.config.floatX))
+        self.W_fact_reset_gate_x = theano.shared(name='W_fact_reset_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, dimension_fact_embeddings)).astype(theano.config.floatX))
+        self.W_fact_update_gate_h = theano.shared(name='W_fact_update_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, num_hidden_units_facts)).astype(theano.config.floatX))
+        self.W_fact_update_gate_x = theano.shared(name='W_fact_update_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, dimension_fact_embeddings)).astype(theano.config.floatX))
+        self.W_fact_hidden_gate_h = theano.shared(name='W_fact_hidden_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, num_hidden_units_facts)).astype(theano.config.floatX))
+        self.W_fact_hidden_gate_x = theano.shared(name='W_fact_hidden_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, dimension_fact_embeddings)).astype(theano.config.floatX))
 
-        self.W_fact_to_episode = theano.shared(name='W_fact_to_episode', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, num_hidden_units_facts)).astype(theano.config.floatX))
-        self.b_fact_to_episode = theano.shared(name='b_fact_to_episode', value=0.2 * np.random.uniform(-1.0, 1.0, num_hidden_units_episodes).astype(theano.config.floatX))
+        self.W_fact_to_episode = theano.shared(name='W_fact_to_episode', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, num_hidden_units_facts)).astype(theano.config.floatX))
+        self.b_fact_to_episode = theano.shared(name='b_fact_to_episode', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, num_hidden_units_episodes).astype(theano.config.floatX))
 
         # GRU Episode Parameters
-        self.W_episode_reset_gate_h = theano.shared(name='W_episode_reset_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, num_hidden_units_episodes)).astype(theano.config.floatX))
-        self.W_episode_reset_gate_x = theano.shared(name='W_episode_reset_gate_x', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, dimension_fact_embeddings)).astype(theano.config.floatX))
-        self.W_episode_update_gate_h = theano.shared(name='W_episode_update_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, num_hidden_units_episodes)).astype(theano.config.floatX))
-        self.W_episode_update_gate_x = theano.shared(name='W_episode_update_gate_x', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, dimension_fact_embeddings)).astype(theano.config.floatX))
-        self.W_episode_hidden_gate_h = theano.shared(name='W_episode_hidden_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, num_hidden_units_episodes)).astype(theano.config.floatX))
-        self.W_episode_hidden_gate_x = theano.shared(name='W_episode_hidden_gate_x', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, dimension_fact_embeddings)).astype(theano.config.floatX))
+        self.W_episode_reset_gate_h = theano.shared(name='W_episode_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, num_hidden_units_episodes)).astype(theano.config.floatX))
+        self.W_episode_reset_gate_x = theano.shared(name='W_episode_reset_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, dimension_fact_embeddings)).astype(theano.config.floatX))
+        self.W_episode_update_gate_h = theano.shared(name='W_episode_update_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, num_hidden_units_episodes)).astype(theano.config.floatX))
+        self.W_episode_update_gate_x = theano.shared(name='W_episode_update_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, dimension_fact_embeddings)).astype(theano.config.floatX))
+        self.W_episode_hidden_gate_h = theano.shared(name='W_episode_hidden_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, num_hidden_units_episodes)).astype(theano.config.floatX))
+        self.W_episode_hidden_gate_x = theano.shared(name='W_episode_hidden_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, dimension_fact_embeddings)).astype(theano.config.floatX))
 
-        self.W_out = theano.shared(name='W_fact_reset_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (number_word_classes, num_hidden_units_facts)).astype(theano.config.floatX))
-        self.b_out = theano.shared(name='W_fact_reset_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, number_word_classes).astype(theano.config.floatX))
+        self.W_out = theano.shared(name='W_fact_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (number_word_classes, num_hidden_units_facts)).astype(theano.config.floatX))
+        self.b_out = theano.shared(name='W_fact_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, number_word_classes).astype(theano.config.floatX))
 
         # DMN Gate Parameters
         num_rows_z_dmn = 2
         inner_dmn_dimension = 8
-        self.W_dmn_1 = theano.shared(name='W_dmn_1', value=0.2 * np.random.uniform(-1.0, 1.0, (inner_dmn_dimension , num_rows_z_dmn)).astype(theano.config.floatX))
-        self.W_dmn_2 = theano.shared(name='W_dmn_2', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, inner_dmn_dimension)).astype(theano.config.floatX))
+        self.W_dmn_1 = theano.shared(name='W_dmn_1', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (inner_dmn_dimension , num_rows_z_dmn)).astype(theano.config.floatX))
+        self.W_dmn_2 = theano.shared(name='W_dmn_2', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, inner_dmn_dimension)).astype(theano.config.floatX))
 
-        self.b_dmn_1 = theano.shared(name='b_dmn_1', value=0.2 * np.random.uniform(-1.0, 1.0, num_hidden_units_facts).astype(theano.config.floatX))
-        self.b_dmn_2 = theano.shared(name='b_dmn_2', value=0.2 * np.random.uniform(-1.0, 1.0, num_hidden_units_facts).astype(theano.config.floatX))
-        self.W_dmn_b = theano.shared(name='W_dmn_2', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, num_hidden_units_questions)).astype(theano.config.floatX))
+        self.b_dmn_1 = theano.shared(name='b_dmn_1', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, num_hidden_units_facts).astype(theano.config.floatX))
+        self.b_dmn_2 = theano.shared(name='b_dmn_2', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, num_hidden_units_facts).astype(theano.config.floatX))
+        self.W_dmn_b = theano.shared(name='W_dmn_2', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, num_hidden_units_questions)).astype(theano.config.floatX))
 
         self.params = [self.emb, self.W_out, self.b_out, self.W_fact_reset_gate_h, self.W_fact_reset_gate_x, self.W_fact_update_gate_h,
                        self.W_fact_update_gate_x, self.W_fact_hidden_gate_h, self.W_fact_hidden_gate_x, self.W_fact_to_episode, self.b_fact_to_episode,
@@ -218,15 +218,15 @@ class DMN_No_Scan(object):
     def GRU_question(self, dimension_fact_embedding, num_hidden_units_questions, num_hidden_units_episodes, max_question_len, dimension_word_embeddings):
 
         # GRU Parameters
-        self.W_question_reset_gate_h = theano.shared(name='W_question_reset_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_questions, num_hidden_units_questions)).astype(theano.config.floatX))
-        self.W_question_reset_gate_x = theano.shared(name='W_question_reset_gate_x', value=0.2 * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_questions)).astype(theano.config.floatX))
-        self.W_question_update_gate_h = theano.shared(name='W_question_update_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_questions, num_hidden_units_questions)).astype(theano.config.floatX))
-        self.W_question_update_gate_x = theano.shared(name='W_question_update_gate_x', value=0.2 * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_questions)).astype(theano.config.floatX))
-        self.W_question_hidden_gate_h = theano.shared(name='W_question_hidden_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_questions, num_hidden_units_questions)).astype(theano.config.floatX))
-        self.W_question_hidden_gate_x = theano.shared(name='W_question_hidden_gate_x', value=0.2 * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_questions)).astype(theano.config.floatX))
+        self.W_question_reset_gate_h = theano.shared(name='W_question_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_questions, num_hidden_units_questions)).astype(theano.config.floatX))
+        self.W_question_reset_gate_x = theano.shared(name='W_question_reset_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_questions)).astype(theano.config.floatX))
+        self.W_question_update_gate_h = theano.shared(name='W_question_update_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_questions, num_hidden_units_questions)).astype(theano.config.floatX))
+        self.W_question_update_gate_x = theano.shared(name='W_question_update_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_questions)).astype(theano.config.floatX))
+        self.W_question_hidden_gate_h = theano.shared(name='W_question_hidden_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_questions, num_hidden_units_questions)).astype(theano.config.floatX))
+        self.W_question_hidden_gate_x = theano.shared(name='W_question_hidden_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_questions)).astype(theano.config.floatX))
 
-        self.W_question_to_vector = theano.shared(name='W_question_to_vector', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_questions, num_hidden_units_episodes)).astype(theano.config.floatX))
-        self.b_question_to_vector = theano.shared(name='b_question_to_vector', value=0.2 * np.random.uniform(-1.0, 1.0, num_hidden_units_episodes).astype(theano.config.floatX))
+        self.W_question_to_vector = theano.shared(name='W_question_to_vector', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_questions, num_hidden_units_episodes)).astype(theano.config.floatX))
+        self.b_question_to_vector = theano.shared(name='b_question_to_vector', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, num_hidden_units_episodes).astype(theano.config.floatX))
 
         self.h0_questions = theano.shared(name='h0_questions', value=np.zeros(num_hidden_units_questions, dtype=theano.config.floatX))
 
@@ -336,13 +336,14 @@ class DMN_No_Scan(object):
                             if cur_name not in sent:
                                 written_sents.append(sent)
                                 break
-                        if len(written_sents) > 1:
-                            if random.random() < 0.5:
-                                tmp = written_sents[0]
-                                written_sents[0] = written_sents[1]
-                                written_sents[1] = tmp
+#                         if len(written_sents) > 1:
+#                             if random.random() < 0.5:
+#                                 tmp = written_sents[0]
+#                                 written_sents[0] = written_sents[1]
+#                                 written_sents[1] = tmp
                         for w in written_sents:
                             b.write(w)
+                            break
                     else:
                         for sent in cur_article:
                             b.write(sent)
@@ -356,8 +357,8 @@ class DMN_No_Scan(object):
 
     def process_data(self, type_of_embedding):
 
-        filename_train = 'data/babi_train.txt'
-        filename_test = 'data/babi_test.txt'
+        filename_train = 'simple_dmn_theano/babi_train1.txt'
+        filename_test = 'simple_dmn_theano/babi_test1.txt'
 
         X_train, mask_sentences_train, mask_articles_train, Question_train, Question_train_mask, Y_train, X_test, mask_sentences_test, mask_articles_test, Question_test, Question_test_mask, Y_test, max_queslen = [], [], [], [], [], [], [], [], [], [], [], [], 0
 
