@@ -13,16 +13,17 @@ Y
 sudo git init
 sudo git clone https://github.com/dstrawse/Nlp2Commands.git
 cd Nlp2Commands
-sudo chmod +x aws_bash
-./aws_bash
-
+sudo chmod +x aws_bash1
+./aws_bash1
+sudo chmod +x aws_bash2
+./aws_bash2
 
 
 
 Also need these: 
 
 alias python=/usr/bin/python3
-apt-get install python-numpy
+sudo apt-get install python-numpy
 
 sudo apt-get install packaging-dev
 
