@@ -29,7 +29,7 @@ class DMN_No_Scan(object):
         max_fact_seqlen = max_article_len
         dimension_word_embeddings = 10
         max_number_of_facts_read = 1
-        self.initialization_randomization = 0.5
+        self.initialization_randomization = 1
 
         nh = 7 # Dimension of the hidden layer
         num_hidden_units = nh
