@@ -19,17 +19,16 @@ class DMN_No_Scan(object):
     def __init__(self, num_fact_hidden_units, number_word_classes, dimension_fact_embeddings, num_episode_hidden_units, max_number_of_facts_read):
         print(" Starting dmn no scan... ")
 
-        self.X_train, self.mask_sentences_train, self.mask_articles_train, self.question_train, self.question_train_mask, self.Y_train, self.X_test, self.mask_sentences_test, self.mask_articles_test, self.question_test, self.question_test_mask, self.Y_test, word2idx, self.idx2word, dimension_fact_embeddings, max_queslen, max_sentlen = self.process_data("embeddings")
+        self.X_train, self.mask_sentences_train, self.mask_articles_train, self.question_train, self.question_train_mask, self.Y_train, self.X_test, self.mask_sentences_test, self.mask_articles_test, self.question_test, self.question_test_mask, self.Y_test, word2idx, self.idx2word, dimension_fact_embeddings, max_queslen, max_sentlen, max_article_len = self.process_data("embeddings")
         number_word_classes = max(self.idx2word.keys(), key=int) + 1
 
         print(" Building model... ")
 
-        max_fact_seqlen = 3
-        dimension_word_embeddings = 7
+        max_fact_seqlen = max_article_len
+        dimension_word_embeddings = 8
         nv, de, cs = dimension_fact_embeddings, dimension_fact_embeddings, 1
         max_number_of_facts_read = 2
-        nc = number_word_classes
-        ne = number_word_classes # Using one hot, the number of embeddings is the same as the dimension of the fact embeddings
+
         nh = 7 # Dimension of the hidden layer
         num_hidden_units = nh
         num_hidden_units_facts = num_hidden_units
@@ -37,7 +36,7 @@ class DMN_No_Scan(object):
         num_hidden_units_questions = num_hidden_units_episodes
         num_hidden_units_words = num_hidden_units_questions
 
-        self.emb = theano.shared(name='embeddings_prob', value=0.2 * np.random.uniform(-1.0, 1.0, (ne, de)).astype(theano.config.floatX))
+        self.emb = theano.shared(name='embeddings_prob', value=0.2 * np.random.uniform(-1.0, 1.0, (number_word_classes, dimension_word_embeddings)).astype(theano.config.floatX))
 
         self.h0_facts_reading_1 = theano.shared(name='h0_facts', value=np.zeros(nh, dtype=theano.config.floatX))
         self.h0_facts_reading_2 = theano.shared(name='h0_facts', value=np.zeros(nh, dtype=theano.config.floatX))
@@ -45,12 +44,11 @@ class DMN_No_Scan(object):
 
         self.h0_episodes = theano.shared(name='h0_episodes', value=np.zeros(num_hidden_units_episodes, dtype=theano.config.floatX))
 
-
-        word_mask = T.lvector("word_mask")
+        word_mask = T.lmatrix("word_mask")
         sentence_mask = T.lvector("sentence_mask")
 
         word_idxs = T.lmatrix("fact_indices") # as many columns as words in the context window and as many lines as words in the sentence
-        x = self.emb[word_idxs].reshape((word_idxs.shape[0], de*cs)) # x basically represents the embeddings of the words IN the current sentence.  So it is shape
+        #x = self.emb[word_idxs].reshape((word_idxs.shape[0], de*cs)) # x basically represents the embeddings of the words IN the current sentence.  So it is shape
         y_sentence = T.lscalar('y_sentence')
 
         #self.W_fact_to_hidden = theano.shared(name='W_fact_reset_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (dimension_fact_embeddings, num_hidden_units_facts)).astype(theano.config.floatX))
@@ -107,15 +105,14 @@ class DMN_No_Scan(object):
                        self.W_dmn_1, self.W_dmn_2, self.b_dmn_1, self.b_dmn_2, self.W_word_reset_gate_h, self.W_word_reset_gate_x, self.W_word_update_gate_h, self.W_word_update_gate_x,
                        self.W_word_hidden_gate_h, self.W_word_hidden_gate_x, self.W_word_to_fact_vector, self.b_word_to_fact_vector, self.h0_words]
 
-        question_encoding = self.GRU_question(dimension_fact_embeddings, num_hidden_units_questions, num_hidden_units_episodes, max_queslen)
+        question_encoding = self.GRU_question(dimension_fact_embeddings, num_hidden_units_questions, num_hidden_units_episodes, max_queslen, dimension_word_embeddings)
 
         def slice_w(x, n):
             return x[n*num_hidden_units_facts:(n+1)*num_hidden_units_facts]
 
-
         def word_step(x_cur_word, h_prev, w_mask):
 
-            W_in_stacked = T.concatenate([self.W_word_reset_gate_x, self.W_word_update_gate_x, self.W_word_hidden_gate_x], axis=1)
+            W_in_stacked = T.concatenate([self.W_word_reset_gate_x, self.W_word_update_gate_x, self.W_word_hidden_gate_x], axis=1)  # I think your issue is that this should have # dim word embeddings
             W_hid_stacked = T.concatenate([self.W_word_reset_gate_h, self.W_word_update_gate_h, self.W_word_hidden_gate_h], axis=1)
 
             input_n = T.dot(x_cur_word, W_in_stacked)
@@ -134,11 +131,11 @@ class DMN_No_Scan(object):
             # h_cur = T.tanh(T.dot(self.W_fact_to_hidden, x_cur) + T.dot(self.W_hidden_to_hidden, h_prev))
             return h_cur
 
-        def fact_step(cur_sentence, h_prev, f_mask, sentence_mask_local):
+        def fact_step(jdx, h_prev, f_mask, sentence_mask_local):
 
             state_word_step = self.h0_words
             for kdx in range(max_sentlen):
-                state_word_step = word_step(cur_sentence[kdx], state_word_step, sentence_mask_local[kdx])
+                state_word_step = word_step(self.emb[word_idxs[jdx][kdx]], state_word_step, sentence_mask_local[kdx])  # The error would be that self.emb is producing 1,29 and not 1,7
 
             x_cur = T.tanh(T.dot(self.W_word_to_fact_vector, state_word_step) + self.b_word_to_fact_vector)
 
@@ -170,7 +167,8 @@ class DMN_No_Scan(object):
 
             state_fact_step = h0_fact
             for jdx in range(max_fact_seqlen):
-                state_fact_step = fact_step(x[jdx], state_fact_step, sentence_mask[jdx], word_mask[jdx])
+                state_fact_step = fact_step(jdx, state_fact_step, sentence_mask[jdx], word_mask[jdx])
+                #state_fact_step = fact_step(x[jdx], state_fact_step, sentence_mask[jdx], word_mask[jdx])
 
             x_cur = T.tanh(T.dot(self.W_fact_to_episode, state_fact_step) + self.b_fact_to_episode)
 
@@ -215,15 +213,15 @@ class DMN_No_Scan(object):
         print("Done compiling!")
 
 
-    def GRU_question(self, dimension_fact_embedding, num_hidden_units_questions, num_hidden_units_episodes, max_question_len):
+    def GRU_question(self, dimension_fact_embedding, num_hidden_units_questions, num_hidden_units_episodes, max_question_len, dimension_word_embeddings):
 
         # GRU Parameters
         self.W_question_reset_gate_h = theano.shared(name='W_question_reset_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_questions, num_hidden_units_questions)).astype(theano.config.floatX))
-        self.W_question_reset_gate_x = theano.shared(name='W_question_reset_gate_x', value=0.2 * np.random.uniform(-1.0, 1.0, (dimension_fact_embedding, num_hidden_units_questions)).astype(theano.config.floatX))
+        self.W_question_reset_gate_x = theano.shared(name='W_question_reset_gate_x', value=0.2 * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_questions)).astype(theano.config.floatX))
         self.W_question_update_gate_h = theano.shared(name='W_question_update_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_questions, num_hidden_units_questions)).astype(theano.config.floatX))
-        self.W_question_update_gate_x = theano.shared(name='W_question_update_gate_x', value=0.2 * np.random.uniform(-1.0, 1.0, (dimension_fact_embedding, num_hidden_units_questions)).astype(theano.config.floatX))
+        self.W_question_update_gate_x = theano.shared(name='W_question_update_gate_x', value=0.2 * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_questions)).astype(theano.config.floatX))
         self.W_question_hidden_gate_h = theano.shared(name='W_question_hidden_gate_h', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_questions, num_hidden_units_questions)).astype(theano.config.floatX))
-        self.W_question_hidden_gate_x = theano.shared(name='W_question_hidden_gate_x', value=0.2 * np.random.uniform(-1.0, 1.0, (dimension_fact_embedding, num_hidden_units_questions)).astype(theano.config.floatX))
+        self.W_question_hidden_gate_x = theano.shared(name='W_question_hidden_gate_x', value=0.2 * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_questions)).astype(theano.config.floatX))
 
         self.W_question_to_vector = theano.shared(name='W_question_to_vector', value=0.2 * np.random.uniform(-1.0, 1.0, (num_hidden_units_questions, num_hidden_units_episodes)).astype(theano.config.floatX))
         self.b_question_to_vector = theano.shared(name='b_question_to_vector', value=0.2 * np.random.uniform(-1.0, 1.0, num_hidden_units_episodes).astype(theano.config.floatX))
@@ -235,7 +233,7 @@ class DMN_No_Scan(object):
 
         self.question_idxs = T.lmatrix("question_indices") # as many columns as words in the context window and as many lines as words in the sentence
         self.question_mask = T.lvector("question_mask")
-        q = self.emb[self.question_idxs].reshape((self.question_idxs.shape[0], dimension_fact_embedding)) # x basically represents the embeddings of the words IN the current sentence.  So it is shape
+        q = self.emb[self.question_idxs].reshape((self.question_idxs.shape[0], dimension_word_embeddings)) # x basically represents the embeddings of the words IN the current sentence.  So it is shape
 
         def slice_w(x, n):
             return x[n*num_hidden_units_questions:(n+1)*num_hidden_units_questions]
@@ -270,7 +268,7 @@ class DMN_No_Scan(object):
 
     def train(self):
         # self.X_train, self.mask_train, self.question_train, self.Y_train, self.X_test, self.mask_test, self.question_test, self.Y_test, word2idx, idx2word, dimension_fact_embeddings = self.process_data()
-        lr = .1
+        lr = .002
         max_epochs = 100
 
         print(" Starting training...")
@@ -372,11 +370,9 @@ class DMN_No_Scan(object):
             cur_mask_article[0:len(article)] = 1
             mask_articles_train.append(cur_mask_article)
 
-            set_of_sentence_masks = []
-            for sentence in article:
-                cur_mask_sentence = np.zeros(max_sentence_len, dtype='int32')
-                cur_mask_sentence[0:len(sentence)] = 1
-                set_of_sentence_masks.append(cur_mask_sentence)
+            set_of_sentence_masks = np.zeros((max_article_len, max_sentence_len),dtype='int32')
+            for idx, sentence in enumerate(article):
+                set_of_sentence_masks[idx, 0:len(sentence)] = 1
             mask_sentences_train.append(set_of_sentence_masks)
 
         for article in X_test:
@@ -384,11 +380,9 @@ class DMN_No_Scan(object):
             cur_mask_article[0:len(article)] = 1
             mask_articles_test.append(cur_mask_article)
 
-            set_of_sentence_masks = []
-            for sentence in article:
-                cur_mask_sentence = np.zeros(max_sentence_len, dtype='int32')
-                cur_mask_sentence[0:len(sentence)] = 1
-                set_of_sentence_masks.append(cur_mask_sentence)
+            set_of_sentence_masks = np.zeros((max_article_len, max_sentence_len),dtype='int32')
+            for idx, sentence in enumerate(article):
+                set_of_sentence_masks[idx, 0:len(sentence)] = 1
             mask_sentences_test.append(set_of_sentence_masks)
 
         for l in Question_train:
@@ -509,7 +503,7 @@ class DMN_No_Scan(object):
         # X_test_vec = new_x_test_vec
         assert(len(X_test_vec) == len(Y_test_vec))
 
-        return X_train_vec, mask_sentences_train, mask_articles_train, Question_train_vec, Question_train_mask, Y_train_vec, X_test_vec, mask_sentences_train, mask_articles_train, Question_test_vec, Question_test_mask, Y_test_vec, word2idx, idx2word, len(word2idx), max_queslen, max_sentence_len
+        return X_train_vec, mask_sentences_train, mask_articles_train, Question_train_vec, Question_train_mask, Y_train_vec, X_test_vec, mask_sentences_train, mask_articles_train, Question_test_vec, Question_test_mask, Y_test_vec, word2idx, idx2word, len(word2idx), max_queslen, max_sentence_len, max_article_len
 
 
 
