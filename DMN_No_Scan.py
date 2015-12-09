@@ -22,7 +22,7 @@ class DMN_No_Scan(object):
     def __init__(self, num_fact_hidden_units, number_word_classes, dimension_fact_embeddings, num_episode_hidden_units, max_number_of_facts_read):
         print(" Starting dmn no scidxsan... ")
         
-        self.preprocess_babi_set_for_dmn()
+        #self.preprocess_babi_set_for_dmn()
         
         self.X_train, self.mask_sentences_train, self.mask_articles_train, self.question_train, self.question_train_mask, self.Y_train, self.X_test, self.mask_sentences_test, self.mask_articles_test, self.question_test, self.question_test_mask, self.Y_test, word2idx, self.idx2word, dimension_fact_embeddings, max_queslen, max_sentlen, max_article_len = self.process_data("embeddings")
                
@@ -332,6 +332,8 @@ class DMN_No_Scan(object):
                 total_tests += 1
 
             print("epoch , " , e, " training ll: ", ll, " ll improvement: ", last_ll - ll, " ratio correct: ", correct / total_tests)
+            if last_ll < ll:
+                lr = 0.9 * lr            
             last_ll = ll
 
 
