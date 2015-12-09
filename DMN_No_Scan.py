@@ -1,3 +1,4 @@
+from theano.gradient import grad_clip
 __author__ = 'Dan'
 
 from theano.compile.mode import FAST_COMPILE
@@ -160,20 +161,22 @@ class DMN_No_Scan(object):
 
         gparams = []
         for param in self.params:
-            gparam = T.grad(sentence_nll, param)
+            gparam = T.grad(grad_clip(sentence_nll, -1, 1), param)
             gparams.append(gparam)
+            
+            
         sentence_updates = []
-        rho = 0.01
+        rho = 0.1
         for param, param_helper, gparam in zip(self.params, self.params_helper, gparams):
             sentence_updates.append((param_helper, param_helper + gparam ** 2))
-            sentence_updates.append((param, param - lr * gparam * rho / (rho + (param_helper + gparam**2) ** 0.5)))
+            sentence_updates.append((param, param - lr * gparam * rho / (rho + (param_helper) ** 0.5)))
 
         #sentence_gradients = T.grad(sentence_nll, self.params)  # Returns gradients of the nll w.r.t the params
         #sentence_updates = OrderedDict((p, p - lr*g) for p, g in zip(self.params, sentence_gradients))  # computes the update for each of the params.
 
         print("Compiling fcns...")
         self.classify = theano.function(inputs=[word_idxs, sentence_mask, word_mask, self.question_idxs, self.question_mask], outputs=y_pred)
-        self.sentence_train = theano.function(inputs=[word_idxs, sentence_mask, word_mask, self.question_idxs, self.question_mask, y_sentence, lr], outputs=sentence_nll, updates=sentence_updates)
+        self.sentence_train = theano.function(inputs=[word_idxs, sentence_mask, word_mask, self.question_idxs, self.question_mask, y_sentence, lr], outputs=[sentence_nll, gparams[1]], updates=sentence_updates)
         print("Done compiling!")
 
 
@@ -237,8 +240,9 @@ class DMN_No_Scan(object):
             
             for idx in shuffled_idxs:
                 x, word_mask, sentence_mask, q, mask_question, y = self.X_train[idx], self.mask_sentences_train[idx], self.mask_articles_train[idx], self.question_train[idx], self.question_train_mask[idx], self.Y_train[idx]
-                ll += self.sentence_train(x, sentence_mask, word_mask, q, mask_question, y, lr)
-            
+                [ll_cur, gparams] = self.sentence_train(x, sentence_mask, word_mask, q, mask_question, y, lr)
+                ll += ll_cur
+                
             shuffle(shuffled_idxs)
             for idx in shuffled_idxs:
                 x, word_mask, sentence_mask, q, mask_question, y = self.X_train[idx], self.mask_sentences_train[idx], self.mask_articles_train[idx], self.question_train[idx], self.question_train_mask[idx], self.Y_train[idx]
