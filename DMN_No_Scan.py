@@ -338,7 +338,7 @@ class DMN_No_Scan(object):
 
             print("epoch , " , e, " training ll: ", ll, " ll improvement: ", last_ll - ll, " ratio correct: ", correct / total_tests)
             if last_ll < ll:
-                lr = 0.95 * lr            
+                lr = 0.98 * lr            
             else:
                 lr *= 1
             
