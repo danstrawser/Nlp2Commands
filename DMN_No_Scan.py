@@ -168,15 +168,36 @@ class DMN_No_Scan(object):
         sentence_updates = []
         rho = 0.1
         for param, param_helper, gparam in zip(self.params, self.params_helper, gparams):
-            sentence_updates.append((param_helper, param_helper + gparam ** 2))
-            sentence_updates.append((param, param - lr * gparam * rho / (rho + (param_helper) ** 0.5)))
-
+            sentence_updates.append((param, param - lr * gparam * rho / (rho + (param_helper + 2 * gparam ** 2) ** 0.5)))
+            sentence_updates.append((param_helper, param_helper))
+            
         #sentence_gradients = T.grad(sentence_nll, self.params)  # Returns gradients of the nll w.r.t the params
         #sentence_updates = OrderedDict((p, p - lr*g) for p, g in zip(self.params, sentence_gradients))  # computes the update for each of the params.
 
         print("Compiling fcns...")
         self.classify = theano.function(inputs=[word_idxs, sentence_mask, word_mask, self.question_idxs, self.question_mask], outputs=y_pred)
-        self.sentence_train = theano.function(inputs=[word_idxs, sentence_mask, word_mask, self.question_idxs, self.question_mask, y_sentence, lr], outputs=[sentence_nll, gparams[1]], updates=sentence_updates)
+        self.sentence_train = theano.function(inputs=[word_idxs, sentence_mask, word_mask, self.question_idxs, self.question_mask, y_sentence, lr], outputs=[sentence_nll, self.params_helper[0],
+                                                                                                                                                             self.params_helper[1],
+                                                                                                                                                             self.params_helper[2],
+                                                                                                                                                             self.params_helper[3],
+                                                                                                                                                             self.params_helper[4],
+                                                                                                                                                             self.params_helper[5],
+                                                                                                                                                             self.params_helper[6],
+                                                                                                                                                             self.params_helper[7],
+                                                                                                                                                             self.params_helper[8],
+                                                                                                                                                             self.params_helper[9],
+                                                                                                                                                             self.params_helper[10],
+                                                                                                                                                             self.params_helper[11],
+                                                                                                                                                             self.params_helper[12],
+                                                                                                                                                             self.params_helper[13],
+                                                                                                                                                             self.params_helper[14],
+                                                                                                                                                             self.params_helper[15],
+                                                                                                                                                             self.params_helper[16],
+                                                                                                                                                             self.params_helper[17],
+                                                                                                                                                             self.params_helper[18],
+                                                                                                                                                             self.params_helper[19],
+                                                                                                                                                             self.params_helper[20]
+                                                                                                                                                             ], updates=sentence_updates)
         print("Done compiling!")
 
 
@@ -240,8 +261,55 @@ class DMN_No_Scan(object):
             
             for idx in shuffled_idxs:
                 x, word_mask, sentence_mask, q, mask_question, y = self.X_train[idx], self.mask_sentences_train[idx], self.mask_articles_train[idx], self.question_train[idx], self.question_train_mask[idx], self.Y_train[idx]
-                [ll_cur, gparams] = self.sentence_train(x, sentence_mask, word_mask, q, mask_question, y, lr)
+                [ll_cur, zero, one, two, three, four, five, six, seven, eight, nine, ten, eleven, twelve, thirteen, fourteen, fifteen, sixteen, seventeen, eighteen, ninteen, twenty] = self.sentence_train(x, sentence_mask, word_mask, q, mask_question, y, lr)
                 ll += ll_cur
+                
+                for x in one:
+                    print(" one x: ", x)
+                for x in two:
+                    print(" one x: ", x)
+                for x in three:
+                    print(" one x: ", x)
+                for x in four:
+                    print(" one x: ", x)
+                for x in five:
+                    print(" one x: ", x)
+                for x in six:
+                    print(" one x: ", x)
+                for x in seven:
+                    print(" one x: ", x)
+                for x in eight:
+                    print(" one x: ", x)
+                for x in nine:
+                    print(" one x: ", x)
+                for x in ten:
+                    print(" one x: ", x)
+                for x in eleven:
+                    print(" one x: ", x)
+                for x in twelve:
+                    print(" one x: ", x)
+                for x in thirteen:
+                    print(" one x: ", x)
+                for x in fourteen:
+                    print(" one x: ", x)
+                for x in fifteen:
+                    print(" one x: ", x)
+                for x in sixteen:
+                    print(" one x: ", x)
+                for x in seventeen:
+                    print(" one x: ", x)
+                for x in eighteen:
+                    print(" one x: ", x)
+                for x in ninteen:
+                    print(" one x: ", x)
+                for x in twenty:
+                    print(" one x: ", x)
+                
+                
+                
+                
+                
+                assert(1 == 2)
                 
             shuffle(shuffled_idxs)
             for idx in shuffled_idxs:
