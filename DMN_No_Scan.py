@@ -47,7 +47,7 @@ class DMN_No_Scan(object):
         self.h0_facts_reading_2 = theano.shared(name='h0_facts', value=np.zeros(nh, dtype=theano.config.floatX))
 
         # self.h0_facts = theano.shared(name='h0_facts', value=np.zeros(nh, dtype=theano.config.floatX))
-        self.h0_facts = [self.h0_facts_reading_1, self.h0_facts_reading_2]
+        self.h0_facts = [self.h0_facts_reading_1]
         self.h0_episodes = theano.shared(name='h0_episodes', value=np.zeros(num_hidden_units_episodes, dtype=theano.config.floatX))
         #self.h0 = theano.shared(name='h0', value=np.zeros(num_hidden_units_episodes, dtype=theano.config.floatX))
 
@@ -162,7 +162,10 @@ class DMN_No_Scan(object):
             hidden_update = T.tanh(hidden_update)
             h_cur = (1 - updategate) * hidden_update + updategate * hidden_update
 
+            z_dmn = T.concatenate(([question_encoding], [x_cur], []), axis=0)
+
             z_dmn = T.concatenate(([question_encoding], [x_cur]), axis=0)
+
 
             G_dmn = T.nnet.sigmoid(T.dot(self.W_dmn_2, T.tanh(T.dot(self.W_dmn_1, z_dmn)) + self.b_dmn_1) + self.b_dmn_2)
             h_cur = T.dot(G_dmn, h_cur) + T.dot((1 - G_dmn), h_prev)
@@ -200,9 +203,10 @@ class DMN_No_Scan(object):
 
         #state_episode_step = self.h0_episodes  # Could give rise to problem if dimension is not correct
         state_episode_step = question_encoding
+        self.h0_facts = question_encoding
         # Reading over the facts
         for idx in range(max_number_of_episodes_read):
-            state_episode_step = episode_step(idx, state_episode_step, self.h0_facts[idx])
+            state_episode_step = episode_step(idx, state_episode_step, self.h0_facts)
 
         output = T.nnet.softmax(T.dot(self.W_out, state_episode_step) + self.b_out)
         p_y_given_x_sentence = output[0, :]
