@@ -12,8 +12,8 @@ class CNNProcessor(object):
         self.test_directory = 'test'
         assert(type_of_data == "full" or type_of_data == "simplified" or type_of_data == "medium")
         self.type_of_data = type_of_data
-        self.MAX_NUM_TRAINING_FILES = 10000
-        self.MAX_NUM_TEST_FILES = 400
+        self.MAX_NUM_TRAINING_FILES = 20000
+        self.MAX_NUM_TEST_FILES = 500
 
     def process(self):
         test_lines, train_lines, max_seqlen = [], [], 0

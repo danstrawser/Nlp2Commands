@@ -340,6 +340,8 @@ class Model:
                 errors.append((i, self.lb.classes_[p]))
         return metrics.f1_score(y_true, y_pred, average='weighted', pos_label=None), errors
 
+
+
     def train(self, n_epochs=100, shuffle_batch=False):
         epoch = 0
         n_train_batches = len(self.data['train']['Y']) // self.batch_size
@@ -347,6 +349,7 @@ class Model:
         prev_train_f1 = None
 
         print("training...")
+        min_test_error = 100
         while (epoch < n_epochs):
             epoch += 1
 
@@ -389,6 +392,12 @@ class Model:
                 print('TEST', '=' * 40)
                 test_f1, test_errors = self.compute_f1(self.data['test'])
                 print('*** TEST_ERROR:', (1-test_f1)*100)
+                test_error = (1-test_f1)*100
+
+                if test_error < min_test_error:
+                    min_test_error = test_error
+                print(" MIN TEST ERROR: ", min_test_error)
+
 
             prev_train_f1 = train_f1
 

@@ -198,8 +198,8 @@ class DMN_No_Scan(object):
             # h_cur = T.tanh(T.dot(self.W_fact_to_hidden, x_cur) + T.dot(self.W_hidden_to_hidden, h_prev))
             return h_cur
 
-        state_episode_step = self.h0_episodes  # Could give rise to problem if dimension is not correct
-
+        #state_episode_step = self.h0_episodes  # Could give rise to problem if dimension is not correct
+        state_episode_step = question_encoding
         # Reading over the facts
         for idx in range(max_number_of_episodes_read):
             state_episode_step = episode_step(idx, state_episode_step, self.h0_facts[idx])
@@ -271,7 +271,7 @@ class DMN_No_Scan(object):
         for jdx in range(max_question_len):
             state = question_gru_recursion(q[jdx], state, self.question_mask[jdx])
 
-        return T.tanh(T.dot(self.W_question_to_vector, state) + self.b_question_to_vector)
+        return T.tanh(T.dot(state, self.W_question_to_vector) + self.b_question_to_vector)
 
     def idx2sentence(self, x):
         cur_sent = ""
