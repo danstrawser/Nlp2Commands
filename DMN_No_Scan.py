@@ -29,7 +29,7 @@ class DMN_No_Scan(object):
         print(" Building model... ")
         number_word_classes = max(self.idx2word.keys(), key=int) + 1
         max_fact_seqlen = max_article_len
-        dimension_word_embeddings = 10
+        dimension_word_embeddings = 5
         max_number_of_facts_read = 1
         self.initialization_randomization = 1
 
