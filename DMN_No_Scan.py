@@ -41,15 +41,8 @@ class DMN_No_Scan(object):
         num_hidden_units_questions = num_hidden_units_episodes
         num_hidden_units_words = num_hidden_units_questions
 
-        self.emb = theano.shared(name='embeddings_prob', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (number_word_classes, dimension_word_embeddings)).astype(theano.config.floatX))
-
-        self.h0_facts_reading_1 = theano.shared(name='h0_facts', value=np.zeros(nh, dtype=theano.config.floatX))
-        self.h0_facts_reading_2 = theano.shared(name='h0_facts', value=np.zeros(nh, dtype=theano.config.floatX))
-
-        # self.h0_facts = theano.shared(name='h0_facts', value=np.zeros(nh, dtype=theano.config.floatX))
-        self.h0_facts = [self.h0_facts_reading_1]
-        self.h0_episodes = theano.shared(name='h0_episodes', value=np.zeros(num_hidden_units_episodes, dtype=theano.config.floatX))
-        #self.h0 = theano.shared(name='h0', value=np.zeros(num_hidden_units_episodes, dtype=theano.config.floatX))
+        self.initialize_dmn_params(nh, num_hidden_units_words, num_hidden_units_facts, num_hidden_units_episodes, num_hidden_units_questions,
+                                   dimension_word_embeddings, dimension_fact_embeddings, max_fact_seqlen, max_number_of_episodes_read, number_word_classes)
 
         word_mask = T.lmatrix("word_mask")
         sentence_mask = T.lvector("sentence_mask")
@@ -559,7 +552,21 @@ class DMN_No_Scan(object):
         return X_train_vec, mask_sentences_train, mask_articles_train, Question_train_vec, Question_train_mask, Y_train_vec, X_test_vec, mask_sentences_test, mask_articles_test, Question_test_vec, Question_test_mask, Y_test_vec, word2idx, idx2word, len(word2idx), max_queslen, max_sentence_len, max_article_len
 
 
-    def initialize_dmn_params(self, num_hidden_units_words, num_hidden_units_facts, num_hidden_units_episodes, num_hidden_units_questions, dimension_word_embeddings, dimension_fact_embeddings, max_fact_seqlen, max_number_of_episodes_read, number_word_classes):
+    def initialize_dmn_params(self, nh, num_hidden_units_words, num_hidden_units_facts, num_hidden_units_episodes, num_hidden_units_questions, dimension_word_embeddings, dimension_fact_embeddings, max_fact_seqlen, max_number_of_episodes_read, number_word_classes):
+
+        # Initializers
+        self.emb = theano.shared(name='embeddings_prob', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (number_word_classes, dimension_word_embeddings)).astype(theano.config.floatX))
+        #self.h0_facts_reading_1 = theano.shared(name='h0_facts', value=np.zeros(nh, dtype=theano.config.floatX))
+        #self.h0_facts_reading_2 = theano.shared(name='h0_facts', value=np.zeros(nh, dtype=theano.config.floatX))
+        #self.h0_facts = [self.h0_facts_reading_1]
+        #self.h0_episodes = theano.shared(name='h0_episodes', value=np.zeros(num_hidden_units_episodes, dtype=theano.config.floatX))
+
+        self.emb_helper = theano.shared(name='embeddings_prob_helper', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (number_word_classes, dimension_word_embeddings)).astype(theano.config.floatX))
+        #self.h0_facts_reading_1_helper = theano.shared(name='h0_facts_helper', value=np.zeros(nh, dtype=theano.config.floatX))
+        #self.h0_facts_reading_2_helper = theano.shared(name='h0_facts_helper', value=np.zeros(nh, dtype=theano.config.floatX))
+        #self.h0_facts_helper = [self.h0_facts_reading_1]
+        #self.h0_episodes_helper = theano.shared(name='h0_episodes_helper', value=np.zeros(num_hidden_units_episodes, dtype=theano.config.floatX))
+
 
         # GRU Word Parameters
         self.W_word_reset_gate_h = theano.shared(name='W_word_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_words, num_hidden_units_words)).astype(theano.config.floatX))
@@ -586,7 +593,7 @@ class DMN_No_Scan(object):
         #self.h0_words = theano.shared(name='h0_episodes', value=np.zeros(num_hidden_units_words, dtype=theano.config.floatX))
         self.h0_words = theano.shared(name='h0_episodes', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (max_number_of_episodes_read, max_fact_seqlen, num_hidden_units_words)).astype(theano.config.floatX))
 
-        self.h0_words_helper = theano.shared(name='h0_episodes_helper', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (max_number_of_episodes_read, max_fact_seqlen, num_hidden_units_words)).astype(theano.config.floatX))
+        self.h0_words_helper = theano.shared(name='h0_words_helper', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (max_number_of_episodes_read, max_fact_seqlen, num_hidden_units_words)).astype(theano.config.floatX))
 
         # GRU Fact Parameters
         self.W_fact_reset_gate_h = theano.shared(name='W_fact_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, num_hidden_units_facts)).astype(theano.config.floatX))
