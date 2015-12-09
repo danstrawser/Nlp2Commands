@@ -31,7 +31,7 @@ class DMN_No_Scan(object):
         number_word_classes = max(self.idx2word.keys(), key=int) + 1
         max_fact_seqlen = max_article_len
         dimension_word_embeddings = 10
-        max_number_of_facts_read = 1
+        max_number_of_episodes_read = 1
         self.initialization_randomization = 1
 
         nh = 7 # Dimension of the hidden layer
@@ -45,9 +45,11 @@ class DMN_No_Scan(object):
 
         self.h0_facts_reading_1 = theano.shared(name='h0_facts', value=np.zeros(nh, dtype=theano.config.floatX))
         self.h0_facts_reading_2 = theano.shared(name='h0_facts', value=np.zeros(nh, dtype=theano.config.floatX))
-        self.h0_facts = [self.h0_facts_reading_1, self.h0_facts_reading_2]
 
+        # self.h0_facts = theano.shared(name='h0_facts', value=np.zeros(nh, dtype=theano.config.floatX))
+        self.h0_facts = [self.h0_facts_reading_1, self.h0_facts_reading_2]
         self.h0_episodes = theano.shared(name='h0_episodes', value=np.zeros(num_hidden_units_episodes, dtype=theano.config.floatX))
+        #self.h0 = theano.shared(name='h0', value=np.zeros(num_hidden_units_episodes, dtype=theano.config.floatX))
 
         word_mask = T.lmatrix("word_mask")
         sentence_mask = T.lvector("sentence_mask")
@@ -70,7 +72,8 @@ class DMN_No_Scan(object):
         self.W_word_to_fact_vector = theano.shared(name='W_word_to_fact_vector', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_words, num_hidden_units_episodes)).astype(theano.config.floatX))
         self.b_word_to_fact_vector = theano.shared(name='b_word_to_fact_vector', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, num_hidden_units_episodes).astype(theano.config.floatX))
 
-        self.h0_words = theano.shared(name='h0_episodes', value=np.zeros(num_hidden_units_words, dtype=theano.config.floatX))
+        #self.h0_words = theano.shared(name='h0_episodes', value=np.zeros(num_hidden_units_words, dtype=theano.config.floatX))
+        self.h0_words = theano.shared(name='h0_episodes', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (max_number_of_episodes_read, max_fact_seqlen, num_hidden_units_words)).astype(theano.config.floatX))
 
         # GRU Fact Parameters
         self.W_fact_reset_gate_h = theano.shared(name='W_fact_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, num_hidden_units_facts)).astype(theano.config.floatX))
@@ -136,9 +139,9 @@ class DMN_No_Scan(object):
             # h_cur = T.tanh(T.dot(self.W_fact_to_hidden, x_cur) + T.dot(self.W_hidden_to_hidden, h_prev))
             return h_cur
 
-        def fact_step(jdx, h_prev, f_mask, sentence_mask_local):
+        def fact_step(idx, jdx, h_prev, f_mask, sentence_mask_local):
 
-            state_word_step = self.h0_words
+            state_word_step = self.h0_words[idx][jdx]
             for kdx in range(max_sentlen):
                 state_word_step = word_step(self.emb[word_idxs[jdx][kdx]], state_word_step, sentence_mask_local[kdx])  # The error would be that self.emb is producing 1,29 and not 1,7
 
@@ -168,11 +171,11 @@ class DMN_No_Scan(object):
             # h_cur = T.tanh(T.dot(self.W_fact_to_hidden, x_cur) + T.dot(self.W_hidden_to_hidden, h_prev))
             return h_cur
 
-        def episode_step(h_prev, h0_fact):
+        def episode_step(idx, h_prev, h0_fact):
 
             state_fact_step = h0_fact
             for jdx in range(max_fact_seqlen):
-                state_fact_step = fact_step(jdx, state_fact_step, sentence_mask[jdx], word_mask[jdx])
+                state_fact_step = fact_step(idx, jdx, state_fact_step, sentence_mask[jdx], word_mask[jdx])
                 #state_fact_step = fact_step(x[jdx], state_fact_step, sentence_mask[jdx], word_mask[jdx])
 
             x_cur = T.tanh(T.dot(self.W_fact_to_episode, state_fact_step) + self.b_fact_to_episode)
@@ -198,8 +201,8 @@ class DMN_No_Scan(object):
         state_episode_step = self.h0_episodes  # Could give rise to problem if dimension is not correct
 
         # Reading over the facts
-        for idx in range(max_number_of_facts_read):
-            state_episode_step = episode_step(state_episode_step, self.h0_facts[idx])
+        for idx in range(max_number_of_episodes_read):
+            state_episode_step = episode_step(idx, state_episode_step, self.h0_facts[idx])
 
         output = T.nnet.softmax(T.dot(self.W_out, state_episode_step) + self.b_out)
         p_y_given_x_sentence = output[0, :]
