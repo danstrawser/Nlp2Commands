@@ -29,7 +29,7 @@ class DMN_No_Scan(object):
         print(" Building model... ")
         number_word_classes = max(self.idx2word.keys(), key=int) + 1
         max_fact_seqlen = max_article_len
-        dimension_word_embeddings = 5
+        dimension_word_embeddings = 10
         max_number_of_facts_read = 1
         self.initialization_randomization = 1
 
@@ -277,12 +277,12 @@ class DMN_No_Scan(object):
 
     def train(self):
         # self.X_train, self.mask_train, self.question_train, self.Y_train, self.X_test, self.mask_test, self.question_test, self.Y_test, word2idx, idx2word, dimension_fact_embeddings = self.process_data()
-        lr = .001
+        lr = .01
         max_epochs = 20000
 
         print(" Starting training...")
 
-        last_ll = 1000
+        last_ll = 100000
         for e in range(max_epochs):
             
             shuffled_idxs = [i for i in range(len(self.X_train))]           
@@ -333,7 +333,13 @@ class DMN_No_Scan(object):
 
             print("epoch , " , e, " training ll: ", ll, " ll improvement: ", last_ll - ll, " ratio correct: ", correct / total_tests)
             if last_ll < ll:
-                lr = 0.9 * lr            
+                lr = 0.95 * lr            
+            else:
+                lr *= 1
+            
+#             if e % 25 == 0:
+#                 lr /= 2
+                        
             last_ll = ll
 
 
