@@ -1,3 +1,4 @@
+from theano.gradient import disconnected_grad
 __author__ = 'Dan'
 
 from theano.compile.mode import FAST_COMPILE
@@ -21,15 +22,18 @@ class DMN_SimplerGate(object):
     # We take as input a string of "facts"
     def __init__(self, num_fact_hidden_units, number_word_classes, dimension_fact_embeddings, num_episode_hidden_units, max_number_of_facts_read):
         print(" Starting dmn no scan... ")
-        #self.preprocess_babi_set_for_dmn()
+        self.preprocess_babi_set_for_dmn()
 
         print(" Starting dmn no scidxsan... ")
         
-        self.X_train, self.mask_sentences_train, self.mask_articles_train, self.question_train, self.question_train_mask, self.Y_train, self.X_test, self.mask_sentences_test, self.mask_articles_test, self.question_test, self.question_test_mask, self.Y_test, word2idx, self.idx2word, dimension_fact_embeddings, max_queslen, max_sentlen, max_article_len = self.process_data("embeddings")
+        self.X_train, self.mask_sentences_train, self.fact_ordering_train, self.question_train, self.question_train_mask, self.Y_train, self.X_test, self.mask_sentences_test, self.fact_ordering_test, self.question_test, self.question_test_mask, self.Y_test, word2idx, self.idx2word, dimension_fact_embeddings, max_queslen, max_sentlen, total_sequence_length = self.process_data("embeddings")
                
         print(" Building model... ")
         number_word_classes = max(self.idx2word.keys(), key=int) + 1
-        max_fact_seqlen = max_article_len
+        #max_fact_seqlen = max_article_len
+        max_fact_seqlen = max_sentlen
+        
+        max_number_of_facts_read = 1
         dimension_word_embeddings = 10
         max_number_of_episodes_read = 1
         self.initialization_randomization = 1
@@ -41,12 +45,16 @@ class DMN_SimplerGate(object):
         num_hidden_units_questions = num_hidden_units_episodes
         num_hidden_units_words = num_hidden_units_questions
 
-        total_length_all_words = max_sentlen * max_fact_seqlen
+        total_len_word_seq = total_sequence_length
+                
+        self.initialize_dmn_params(nh, num_hidden_units_words, num_hidden_units_facts, num_hidden_units_episodes, num_hidden_units_questions, dimension_word_embeddings, dimension_fact_embeddings, max_fact_seqlen, max_number_of_episodes_read, number_word_classes)
+        
         question_encoding = self.GRU_question(dimension_fact_embeddings, num_hidden_units_questions, num_hidden_units_episodes, max_queslen, dimension_word_embeddings)
 
-        word_idxs = T.lvector("word_indices") # as many columns as words in the context window and as many lines as words in the sentence
-        word_mask = T.lvector("word_mask")
-        current_facts = T.lvector("fact_indices")
+        # Size is (num_episodes_read, word_idx_in_sentence)
+        word_idxs = T.lmatrix("word_indices") # as many columns as words in the context window and as many lines as words in the sentence
+        word_mask = T.lmatrix("word_mask")
+        facts_input = T.lvector("fact_indices")
 
         #sentence_mask = T.lvector("sentence_mask")
         y_sentence = T.lscalar('y_sentence')
@@ -77,17 +85,14 @@ class DMN_SimplerGate(object):
             # h_cur = T.tanh(T.dot(self.W_fact_to_hidden, x_cur) + T.dot(self.W_hidden_to_hidden, h_prev))
             return h_cur
 
-
         def brain_gru_reader(episode_reading_idx, h_prev):
 
             h_cur = question_encoding # Initial state of word GRU
-            jdx = 0
-            kdx = 0
             current_facts = None
 
-            for idx in range(total_length_all_words):
+            for idx in range(total_len_word_seq):
 
-                h_cur = gru_reader_step(self.emb[word_idxs[jdx][kdx]], h_cur, word_mask[idx])
+                h_cur = gru_reader_step(self.emb[word_idxs[episode_reading_idx][idx]], h_cur, word_mask[episode_reading_idx][idx])
 
                 if idx % max_fact_seqlen == 0:
                     output = T.tanh(T.dot(self.W_word_to_fact_vector, h_cur) + self.b_word_to_fact_vector)
@@ -95,13 +100,13 @@ class DMN_SimplerGate(object):
                     if current_facts is None:
                         current_facts = [output]  # Run through softmax
                     else:
-                        T.concatenate(current_facts, [output])
-
-
+                        current_facts = T.concatenate((current_facts, [output]), axis=0)
+                        
             z_dmn = T.concatenate(([question_encoding], [h_prev]), axis=0)
             G_dmn = T.nnet.sigmoid(T.dot(self.W_dmn_2, T.tanh(T.dot(self.W_dmn_1, z_dmn)) + self.b_dmn_1) + self.b_dmn_2)  # Note that this should be 1-dimensional
 
-            result_of_gate = T.nnet.softmax(T.dot(G_dmn * current_facts))  # Ensure that this has 1 dimension, should be weight of whether or not we take g_i * F_i
+
+            result_of_gate = T.nnet.softmax(T.dot(G_dmn, current_facts))  # Ensure that this has 1 dimension, should be weight of whether or not we take g_i * F_i
 
             list_of_fact_softmaxes.append(result_of_gate)
 
@@ -127,9 +132,10 @@ class DMN_SimplerGate(object):
 
         # Brain for loop
         state_episode_step = question_encoding
-        self.h0_facts = question_encoding
-        # Reading over the facts
-        for idx in range(max_number_of_episodes_read):
+        #self.h0_facts = question_encoding
+        
+        # Main Brain Loop
+        for idx in range(max_number_of_facts_read):
             state_episode_step = brain_gru_reader(idx, state_episode_step)
 
         output = T.nnet.softmax(T.dot(self.W_episode_to_word, state_episode_step) + self.b_episode_to_word)
@@ -140,160 +146,22 @@ class DMN_SimplerGate(object):
         sentence_nll = -T.mean(T.log(p_y_given_x_sentence)[y_sentence])
 
         fact_nll = 0
-        for idx in current_facts:
-            fact_nll += -T.mean(T.log(list_of_fact_softmaxes[idx])[current_facts[idx]])
+        for idx in range(max_number_of_facts_read):
+            fact_nll += -T.mean(T.log(list_of_fact_softmaxes[idx])[facts_input[idx]])
 
-        fact_grads = T.grad(fact_nll, self.params)
-        fact_updates = OrderedDict((p, p - lr*g) for p, g in zip(self.params, fact_grads))  # computes the update for each of the params.
-
-        # gparams = []
-        # for param in self.params:
-        #     gparam = T.grad(sentence_nll, param)
-        #     gparams.append(gparam)
-        # sentence_updates = []
-        # rho = 0.01
-        # for param, param_helper, gparam in zip(self.params, self.params_helper, gparams):
-        #     sentence_updates.append((param_helper, param_helper + gparam ** 2))
-        #     sentence_updates.append((param, param - lr * gparam * rho / (rho + (param_helper + gparam**2) ** 0.5)))
+        fact_grads = T.grad(fact_nll, self.fact_params)
+        fact_updates = OrderedDict((p, p - lr*g) for p, g in zip(self.fact_params, fact_grads))  # computes the update for each of the params.
 
         sentence_gradients = T.grad(sentence_nll, self.params)  # Returns gradients of the nll w.r.t the params
         sentence_updates = OrderedDict((p, p - lr*g) for p, g in zip(self.params, sentence_gradients))  # computes the update for each of the params.
 
         print("Compiling fcns...")
         self.classify = theano.function(inputs=[word_idxs, word_mask, self.question_idxs, self.question_mask], outputs=y_pred)
+                                
         self.sentence_train = theano.function(inputs=[word_idxs, word_mask, self.question_idxs, self.question_mask, y_sentence, lr], outputs=sentence_nll, updates=sentence_updates)
-        self.fact_train = theano.function(inputs=[word_idxs, word_mask, self.question_idxs, self.question_mask, y_sentence, lr], outputs=fact_nll, updates=fact_updates)
-        print("Done compiling!")
-
-
-        self.initialize_dmn_params(nh, num_hidden_units_words, num_hidden_units_facts, num_hidden_units_episodes, num_hidden_units_questions,
-                                   dimension_word_embeddings, dimension_fact_embeddings, max_fact_seqlen, max_number_of_episodes_read, number_word_classes)
-
-
-        #x = self.emb[word_idxs].reshape((word_idxs.shape[0], de*cs)) # x basically represents the embeddings of the words IN the current sentence.  So it is shape
-
-        #self.W_fact_to_hidden = theano.shared(name='W_fact_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (dimension_fact_embeddings, num_hidden_units_facts)).astype(theano.config.floatX))
-        #self.W_hidden_to_hidden = theano.shared(name='W_fact_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, num_hidden_units_facts)).astype(theano.config.floatX))
-
-        question_encoding = self.GRU_question(dimension_fact_embeddings, num_hidden_units_questions, num_hidden_units_episodes, max_queslen, dimension_word_embeddings)
-
-        def slice_w(x, n):
-            return x[n*num_hidden_units_facts:(n+1)*num_hidden_units_facts]
-
-        def word_step(x_cur_word, h_prev, w_mask):
-
-            W_in_stacked = T.concatenate([self.W_word_reset_gate_x, self.W_word_update_gate_x, self.W_word_hidden_gate_x], axis=1)  # I think your issue is that this should have # dim word embeddings
-            W_hid_stacked = T.concatenate([self.W_word_reset_gate_h, self.W_word_update_gate_h, self.W_word_hidden_gate_h], axis=1)
-
-            input_n = T.dot(x_cur_word, W_in_stacked)
-            hid_input = T.dot(h_prev, W_hid_stacked)
-
-            resetgate = slice_w(hid_input, 0) + slice_w(input_n, 0)
-            updategate = slice_w(hid_input, 1) + slice_w(input_n, 1)
-            resetgate = T.tanh(resetgate)
-            updategate = T.tanh(updategate)
-
-            hidden_update = slice_w(input_n, 2) + resetgate * slice_w(hid_input, 2)
-            hidden_update = T.tanh(hidden_update)
-            h_cur = (1 - updategate) * hidden_update + updategate * hidden_update
-
-            h_cur = w_mask * h_cur + (1 - w_mask) * h_prev
-            # h_cur = T.tanh(T.dot(self.W_fact_to_hidden, x_cur) + T.dot(self.W_hidden_to_hidden, h_prev))
-            return h_cur
-
-        def fact_step(idx, jdx, h_prev, f_mask, sentence_mask_local):
-
-            state_word_step = self.h0_words[idx][jdx]
-            for kdx in range(max_sentlen):
-                state_word_step = word_step(self.emb[word_idxs[jdx][kdx]], state_word_step, sentence_mask_local[kdx])  # The error would be that self.emb is producing 1,29 and not 1,7
-
-            x_cur = T.tanh(T.dot(self.W_word_to_fact_vector, state_word_step) + self.b_word_to_fact_vector)
-
-            W_in_stacked = T.concatenate([self.W_fact_reset_gate_x, self.W_fact_update_gate_x, self.W_fact_hidden_gate_x], axis=1)
-            W_hid_stacked = T.concatenate([self.W_fact_reset_gate_h, self.W_fact_update_gate_h, self.W_fact_hidden_gate_h], axis=1)
-
-            input_n = T.dot(x_cur, W_in_stacked)
-            hid_input = T.dot(h_prev, W_hid_stacked)
-
-            resetgate = slice_w(hid_input, 0) + slice_w(input_n, 0)
-            updategate = slice_w(hid_input, 1) + slice_w(input_n, 1)
-            resetgate = T.tanh(resetgate)
-            updategate = T.tanh(updategate)
-
-            hidden_update = slice_w(input_n, 2) + resetgate * slice_w(hid_input, 2)
-            hidden_update = T.tanh(hidden_update)
-            h_cur = (1 - updategate) * hidden_update + updategate * hidden_update
-
-            #z_dmn = T.concatenate(([question_encoding], [x_cur], []), axis=0)
-
-            z_dmn = T.concatenate(([question_encoding], [x_cur]), axis=0)
-
-            G_dmn = T.nnet.sigmoid(T.dot(self.W_dmn_2, T.tanh(T.dot(self.W_dmn_1, z_dmn)) + self.b_dmn_1) + self.b_dmn_2)
-            h_cur = T.dot(G_dmn, h_cur) + T.dot((1 - G_dmn), h_prev)
-
-            h_cur = f_mask * h_cur + (1 - f_mask) * h_prev
-            # h_cur = T.tanh(T.dot(self.W_fact_to_hidden, x_cur) + T.dot(self.W_hidden_to_hidden, h_prev))
-            return h_cur
-
-        def episode_step(idx, h_prev, h0_fact):
-
-            state_fact_step = h0_fact
-            for jdx in range(max_fact_seqlen):
-                state_fact_step = fact_step(idx, jdx, state_fact_step, sentence_mask[jdx], word_mask[jdx])
-                #state_fact_step = fact_step(x[jdx], state_fact_step, sentence_mask[jdx], word_mask[jdx])
-
-            x_cur = T.tanh(T.dot(self.W_fact_to_episode, state_fact_step) + self.b_fact_to_episode)
-
-            W_in_stacked = T.concatenate([self.W_episode_reset_gate_x, self.W_episode_update_gate_x, self.W_episode_hidden_gate_x], axis=1)
-            W_hid_stacked = T.concatenate([self.W_episode_reset_gate_h, self.W_episode_update_gate_h, self.W_episode_hidden_gate_h], axis=1)
-
-            input_n = T.dot(x_cur, W_in_stacked)
-            hid_input = T.dot(h_prev, W_hid_stacked)
-
-            resetgate = slice_w(hid_input, 0) + slice_w(input_n, 0)
-            updategate = slice_w(hid_input, 1) + slice_w(input_n, 1)
-            resetgate = T.tanh(resetgate)
-            updategate = T.tanh(updategate)
-
-            hidden_update = slice_w(input_n, 2) + resetgate * slice_w(hid_input, 2)
-            hidden_update = T.tanh(hidden_update)
-            h_cur = (1 - updategate) * hidden_update + updategate * hidden_update
-
-            # h_cur = T.tanh(T.dot(self.W_fact_to_hidden, x_cur) + T.dot(self.W_hidden_to_hidden, h_prev))
-            return h_cur
-
-        #state_episode_step = self.h0_episodes  # Could give rise to problem if dimension is not correct
-        state_episode_step = question_encoding
-        self.h0_facts = question_encoding
-        # Reading over the facts
-        for idx in range(max_number_of_episodes_read):
-            state_episode_step = episode_step(idx, state_episode_step, self.h0_facts)
-
-        output = T.nnet.softmax(T.dot(self.W_out, state_episode_step) + self.b_out)
-        p_y_given_x_sentence = output[0, :]
-
-        # err = (state - y_sentence) ** 2
-        # updates = theano.OrderedUpdates()
-        y_pred = T.argmax(p_y_given_x_sentence, axis=0)
-        lr = T.scalar('lr')
-        sentence_nll = -T.mean(T.log(p_y_given_x_sentence)[y_sentence])
-
-        gparams = []
-        for param in self.params:
-            gparam = T.grad(sentence_nll, param)
-            gparams.append(gparam)
-        sentence_updates = []
-        rho = 0.01
-        for param, param_helper, gparam in zip(self.params, self.params_helper, gparams):
-            sentence_updates.append((param_helper, param_helper + gparam ** 2))
-            sentence_updates.append((param, param - lr * gparam * rho / (rho + (param_helper + gparam**2) ** 0.5)))
-
-        #sentence_gradients = T.grad(sentence_nll, self.params)  # Returns gradients of the nll w.r.t the params
-        #sentence_updates = OrderedDict((p, p - lr*g) for p, g in zip(self.params, sentence_gradients))  # computes the update for each of the params.
-
-        print("Compiling fcns...")
-        self.classify = theano.function(inputs=[word_idxs, sentence_mask, word_mask, self.question_idxs, self.question_mask], outputs=y_pred)
-        self.sentence_train = theano.function(inputs=[word_idxs, sentence_mask, word_mask, self.question_idxs, self.question_mask, y_sentence, lr], outputs=sentence_nll, updates=sentence_updates)
+        
+        # The problem is here
+        self.fact_train = theano.function(inputs=[word_idxs, word_mask, facts_input, self.question_idxs, self.question_mask, lr], outputs=fact_nll, updates=fact_updates)
         print("Done compiling!")
 
 
@@ -341,12 +209,9 @@ class DMN_SimplerGate(object):
 
     def train(self):
         # self.X_train, self.mask_train, self.question_train, self.Y_train, self.X_test, self.mask_test, self.question_test, self.Y_test, word2idx, idx2word, dimension_fact_embeddings = self.process_data()
-
         lr = .01
         max_epochs = 20000
-
         print(" Starting training...")
-
         last_ll = 100000
         for e in range(max_epochs):
             
@@ -355,14 +220,21 @@ class DMN_SimplerGate(object):
             ll = 0
             num_train_correct, tot_num_train = 0, 0
             
+            ll_fact = 0
             for idx in shuffled_idxs:
-                x, word_mask, sentence_mask, q, mask_question, y = self.X_train[idx], self.mask_sentences_train[idx], self.mask_articles_train[idx], self.question_train[idx], self.question_train_mask[idx], self.Y_train[idx]
-                ll += self.sentence_train(x, sentence_mask, word_mask, q, mask_question, y, lr)
+                x, word_mask, fact_ordering, q, mask_question, y = self.X_train[idx], self.mask_sentences_train[idx], self.fact_ordering_train[idx], self.question_train[idx], self.question_train_mask[idx], self.Y_train[idx]
+                ll_fact += self.fact_train([x], [word_mask], fact_ordering, q, mask_question, lr)
+            
+            print(" This is the ll fact: ", ll_fact)
+            
+            for idx in shuffled_idxs:
+                x, word_mask, fact_ordering, q, mask_question, y = self.X_train[idx], self.mask_sentences_train[idx], self.fact_ordering_train[idx], self.question_train[idx], self.question_train_mask[idx], self.Y_train[idx]
+                ll += self.sentence_train([x], [word_mask], fact_ordering, q, mask_question, y, lr)
             
             shuffle(shuffled_idxs)
             for idx in shuffled_idxs:
-                x, word_mask, sentence_mask, q, mask_question, y = self.X_train[idx], self.mask_sentences_train[idx], self.mask_articles_train[idx], self.question_train[idx], self.question_train_mask[idx], self.Y_train[idx]
-                predictions_test = self.classify(x, sentence_mask, word_mask, q, mask_question)
+                x, word_mask, fact_ordering, q, mask_question, y = self.X_train[idx], self.mask_sentences_train[idx], self.fact_ordering_train[idx], self.question_train[idx], self.question_train_mask[idx], self.Y_train[idx]
+                predictions_test = self.classify(x, word_mask, q, mask_question)
                 if predictions_test == y:
                     num_train_correct += 1
                 tot_num_train += 1
@@ -378,8 +250,8 @@ class DMN_SimplerGate(object):
             correct = 0
             total_tests = 0
             for idx in range(len(self.X_test)):
-                x, word_mask, sentence_mask, q, mask_question, y = self.X_test[idx], self.mask_sentences_test[idx], self.mask_articles_test[idx], self.question_test[idx], self.question_test_mask[idx], self.Y_test[idx]
-                predictions_test = self.classify(x, sentence_mask, word_mask, q, mask_question)
+                x, word_mask, fact_ordering, q, mask_question, y = self.X_test[idx], self.mask_sentences_test[idx], self.fact_ordering_test[idx], self.question_test[idx], self.question_test_mask[idx], self.Y_test[idx]
+                predictions_test = self.classify(x, word_mask, fact_ordering, q, mask_question)
 
 #                 if e % 5 == 0:
 #                     if predictions_test != y:
@@ -442,13 +314,18 @@ class DMN_SimplerGate(object):
                             if cur_name not in sent:
                                 written_sents.append(sent)
                                 break
+                        flipped = 0
                         if len(written_sents) > 1:
+                                                        
                             if random.random() < 0.5:
+                                flipped = 1
                                 tmp = written_sents[0]
                                 written_sents[0] = written_sents[1]
                                 written_sents[1] = tmp
                         for w in written_sents:
-                            b.write(w)                            
+                            b.write(w)
+                                                    
+                        b.write("$ " + str(flipped) +"\n")
                     else:
                         for sent in cur_article:
                             b.write(sent)
@@ -467,6 +344,8 @@ class DMN_SimplerGate(object):
 
         X_train, mask_sentences_train, mask_articles_train, Question_train, Question_train_mask, Y_train, X_test, mask_sentences_test, mask_articles_test, Question_test, Question_test_mask, Y_test, max_queslen = [], [], [], [], [], [], [], [], [], [], [], [], 0
 
+        fact_ordering_train, fact_ordering_test = [], []
+
         cur_idx = 1
         word2idx = {}
         idx2word = {}
@@ -482,15 +361,17 @@ class DMN_SimplerGate(object):
         with open(filename_train, encoding='utf-8') as f:
             cur_article = []
             for line in f:
-                if "?" not in line and "@" not in line:
+                if "?" not in line and "@" not in line and "$" not in line:
                     cur_sentence = []
                     for w in tokenizer.tokenize(line):
                         cur_sentence.append(w.strip().lower())
                     cur_article.append(cur_sentence)
                     if len(cur_sentence) > max_sentence_len:
                         max_sentence_len = len(cur_sentence)
-                else:
-                    question_phrase = line[2:].split()
+                else:                    
+                    fact_ordering_train.append(np.asarray([int(line[2:])], dtype='int32'))
+                    
+                    question_phrase = next(f)[2:].split()
                     cur_question = []
 
                     if len(cur_article) > max_article_len:
@@ -508,7 +389,7 @@ class DMN_SimplerGate(object):
         with open(filename_test, encoding='utf-8') as f:
             cur_article = []
             for line in f:
-                if "?" not in line and "@" not in line:
+                if "?" not in line and "@" not in line and "$" not in line:
                     cur_sentence = []
                     for w in tokenizer.tokenize(line):
                         cur_sentence.append(w.strip().lower())
@@ -516,7 +397,9 @@ class DMN_SimplerGate(object):
                     if len(cur_sentence) > max_sentence_len:
                         max_sentence_len = len(cur_sentence)
                 else:
-                    question_phrase = line[2:].split()
+                    fact_ordering_test.append(np.asarray([int(line[2:])], dtype='int32'))
+                    
+                    question_phrase = next(f)[2:].split()
                     cur_question = []
                     if len(cur_article) > max_article_len:
                         max_article_len = len(cur_article)
@@ -529,27 +412,7 @@ class DMN_SimplerGate(object):
                     X_test.append(cur_article)
                     Y_test.append(next(f)[2:].strip())
                     cur_article = []
-
-        for article in X_train:
-            cur_mask_article = np.zeros(max_article_len, dtype='int32')
-            cur_mask_article[0:len(article)] = 1
-            mask_articles_train.append(cur_mask_article)
-
-            set_of_sentence_masks = np.zeros((max_article_len, max_sentence_len),dtype='int32')
-            for idx, sentence in enumerate(article):
-                set_of_sentence_masks[idx, 0:len(sentence)] = 1
-            mask_sentences_train.append(set_of_sentence_masks)
-
-        for article in X_test:
-            cur_mask_article = np.zeros(max_article_len, dtype='int32')
-            cur_mask_article[0:len(article)] = 1
-            mask_articles_test.append(cur_mask_article)
-
-            set_of_sentence_masks = np.zeros((max_article_len, max_sentence_len),dtype='int32')
-            for idx, sentence in enumerate(article):
-                set_of_sentence_masks[idx, 0:len(sentence)] = 1
-            mask_sentences_test.append(set_of_sentence_masks)
-
+                                        
         for l in Question_train:
             cur_mask = np.zeros(max_queslen, dtype='int32')
             cur_mask[0:len(l)] = 1
@@ -656,41 +519,59 @@ class DMN_SimplerGate(object):
             new_question_test_vec.append(q)
         Question_test_vec = new_question_test_vec
 
-        # # These are to add zeros where we don't currently have elements
-        # new_x_train_vec = []
-        # for f in X_train_vec:
-        #     for added_el in range(len(f), max_article_len):
-        #         f = np.concatenate((f, [[0]]), axis=0)
-        #     new_x_train_vec.append(f)
-        # X_train_vec = new_x_train_vec
-        #
-        # new_x_test_vec = []
-        # for f in X_test_vec:
-        #     for added_el in range(len(f), max_article_len):
-        #         f = np.concatenate((f, [[0]]), axis=0)
-        #     new_x_test_vec.append(f)
-        # X_test_vec = new_x_test_vec
-
         assert(len(X_test_vec) == len(Y_test_vec))
 
         # TODO: What needs edited:  the x_train_vec, x_test_vec, x_mask
+        total_sequence_length = max_sentence_len * max_article_len + max_article_len
+        max_sentence_len = max_sentence_len +1 
 
-        X_train_vec_new, mask_sentences_train_new, X_test_vec_new,mask_sentence_test_new = [], [], [], []
+        for article in X_train:
+            cur_mask_sentence = np.zeros(0, dtype='int32')
+            for sentence in article: 
+                cur_mask_sentence_new = np.zeros(max_sentence_len, dtype='int32')
+                cur_mask_sentence_new[0:len(sentence)] = 1
+                cur_mask_sentence_new[-1] = 1
+                cur_mask_sentence = np.concatenate((cur_mask_sentence, cur_mask_sentence_new), axis=0)
+            if len(cur_mask_sentence) < total_sequence_length:
+                cur_mask_sentence = np.concatenate((cur_mask_sentence, [0, 0, 0, 0, 0, 0, 1] ), axis=0)
+            mask_sentences_train.append(cur_mask_sentence)
 
-        for x in X_train:
+        for article in X_test:
+            cur_mask_sentence = np.zeros(0, dtype='int32')
+            for sentence in article: 
+                cur_mask_sentence_new = np.zeros(max_sentence_len + 1, dtype='int32')
+                cur_mask_sentence_new[0:len(sentence)] = 1
+                cur_mask_sentence_new[-1] = 1
+                cur_mask_sentence = np.concatenate((cur_mask_sentence, cur_mask_sentence_new), axis=0)
+            if len(cur_mask_sentence) < total_sequence_length:
+                cur_mask_sentence = np.concatenate((cur_mask_sentence, [0, 0, 0, 0, 0, 0, 1] ), axis=0)
+            mask_sentences_test.append(cur_mask_sentence)
 
+        #X_train_vec_new, X_test_vec_new = [], []
+        X_train_vec_new = np.zeros((len(X_train_vec), total_sequence_length),dtype='int32')
+        X_test_vec_new = np.zeros((len(X_train_vec), total_sequence_length),dtype='int32')
+        
+        for idx, x in enumerate(X_train_vec):
+            cur_sentence = np.zeros(total_sequence_length, dtype='int32')
+            for jdx, s in enumerate(x): 
+                res =  [word2idx["<EOS>"]]
+                cur_sentence[jdx * (max_sentence_len): (jdx + 1) * (max_sentence_len)] = np.concatenate((s, res), axis=1)
+            X_train_vec_new[idx, :] = cur_sentence
+        
+        for idx, x in enumerate(X_test_vec):
+            cur_sentence = np.zeros(total_sequence_length, dtype='int32')
+            for jdx, s in enumerate(x): 
+                res =  [word2idx["<EOS>"]]
+                cur_sentence[jdx * (max_sentence_len): (jdx + 1) * (max_sentence_len)] = np.concatenate((s, res), axis=1)
+            X_test_vec_new[idx, :] = cur_sentence
 
-
-        assert(1 == 2)
-
-
-
-
-
-
-
-
-        return X_train_vec, mask_sentences_train, mask_articles_train, Question_train_vec, Question_train_mask, Y_train_vec, X_test_vec, mask_sentences_test, mask_articles_test, Question_test_vec, Question_test_mask, Y_test_vec, word2idx, idx2word, len(word2idx), max_queslen, max_sentence_len, max_article_len
+        X_train_vec = X_train_vec_new
+        X_test_vec = X_test_vec_new
+        
+        assert(len(X_train_vec[0]) == total_sequence_length)
+        assert(total_sequence_length == max_article_len * max_sentence_len)
+        
+        return X_train_vec, mask_sentences_train, fact_ordering_train, Question_train_vec, Question_train_mask, Y_train_vec, X_test_vec, mask_sentences_test, fact_ordering_test, Question_test_vec, Question_test_mask, Y_test_vec, word2idx, idx2word, len(word2idx), max_queslen, max_sentence_len, total_sequence_length
 
 
     def initialize_dmn_params(self, nh, num_hidden_units_words, num_hidden_units_facts, num_hidden_units_episodes, num_hidden_units_questions, dimension_word_embeddings, dimension_fact_embeddings, max_fact_seqlen, max_number_of_episodes_read, number_word_classes):
@@ -728,8 +609,8 @@ class DMN_SimplerGate(object):
         self.W_episode_hidden_gate_h = theano.shared(name='W_episode_hidden_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, num_hidden_units_episodes)).astype(theano.config.floatX))
         self.W_episode_hidden_gate_x = theano.shared(name='W_episode_hidden_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, dimension_fact_embeddings)).astype(theano.config.floatX))
 
-        self.W_episode_to_words = theano.shared(name='W_fact_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (number_word_classes, num_hidden_units_facts)).astype(theano.config.floatX))
-        self.b_episode_to_words = theano.shared(name='W_fact_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, number_word_classes).astype(theano.config.floatX))
+        self.W_episode_to_word = theano.shared(name='W_fact_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (number_word_classes, num_hidden_units_facts)).astype(theano.config.floatX))
+        self.b_episode_to_word = theano.shared(name='W_fact_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, number_word_classes).astype(theano.config.floatX))
 
         # DMN Gate Parameters
         num_rows_z_dmn = 2
@@ -743,7 +624,7 @@ class DMN_SimplerGate(object):
 
         self.params = [self.W_word_reset_gate_h, self.W_word_reset_gate_x, self.W_word_update_gate_h, self.W_word_update_gate_x, self.W_word_hidden_gate_h, self.W_word_hidden_gate_x,
                        self.W_word_to_fact_vector, self.b_word_to_fact_vector, self.W_episode_reset_gate_h, self.W_episode_reset_gate_x, self.W_episode_update_gate_h, self.W_episode_update_gate_x,
-                       self.W_episode_hidden_gate_h, self.W_episode_hidden_gate_x, self.W_episode_to_words, self.b_episode_to_words, self.W_dmn_1, self.W_dmn_2, self.b_dmn_1, self.b_dmn_2]
+                       self.W_episode_hidden_gate_h, self.W_episode_hidden_gate_x, self.W_episode_to_word, self.b_episode_to_word, self.W_dmn_1, self.W_dmn_2, self.b_dmn_1, self.b_dmn_2]
 
         # Question GRU Parameters
         self.W_question_reset_gate_h = theano.shared(name='W_question_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_questions, num_hidden_units_questions)).astype(theano.config.floatX))
@@ -760,4 +641,9 @@ class DMN_SimplerGate(object):
 
         self.params.extend((self.W_question_reset_gate_h, self.W_question_reset_gate_x, self.W_question_update_gate_h, self.W_question_update_gate_x, self.W_question_hidden_gate_h, self.W_question_hidden_gate_x,
                             self.W_question_to_vector, self.b_question_to_vector, self.h0_questions))
+        
+        self.fact_params = [self.W_question_reset_gate_x, self.W_question_reset_gate_h, self.W_question_update_gate_h, self.W_question_update_gate_x, self.W_question_hidden_gate_h, self.W_question_hidden_gate_x, 
+                            self.W_question_to_vector, self.b_question_to_vector, self.h0_questions, self.emb, self.W_dmn_1, self.W_dmn_2, self.b_dmn_1, self.b_dmn_2, self.W_word_to_fact_vector, self.b_word_to_fact_vector,                                    
+                            self.W_word_reset_gate_h, self.W_word_reset_gate_x, self.W_word_update_gate_h, self.W_word_update_gate_x, self.W_word_hidden_gate_h, self.W_word_hidden_gate_x]
+
 
