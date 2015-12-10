@@ -32,9 +32,9 @@ Sandra went to the bathroom.
 $ 1
 @ Where is Sandra
 ? bathroom
-John travelled to the office.
 Sandra went to the bathroom.
-$ 1
+John travelled to the office.
+$ 0
 @ Where is Sandra
 ? bathroom
 Daniel travelled to the hallway.
@@ -42,9 +42,9 @@ John travelled to the office.
 $ 1
 @  Where is John
 ? office
-John travelled to the office.
 Daniel travelled to the hallway.
-$ 1
+John travelled to the office.
+$ 0
 @  Where is Daniel
 ? hallway
 Mary went to the bedroom.
@@ -67,23 +67,23 @@ John journeyed to the bathroom.
 $ 1
 @  Where is John
 ? bathroom
-Mary moved to the office.
 Sandra went back to the bedroom.
-$ 1
+Mary moved to the office.
+$ 0
 @  Where is Sandra
 ? bedroom
 Daniel journeyed to the bedroom.
 $ 0
 @ Where is Daniel
 ? bedroom
-Sandra went back to the kitchen.
 Daniel journeyed to the bedroom.
-$ 0
+Sandra went back to the kitchen.
+$ 1
 @ Where is Sandra
 ? kitchen
-Daniel travelled to the office.
 Sandra went back to the hallway.
-$ 1
+Daniel travelled to the office.
+$ 0
 @ Where is Sandra
 ? hallway
 Daniel went to the bathroom.
@@ -101,29 +101,29 @@ John journeyed to the bathroom.
 $ 1
 @ Where is John
 ? bathroom
-John moved to the kitchen.
 Mary moved to the garden.
-$ 1
+John moved to the kitchen.
+$ 0
 @ Where is Mary
 ? garden
-John moved to the kitchen.
 Mary travelled to the bedroom.
-$ 0
+John moved to the kitchen.
+$ 1
 @ Where is John
 ? kitchen
-Sandra went to the hallway.
 John moved to the garden.
-$ 0
+Sandra went to the hallway.
+$ 1
 @  Where is Sandra
 ? hallway
-John journeyed to the office.
 Sandra went to the office.
-$ 0
+John journeyed to the office.
+$ 1
 @  Where is John
 ? office
-Mary moved to the garden.
 Daniel journeyed to the bathroom.
-$ 1
+Mary moved to the garden.
+$ 0
 @ Where is Daniel
 ? bathroom
 Daniel journeyed to the bathroom.
@@ -131,9 +131,9 @@ John went back to the bedroom.
 $ 1
 @ Where is John
 ? bedroom
-John moved to the office.
 Daniel went back to the garden.
-$ 1
+John moved to the office.
+$ 0
 @ Where is Daniel
 ? garden
 John went back to the hallway.
@@ -141,9 +141,9 @@ Mary went to the office.
 $ 0
 @  Where is John
 ? hallway
-John travelled to the garden.
 Daniel went back to the garden.
-$ 1
+John travelled to the garden.
+$ 0
 @  Where is Daniel
 ? garden
 John moved to the bedroom.
@@ -151,9 +151,9 @@ Mary moved to the hallway.
 $ 1
 @ Where is Mary
 ? hallway
-Mary moved to the hallway.
 Sandra travelled to the kitchen.
-$ 1
+Mary moved to the hallway.
+$ 0
 @ Where is Sandra
 ? kitchen
 Daniel journeyed to the bathroom.
@@ -161,19 +161,19 @@ Sandra moved to the bathroom.
 $ 0
 @ Where is Daniel
 ? bathroom
-John moved to the kitchen.
 Daniel went back to the garden.
-$ 0
+John moved to the kitchen.
+$ 1
 @  Where is John
 ? kitchen
-John moved to the kitchen.
 Daniel journeyed to the garden.
-$ 1
+John moved to the kitchen.
+$ 0
 @  Where is Daniel
 ? garden
-John went back to the bedroom.
 Mary went to the kitchen.
-$ 1
+John went back to the bedroom.
+$ 0
 @ Where is Mary
 ? kitchen
 Mary moved to the hallway.
@@ -181,9 +181,9 @@ John went back to the bedroom.
 $ 1
 @ Where is John
 ? bedroom
-John went to the kitchen.
 Daniel travelled to the bedroom.
-$ 1
+John went to the kitchen.
+$ 0
 @ Where is Daniel
 ? bedroom
 Sandra moved to the bedroom.
@@ -191,9 +191,9 @@ John went to the kitchen.
 $ 1
 @  Where is John
 ? kitchen
-Sandra journeyed to the kitchen.
 John moved to the bedroom.
-$ 0
+Sandra journeyed to the kitchen.
+$ 1
 @  Where is Sandra
 ? kitchen
 Daniel travelled to the office.
@@ -204,28 +204,28 @@ Daniel journeyed to the office.
 $ 0
 @ Where is Daniel
 ? office
-Sandra journeyed to the kitchen.
 Daniel journeyed to the office.
-$ 1
+Sandra journeyed to the kitchen.
+$ 0
 @ Where is Daniel
 ? office
-Sandra journeyed to the kitchen.
 Daniel journeyed to the hallway.
-$ 0
+Sandra journeyed to the kitchen.
+$ 1
 @  Where is Sandra
 ? kitchen
-Sandra went back to the bathroom.
 Daniel journeyed to the hallway.
-$ 1
+Sandra went back to the bathroom.
+$ 0
 @  Where is Daniel
 ? hallway
 Sandra journeyed to the bedroom.
 $ 0
 @ Where is Sandra
 ? bedroom
-John journeyed to the bedroom.
 Sandra journeyed to the bedroom.
-$ 1
+John journeyed to the bedroom.
+$ 0
 @ Where is Sandra
 ? bedroom
 John went to the kitchen.
@@ -233,14 +233,14 @@ Mary went back to the kitchen.
 $ 0
 @ Where is John
 ? kitchen
-Daniel travelled to the kitchen.
 Sandra travelled to the bathroom.
-$ 1
+Daniel travelled to the kitchen.
+$ 0
 @  Where is Sandra
 ? bathroom
-John went back to the garden.
 Daniel travelled to the kitchen.
-$ 1
+John went back to the garden.
+$ 0
 @  Where is Daniel
 ? kitchen
 Mary moved to the garden.
@@ -253,9 +253,9 @@ Sandra went to the office.
 $ 1
 @ Where is Sandra
 ? office
-John travelled to the office.
 Sandra went to the office.
-$ 1
+John travelled to the office.
+$ 0
 @ Where is Sandra
 ? office
 Daniel moved to the office.
@@ -263,9 +263,9 @@ John travelled to the office.
 $ 1
 @  Where is John
 ? office
-Sandra went to the office.
 John travelled to the office.
-$ 1
+Sandra went to the office.
+$ 0
 @  Where is John
 ? office
 Mary went back to the office.
@@ -278,9 +278,9 @@ Mary journeyed to the hallway.
 $ 1
 @ Where is Mary
 ? hallway
-John went to the hallway.
 Mary travelled to the office.
-$ 0
+John went to the hallway.
+$ 1
 @ Where is John
 ? hallway
 Sandra travelled to the office.
@@ -293,9 +293,9 @@ Mary went back to the hallway.
 $ 1
 @  Where is Mary
 ? hallway
-Sandra moved to the hallway.
 John moved to the hallway.
-$ 1
+Sandra moved to the hallway.
+$ 0
 @ Where is John
 ? hallway
 John journeyed to the bathroom.
@@ -303,9 +303,9 @@ Daniel went back to the bedroom.
 $ 0
 @ Where is John
 ? bathroom
-Daniel went back to the bedroom.
 Mary journeyed to the garden.
-$ 0
+Daniel went back to the bedroom.
+$ 1
 @ Where is Daniel
 ? bedroom
 Sandra journeyed to the garden.
@@ -313,14 +313,14 @@ Daniel went back to the bedroom.
 $ 1
 @  Where is Daniel
 ? bedroom
-John journeyed to the kitchen.
 Sandra went to the kitchen.
-$ 0
+John journeyed to the kitchen.
+$ 1
 @  Where is John
 ? kitchen
-Daniel went to the kitchen.
 Mary travelled to the hallway.
-$ 0
+Daniel went to the kitchen.
+$ 1
 @ Where is Daniel
 ? kitchen
 Mary went back to the bathroom.
@@ -333,9 +333,9 @@ John moved to the garden.
 $ 0
 @ Where is Daniel
 ? garden
-Daniel moved to the kitchen.
 Mary travelled to the office.
-$ 0
+Daniel moved to the kitchen.
+$ 1
 @  Where is Daniel
 ? kitchen
 Sandra travelled to the bathroom.
@@ -352,14 +352,14 @@ Mary moved to the office.
 $ 1
 @ Where is Mary
 ? office
-Daniel moved to the office.
 Sandra journeyed to the bathroom.
-$ 1
+Daniel moved to the office.
+$ 0
 @ Where is Sandra
 ? bathroom
-Daniel went back to the kitchen.
 Mary moved to the hallway.
-$ 1
+Daniel went back to the kitchen.
+$ 0
 @  Where is Mary
 ? hallway
 Sandra went to the office.
@@ -372,29 +372,29 @@ Sandra went to the garden.
 $ 1
 @ Where is Sandra
 ? garden
-Mary travelled to the hallway.
 Sandra moved to the bathroom.
-$ 0
+Mary travelled to the hallway.
+$ 1
 @ Where is Mary
 ? hallway
-Mary went back to the kitchen.
 Daniel travelled to the bedroom.
-$ 0
+Mary went back to the kitchen.
+$ 1
 @ Where is Mary
 ? kitchen
-Daniel travelled to the bedroom.
 Mary journeyed to the office.
-$ 0
+Daniel travelled to the bedroom.
+$ 1
 @  Where is Daniel
 ? bedroom
-Daniel went to the garden.
 Mary went back to the bedroom.
-$ 1
+Daniel went to the garden.
+$ 0
 @  Where is Mary
 ? bedroom
-Mary journeyed to the garden.
 Sandra went back to the office.
-$ 1
+Mary journeyed to the garden.
+$ 0
 @ Where is Sandra
 ? office
 Sandra went to the bathroom.
@@ -407,14 +407,14 @@ Sandra travelled to the hallway.
 $ 1
 @ Where is Sandra
 ? hallway
-John went to the kitchen.
 Mary moved to the bathroom.
-$ 1
+John went to the kitchen.
+$ 0
 @  Where is Mary
 ? bathroom
-Daniel went to the office.
 John went to the kitchen.
-$ 1
+Daniel went to the office.
+$ 0
 @  Where is John
 ? kitchen
 Daniel went to the kitchen.
@@ -432,34 +432,34 @@ Sandra went to the hallway.
 $ 0
 @ Where is Daniel
 ? office
-Sandra went to the hallway.
 Daniel moved to the kitchen.
-$ 0
+Sandra went to the hallway.
+$ 1
 @  Where is Sandra
 ? hallway
-Mary went back to the kitchen.
 John journeyed to the hallway.
-$ 0
+Mary went back to the kitchen.
+$ 1
 @  Where is Mary
 ? kitchen
+John went back to the bathroom.
 Mary travelled to the bathroom.
-John went back to the bathroom.
-$ 1
-@ Where is John
-? bathroom
-John went back to the bathroom.
-Sandra moved to the garden.
 $ 0
 @ Where is John
 ? bathroom
-Daniel moved to the bathroom.
-John went to the kitchen.
+Sandra moved to the garden.
+John went back to the bathroom.
 $ 1
 @ Where is John
+? bathroom
+John went to the kitchen.
+Daniel moved to the bathroom.
+$ 0
+@ Where is John
 ? kitchen
-Daniel went back to the hallway.
 Mary went to the kitchen.
-$ 1
+Daniel went back to the hallway.
+$ 0
 @  Where is Mary
 ? kitchen
 Mary went to the kitchen.
@@ -476,9 +476,9 @@ Mary travelled to the bedroom.
 $ 1
 @ Where is Mary
 ? bedroom
-John moved to the hallway.
 Mary travelled to the bedroom.
-$ 1
+John moved to the hallway.
+$ 0
 @ Where is Mary
 ? bedroom
 Daniel moved to the hallway.
@@ -491,9 +491,9 @@ Mary went back to the garden.
 $ 0
 @  Where is Daniel
 ? kitchen
-Mary went back to the bathroom.
 Daniel moved to the garden.
-$ 1
+Mary went back to the bathroom.
+$ 0
 @ Where is Daniel
 ? garden
 Sandra went to the kitchen.
@@ -501,9 +501,9 @@ Daniel travelled to the kitchen.
 $ 0
 @ Where is Sandra
 ? kitchen
-Mary journeyed to the kitchen.
 Daniel journeyed to the garden.
-$ 0
+Mary journeyed to the kitchen.
+$ 1
 @ Where is Mary
 ? kitchen
 Mary moved to the hallway.
@@ -511,9 +511,9 @@ John went back to the bedroom.
 $ 0
 @  Where is Mary
 ? hallway
-John travelled to the bathroom.
 Mary moved to the hallway.
-$ 1
+John travelled to the bathroom.
+$ 0
 @  Where is Mary
 ? hallway
 Sandra journeyed to the garden.
@@ -521,9 +521,9 @@ Mary went back to the hallway.
 $ 0
 @ Where is Sandra
 ? garden
-Sandra travelled to the bathroom.
 John travelled to the hallway.
-$ 0
+Sandra travelled to the bathroom.
+$ 1
 @ Where is Sandra
 ? bathroom
 John travelled to the garden.
@@ -531,14 +531,14 @@ Mary journeyed to the bedroom.
 $ 1
 @ Where is Mary
 ? bedroom
-John travelled to the garden.
 Daniel journeyed to the hallway.
-$ 0
+John travelled to the garden.
+$ 1
 @  Where is John
 ? garden
-Daniel journeyed to the hallway.
 Mary moved to the bedroom.
-$ 1
+Daniel journeyed to the hallway.
+$ 0
 @  Where is Mary
 ? bedroom
 Sandra journeyed to the garden.
@@ -575,14 +575,14 @@ Daniel went back to the bedroom.
 $ 0
 @ Where is Sandra
 ? hallway
-Mary went back to the garden.
 Sandra journeyed to the hallway.
-$ 0
+Mary went back to the garden.
+$ 1
 @ Where is Mary
 ? garden
-Sandra went back to the bathroom.
 John went to the office.
-$ 1
+Sandra went back to the bathroom.
+$ 0
 @  Where is John
 ? office
 Sandra travelled to the hallway.
@@ -605,24 +605,24 @@ Daniel journeyed to the garden.
 $ 0
 @ Where is John
 ? bedroom
+Daniel went to the bedroom.
 John travelled to the bedroom.
+$ 0
+@  Where is Daniel
+? bedroom
+Sandra journeyed to the bedroom.
 Daniel went to the bedroom.
 $ 1
 @  Where is Daniel
 ? bedroom
-Daniel went to the bedroom.
-Sandra journeyed to the bedroom.
-$ 0
-@  Where is Daniel
-? bedroom
-John moved to the kitchen.
 Daniel travelled to the garden.
-$ 0
+John moved to the kitchen.
+$ 1
 @ Where is John
 ? kitchen
-Daniel travelled to the bathroom.
 John moved to the kitchen.
-$ 0
+Daniel travelled to the bathroom.
+$ 1
 @ Where is Daniel
 ? bathroom
 Mary journeyed to the bathroom.
@@ -630,9 +630,9 @@ John moved to the bathroom.
 $ 1
 @ Where is John
 ? bathroom
-Daniel journeyed to the garden.
 Mary went to the kitchen.
-$ 1
+Daniel journeyed to the garden.
+$ 0
 @  Where is Mary
 ? kitchen
 John went to the hallway.
@@ -644,9 +644,9 @@ Sandra travelled to the bathroom.
 $ 0
 @ Where is Sandra
 ? bathroom
-John travelled to the garden.
 Daniel moved to the hallway.
-$ 1
+John travelled to the garden.
+$ 0
 @ Where is Daniel
 ? hallway
 Daniel journeyed to the garden.
@@ -654,14 +654,14 @@ Sandra travelled to the bathroom.
 $ 1
 @ Where is Sandra
 ? bathroom
-Daniel journeyed to the hallway.
 Sandra journeyed to the garden.
-$ 0
+Daniel journeyed to the hallway.
+$ 1
 @  Where is Daniel
 ? hallway
-John went back to the hallway.
 Mary travelled to the office.
-$ 0
+John went back to the hallway.
+$ 1
 @  Where is John
 ? hallway
 Daniel moved to the bedroom.
@@ -674,19 +674,19 @@ John travelled to the garden.
 $ 1
 @ Where is John
 ? garden
-Daniel journeyed to the garden.
 John went to the kitchen.
-$ 0
+Daniel journeyed to the garden.
+$ 1
 @ Where is Daniel
 ? garden
-John went back to the garden.
 Sandra went back to the kitchen.
-$ 0
+John went back to the garden.
+$ 1
 @  Where is John
 ? garden
-Daniel moved to the bathroom.
 Sandra went back to the kitchen.
-$ 0
+Daniel moved to the bathroom.
+$ 1
 @  Where is Daniel
 ? bathroom
 Mary moved to the garden.
@@ -703,9 +703,9 @@ Mary moved to the garden.
 $ 1
 @ Where is Mary
 ? garden
-John went back to the office.
 Mary went to the bathroom.
-$ 1
+John went back to the office.
+$ 0
 @  Where is Mary
 ? bathroom
 Daniel went back to the kitchen.
@@ -713,14 +713,14 @@ Mary moved to the kitchen.
 $ 0
 @  Where is Daniel
 ? kitchen
-John journeyed to the garden.
 Daniel went to the office.
-$ 1
+John journeyed to the garden.
+$ 0
 @ Where is Daniel
 ? office
-John travelled to the bathroom.
 Daniel moved to the bedroom.
-$ 0
+John travelled to the bathroom.
+$ 1
 @ Where is John
 ? bathroom
 Mary travelled to the kitchen.
@@ -728,19 +728,19 @@ John journeyed to the kitchen.
 $ 1
 @ Where is John
 ? kitchen
+Sandra moved to the office.
 John travelled to the office.
-Sandra moved to the office.
-$ 1
-@  Where is Sandra
-? office
-Mary journeyed to the bedroom.
-Sandra moved to the office.
-$ 1
-@  Where is Sandra
-? office
-Sandra journeyed to the hallway.
-Daniel travelled to the hallway.
 $ 0
+@  Where is Sandra
+? office
+Sandra moved to the office.
+Mary journeyed to the bedroom.
+$ 0
+@  Where is Sandra
+? office
+Daniel travelled to the hallway.
+Sandra journeyed to the hallway.
+$ 1
 @ Where is Sandra
 ? hallway
 John travelled to the hallway.
@@ -748,9 +748,9 @@ Sandra went to the bedroom.
 $ 0
 @ Where is John
 ? hallway
-Sandra went to the kitchen.
 John travelled to the office.
-$ 0
+Sandra went to the kitchen.
+$ 1
 @ Where is Sandra
 ? kitchen
 Sandra went to the kitchen.
@@ -758,9 +758,9 @@ Daniel moved to the office.
 $ 0
 @  Where is Sandra
 ? kitchen
-Mary moved to the office.
 Daniel travelled to the office.
-$ 1
+Mary moved to the office.
+$ 0
 @  Where is Daniel
 ? office
 Mary went to the bathroom.
@@ -783,9 +783,9 @@ Daniel went back to the bathroom.
 $ 1
 @  Where is Daniel
 ? bathroom
-Mary went back to the office.
 John went back to the bedroom.
-$ 0
+Mary went back to the office.
+$ 1
 @  Where is Mary
 ? office
 John went to the kitchen.
@@ -803,19 +803,19 @@ Mary went to the kitchen.
 $ 1
 @ Where is Mary
 ? kitchen
-Daniel went back to the bathroom.
 Sandra journeyed to the office.
-$ 0
+Daniel went back to the bathroom.
+$ 1
 @  Where is Daniel
 ? bathroom
-Sandra journeyed to the office.
 John went back to the office.
-$ 0
+Sandra journeyed to the office.
+$ 1
 @  Where is Sandra
 ? office
-John went to the bedroom.
 Mary moved to the garden.
-$ 0
+John went to the bedroom.
+$ 1
 @ Where is John
 ? bedroom
 Sandra went to the bathroom.
@@ -823,9 +823,9 @@ Mary moved to the garden.
 $ 1
 @ Where is Mary
 ? garden
-Sandra went to the bathroom.
 Daniel moved to the garden.
-$ 0
+Sandra went to the bathroom.
+$ 1
 @ Where is Sandra
 ? bathroom
 Daniel went to the kitchen.
@@ -833,18 +833,18 @@ Mary journeyed to the bathroom.
 $ 0
 @  Where is Daniel
 ? kitchen
-Sandra went to the hallway.
 Mary journeyed to the bathroom.
-$ 1
+Sandra went to the hallway.
+$ 0
 @  Where is Mary
 ? bathroom
 Sandra travelled to the bathroom.
 $ 0
 @ Where is Sandra
 ? bathroom
-Mary travelled to the bathroom.
 Sandra travelled to the bathroom.
-$ 0
+Mary travelled to the bathroom.
+$ 1
 @ Where is Mary
 ? bathroom
 Daniel went to the bedroom.
@@ -857,9 +857,9 @@ Mary travelled to the hallway.
 $ 1
 @  Where is Mary
 ? hallway
-Sandra moved to the bathroom.
 John moved to the garden.
-$ 1
+Sandra moved to the bathroom.
+$ 0
 @  Where is John
 ? garden
 Sandra journeyed to the garden.
@@ -892,24 +892,24 @@ Daniel journeyed to the kitchen.
 $ 1
 @ Where is Daniel
 ? kitchen
-Daniel journeyed to the kitchen.
 John moved to the garden.
-$ 0
+Daniel journeyed to the kitchen.
+$ 1
 @ Where is Daniel
 ? kitchen
-John journeyed to the bedroom.
 Daniel journeyed to the bathroom.
-$ 0
+John journeyed to the bedroom.
+$ 1
 @ Where is John
 ? bedroom
-John journeyed to the bedroom.
 Mary moved to the garden.
-$ 0
+John journeyed to the bedroom.
+$ 1
 @  Where is John
 ? bedroom
-Sandra went back to the bedroom.
 Mary moved to the garden.
-$ 0
+Sandra went back to the bedroom.
+$ 1
 @  Where is Sandra
 ? bedroom
 Daniel went back to the bedroom.
@@ -917,19 +917,19 @@ Sandra travelled to the bedroom.
 $ 1
 @ Where is Sandra
 ? bedroom
-Mary went to the office.
 Sandra went to the office.
-$ 0
+Mary went to the office.
+$ 1
 @ Where is Mary
 ? office
-John journeyed to the garden.
 Mary journeyed to the garden.
-$ 1
+John journeyed to the garden.
+$ 0
 @ Where is Mary
 ? garden
-Daniel travelled to the bathroom.
 John moved to the kitchen.
-$ 1
+Daniel travelled to the bathroom.
+$ 0
 @  Where is John
 ? kitchen
 Daniel journeyed to the hallway.
@@ -937,19 +937,19 @@ Mary journeyed to the garden.
 $ 1
 @  Where is Mary
 ? garden
-Daniel moved to the bathroom.
 John moved to the office.
-$ 0
+Daniel moved to the bathroom.
+$ 1
 @ Where is Daniel
 ? bathroom
-John went back to the hallway.
 Mary went back to the office.
-$ 1
-@ Where is Mary
-? office
-Mary journeyed to the kitchen.
 John went back to the hallway.
 $ 0
+@ Where is Mary
+? office
+John went back to the hallway.
+Mary journeyed to the kitchen.
+$ 1
 @ Where is Mary
 ? kitchen
 Daniel moved to the bedroom.
@@ -962,14 +962,14 @@ Daniel travelled to the garden.
 $ 1
 @  Where is Daniel
 ? garden
-Mary travelled to the hallway.
 Sandra went to the garden.
-$ 1
+Mary travelled to the hallway.
+$ 0
 @ Where is Sandra
 ? garden
-Mary went to the bedroom.
 Daniel travelled to the bedroom.
-$ 1
+Mary went to the bedroom.
+$ 0
 @ Where is Daniel
 ? bedroom
 John travelled to the bathroom.
@@ -977,23 +977,23 @@ Sandra went to the garden.
 $ 1
 @ Where is Sandra
 ? garden
-John journeyed to the office.
 Daniel journeyed to the bathroom.
-$ 1
+John journeyed to the office.
+$ 0
 @  Where is Daniel
 ? bathroom
-Mary went back to the garden.
 John went to the kitchen.
-$ 1
+Mary went back to the garden.
+$ 0
 @  Where is John
 ? kitchen
 Daniel journeyed to the garden.
 $ 0
 @ Where is Daniel
 ? garden
-Daniel journeyed to the garden.
 John travelled to the garden.
-$ 0
+Daniel journeyed to the garden.
+$ 1
 @ Where is Daniel
 ? garden
 Daniel moved to the office.
@@ -1001,19 +1001,19 @@ John went to the hallway.
 $ 1
 @ Where is John
 ? hallway
-Daniel journeyed to the kitchen.
 John moved to the office.
-$ 1
+Daniel journeyed to the kitchen.
+$ 0
 @  Where is John
 ? office
-John went back to the bathroom.
 Daniel went to the garden.
-$ 1
+John went back to the bathroom.
+$ 0
 @  Where is Daniel
 ? garden
-John went to the kitchen.
 Mary went to the bathroom.
-$ 0
+John went to the kitchen.
+$ 1
 @ Where is John
 ? kitchen
 John went to the kitchen.
@@ -1031,9 +1031,9 @@ Mary went to the garden.
 $ 1
 @  Where is Mary
 ? garden
-Daniel travelled to the garden.
 Sandra journeyed to the kitchen.
-$ 1
+Daniel travelled to the garden.
+$ 0
 @  Where is Sandra
 ? kitchen
 John went to the kitchen.
@@ -1051,9 +1051,9 @@ Mary went to the bathroom.
 $ 0
 @ Where is John
 ? bathroom
-Mary went back to the office.
 John went back to the kitchen.
-$ 0
+Mary went back to the office.
+$ 1
 @  Where is Mary
 ? office
 Mary journeyed to the bathroom.
@@ -1075,9 +1075,9 @@ Daniel travelled to the garden.
 $ 0
 @ Where is John
 ? bedroom
-Daniel went to the hallway.
 Sandra went to the office.
-$ 1
+Daniel went to the hallway.
+$ 0
 @  Where is Sandra
 ? office
 Sandra journeyed to the bedroom.
@@ -1089,19 +1089,19 @@ John journeyed to the garden.
 $ 0
 @ Where is John
 ? garden
+Mary moved to the garden.
 John journeyed to the garden.
-Mary moved to the garden.
-$ 1
-@ Where is Mary
-? garden
-Mary moved to the garden.
-John moved to the kitchen.
 $ 0
 @ Where is Mary
 ? garden
-John journeyed to the hallway.
-Mary went back to the bathroom.
+John moved to the kitchen.
+Mary moved to the garden.
 $ 1
+@ Where is Mary
+? garden
+Mary went back to the bathroom.
+John journeyed to the hallway.
+$ 0
 @  Where is Mary
 ? bathroom
 Sandra moved to the kitchen.
@@ -1109,9 +1109,9 @@ Mary went back to the bathroom.
 $ 1
 @  Where is Mary
 ? bathroom
-Daniel journeyed to the bedroom.
 Mary journeyed to the office.
-$ 0
+Daniel journeyed to the bedroom.
+$ 1
 @ Where is Daniel
 ? bedroom
 Mary went to the bedroom.
@@ -1119,14 +1119,14 @@ Sandra went to the bedroom.
 $ 0
 @ Where is Mary
 ? bedroom
-John went back to the hallway.
 Daniel went back to the bathroom.
-$ 1
+John went back to the hallway.
+$ 0
 @ Where is Daniel
 ? bathroom
-Daniel moved to the hallway.
 John went back to the hallway.
-$ 1
+Daniel moved to the hallway.
+$ 0
 @  Where is John
 ? hallway
 Sandra travelled to the office.
@@ -1139,9 +1139,9 @@ Sandra moved to the kitchen.
 $ 0
 @ Where is Mary
 ? kitchen
-Sandra moved to the kitchen.
 John moved to the bedroom.
-$ 0
+Sandra moved to the kitchen.
+$ 1
 @ Where is Sandra
 ? kitchen
 John moved to the bedroom.
@@ -1149,23 +1149,23 @@ Mary went to the bathroom.
 $ 0
 @ Where is John
 ? bedroom
-Sandra travelled to the garden.
 Daniel went back to the hallway.
-$ 0
+Sandra travelled to the garden.
+$ 1
 @  Where is Sandra
 ? garden
-Daniel went to the bedroom.
 Sandra journeyed to the hallway.
-$ 1
+Daniel went to the bedroom.
+$ 0
 @  Where is Sandra
 ? hallway
 John went to the hallway.
 $ 0
 @ Where is John
 ? hallway
-John travelled to the bathroom.
 Sandra travelled to the kitchen.
-$ 0
+John travelled to the bathroom.
+$ 1
 @ Where is John
 ? bathroom
 John journeyed to the garden.
@@ -1178,24 +1178,24 @@ Sandra went back to the bedroom.
 $ 1
 @  Where is Sandra
 ? bedroom
-Sandra travelled to the hallway.
 Mary went back to the garden.
-$ 1
+Sandra travelled to the hallway.
+$ 0
 @  Where is Mary
 ? garden
-Mary journeyed to the office.
 Daniel went back to the bathroom.
-$ 1
-@ Where is Daniel
-? bathroom
-Daniel moved to the garden.
-Sandra went back to the garden.
+Mary journeyed to the office.
 $ 0
 @ Where is Daniel
-? garden
-John moved to the garden.
-Mary journeyed to the office.
+? bathroom
+Sandra went back to the garden.
+Daniel moved to the garden.
 $ 1
+@ Where is Daniel
+? garden
+Mary journeyed to the office.
+John moved to the garden.
+$ 0
 @ Where is Mary
 ? office
 Mary went back to the bedroom.
@@ -1203,9 +1203,9 @@ Sandra went back to the hallway.
 $ 1
 @  Where is Sandra
 ? hallway
-John went to the bathroom.
 Mary went back to the bedroom.
-$ 0
+John went to the bathroom.
+$ 1
 @  Where is John
 ? bathroom
 Sandra moved to the bathroom.
@@ -1218,9 +1218,9 @@ Mary journeyed to the bathroom.
 $ 0
 @ Where is Sandra
 ? hallway
-Daniel went to the garden.
 Sandra moved to the hallway.
-$ 0
+Daniel went to the garden.
+$ 1
 @ Where is Daniel
 ? garden
 Daniel went to the garden.
@@ -1243,9 +1243,9 @@ Daniel went to the office.
 $ 0
 @ Where is Sandra
 ? bedroom
-Sandra moved to the bedroom.
 Daniel went back to the kitchen.
-$ 0
+Sandra moved to the bedroom.
+$ 1
 @ Where is Sandra
 ? bedroom
 Mary went to the hallway.
@@ -1258,9 +1258,9 @@ Mary went to the office.
 $ 0
 @  Where is Daniel
 ? kitchen
-Mary went back to the garden.
 Daniel journeyed to the office.
-$ 1
+Mary went back to the garden.
+$ 0
 @ Where is Daniel
 ? office
 John moved to the hallway.
@@ -1278,9 +1278,9 @@ Daniel travelled to the bathroom.
 $ 0
 @  Where is Sandra
 ? bedroom
-Daniel journeyed to the garden.
 Sandra travelled to the office.
-$ 1
+Daniel journeyed to the garden.
+$ 0
 @  Where is Sandra
 ? office
 John moved to the bathroom.
@@ -1293,19 +1293,19 @@ Daniel went back to the bathroom.
 $ 1
 @ Where is Daniel
 ? bathroom
-John moved to the bathroom.
 Daniel travelled to the office.
-$ 0
+John moved to the bathroom.
+$ 1
 @ Where is John
 ? bathroom
-Sandra went back to the office.
 Mary went back to the garden.
-$ 0
+Sandra went back to the office.
+$ 1
 @  Where is Sandra
 ? office
-Mary moved to the bedroom.
 Daniel moved to the hallway.
-$ 1
+Mary moved to the bedroom.
+$ 0
 @  Where is Daniel
 ? hallway
 Sandra journeyed to the kitchen.
@@ -1322,14 +1322,14 @@ Daniel went to the garden.
 $ 0
 @ Where is Sandra
 ? garden
-John travelled to the bedroom.
 Mary journeyed to the garden.
-$ 1
+John travelled to the bedroom.
+$ 0
 @  Where is Mary
 ? garden
-Daniel went to the garden.
 Sandra moved to the hallway.
-$ 0
+Daniel went to the garden.
+$ 1
 @  Where is Daniel
 ? garden
 John went back to the garden.
@@ -1342,19 +1342,19 @@ John went back to the kitchen.
 $ 1
 @ Where is John
 ? kitchen
-Daniel travelled to the kitchen.
 Mary went back to the hallway.
-$ 0
+Daniel travelled to the kitchen.
+$ 1
 @ Where is Daniel
 ? kitchen
-Sandra went to the office.
 Daniel travelled to the kitchen.
-$ 0
+Sandra went to the office.
+$ 1
 @  Where is Sandra
 ? office
-Daniel travelled to the hallway.
 Sandra went to the kitchen.
-$ 1
+Daniel travelled to the hallway.
+$ 0
 @  Where is Sandra
 ? kitchen
 John moved to the bathroom.
@@ -1362,34 +1362,34 @@ Sandra journeyed to the office.
 $ 0
 @ Where is John
 ? bathroom
-Daniel moved to the hallway.
 John moved to the hallway.
-$ 1
-@ Where is John
-? hallway
-John went to the bedroom.
 Daniel moved to the hallway.
 $ 0
+@ Where is John
+? hallway
+Daniel moved to the hallway.
+John went to the bedroom.
+$ 1
 @ Where is John
 ? bedroom
+Daniel journeyed to the kitchen.
 John journeyed to the kitchen.
-Daniel journeyed to the kitchen.
-$ 0
-@  Where is John
-? kitchen
-Daniel journeyed to the kitchen.
-John travelled to the kitchen.
 $ 1
 @  Where is John
 ? kitchen
-John travelled to the hallway.
-Mary moved to the hallway.
+John travelled to the kitchen.
+Daniel journeyed to the kitchen.
 $ 0
+@  Where is John
+? kitchen
+Mary moved to the hallway.
+John travelled to the hallway.
+$ 1
 @ Where is John
 ? hallway
-Mary moved to the hallway.
 Daniel went to the garden.
-$ 0
+Mary moved to the hallway.
+$ 1
 @ Where is Mary
 ? hallway
 Sandra moved to the hallway.
@@ -1402,9 +1402,9 @@ Mary went to the office.
 $ 0
 @  Where is Daniel
 ? hallway
-John went to the hallway.
 Mary journeyed to the garden.
-$ 1
+John went to the hallway.
+$ 0
 @  Where is Mary
 ? garden
 John journeyed to the bathroom.
@@ -1417,19 +1417,19 @@ Daniel went back to the kitchen.
 $ 1
 @ Where is Daniel
 ? kitchen
-John journeyed to the office.
 Daniel went to the hallway.
-$ 0
+John journeyed to the office.
+$ 1
 @ Where is John
 ? office
-Mary went to the bathroom.
 Daniel went to the hallway.
-$ 0
+Mary went to the bathroom.
+$ 1
 @  Where is Mary
 ? bathroom
-Daniel went to the hallway.
 Mary moved to the bedroom.
-$ 1
+Daniel went to the hallway.
+$ 0
 @  Where is Mary
 ? bedroom
 Mary moved to the hallway.
@@ -1441,9 +1441,9 @@ Sandra went back to the bathroom.
 $ 0
 @ Where is Mary
 ? hallway
-Sandra went to the kitchen.
 Mary travelled to the kitchen.
-$ 0
+Sandra went to the kitchen.
+$ 1
 @ Where is Sandra
 ? kitchen
 Daniel journeyed to the kitchen.
@@ -1451,9 +1451,9 @@ Sandra went to the garden.
 $ 1
 @  Where is Sandra
 ? garden
-Sandra went to the bathroom.
 Daniel went to the bedroom.
-$ 1
+Sandra went to the bathroom.
+$ 0
 @  Where is Daniel
 ? bedroom
 John journeyed to the bathroom.
@@ -1481,9 +1481,9 @@ John went back to the kitchen.
 $ 1
 @  Where is John
 ? kitchen
-Mary went back to the bedroom.
 Daniel travelled to the office.
-$ 0
+Mary went back to the bedroom.
+$ 1
 @ Where is Mary
 ? bedroom
 Sandra went back to the garden.
@@ -1501,29 +1501,29 @@ John went to the office.
 $ 0
 @  Where is Sandra
 ? office
-Sandra travelled to the bathroom.
 Daniel moved to the kitchen.
-$ 1
+Sandra travelled to the bathroom.
+$ 0
 @  Where is Daniel
 ? kitchen
-Sandra journeyed to the bathroom.
 John went to the hallway.
-$ 1
+Sandra journeyed to the bathroom.
+$ 0
 @ Where is John
 ? hallway
+Mary went back to the kitchen.
 John went to the hallway.
-Mary went back to the kitchen.
-$ 1
-@ Where is Mary
-? kitchen
-Mary went back to the kitchen.
-John moved to the garden.
 $ 0
 @ Where is Mary
 ? kitchen
-Sandra journeyed to the hallway.
-Daniel moved to the kitchen.
+John moved to the garden.
+Mary went back to the kitchen.
 $ 1
+@ Where is Mary
+? kitchen
+Daniel moved to the kitchen.
+Sandra journeyed to the hallway.
+$ 0
 @  Where is Daniel
 ? kitchen
 Daniel moved to the bedroom.
@@ -1569,9 +1569,9 @@ Daniel went back to the bedroom.
 $ 0
 @ Where is John
 ? bedroom
-John went to the bedroom.
 Daniel went back to the office.
-$ 0
+John went to the bedroom.
+$ 1
 @  Where is John
 ? bedroom
 Daniel journeyed to the kitchen.
@@ -1594,9 +1594,9 @@ Daniel moved to the kitchen.
 $ 0
 @ Where is John
 ? bathroom
-Mary moved to the hallway.
 Daniel went to the bedroom.
-$ 0
+Mary moved to the hallway.
+$ 1
 @  Where is Mary
 ? hallway
 Mary went to the kitchen.
@@ -1623,14 +1623,14 @@ Mary moved to the bathroom.
 $ 1
 @  Where is Mary
 ? bathroom
-Daniel went back to the hallway.
 Sandra travelled to the kitchen.
-$ 1
+Daniel went back to the hallway.
+$ 0
 @  Where is Sandra
 ? kitchen
-Mary journeyed to the bedroom.
 Sandra moved to the bedroom.
-$ 0
+Mary journeyed to the bedroom.
+$ 1
 @ Where is Mary
 ? bedroom
 Daniel travelled to the bedroom.
@@ -1638,9 +1638,9 @@ Sandra moved to the bedroom.
 $ 1
 @ Where is Sandra
 ? bedroom
-Sandra went to the kitchen.
 Mary moved to the bedroom.
-$ 1
+Sandra went to the kitchen.
+$ 0
 @ Where is Mary
 ? bedroom
 Sandra went to the garden.
@@ -1663,9 +1663,9 @@ Daniel moved to the office.
 $ 0
 @ Where is John
 ? kitchen
-Mary went to the office.
 Daniel went back to the bedroom.
-$ 0
+Mary went to the office.
+$ 1
 @ Where is Mary
 ? office
 John went to the bedroom.
@@ -1673,9 +1673,9 @@ Daniel moved to the hallway.
 $ 1
 @  Where is Daniel
 ? hallway
-Daniel moved to the office.
 Sandra moved to the kitchen.
-$ 0
+Daniel moved to the office.
+$ 1
 @  Where is Daniel
 ? office
 Mary journeyed to the office.
@@ -1683,19 +1683,19 @@ Daniel went to the bedroom.
 $ 0
 @ Where is Mary
 ? office
-Sandra went to the bedroom.
 Daniel journeyed to the bathroom.
-$ 1
+Sandra went to the bedroom.
+$ 0
 @ Where is Daniel
 ? bathroom
-Daniel travelled to the kitchen.
 Mary journeyed to the hallway.
-$ 0
+Daniel travelled to the kitchen.
+$ 1
 @ Where is Daniel
 ? kitchen
-Mary journeyed to the hallway.
 Sandra moved to the bedroom.
-$ 0
+Mary journeyed to the hallway.
+$ 1
 @  Where is Mary
 ? hallway
 Daniel travelled to the bathroom.
@@ -1707,34 +1707,34 @@ John travelled to the office.
 $ 0
 @ Where is John
 ? office
-John journeyed to the bedroom.
 Mary travelled to the hallway.
+John journeyed to the bedroom.
+$ 1
+@ Where is John
+? bedroom
+John journeyed to the bedroom.
+Mary journeyed to the bedroom.
 $ 0
 @ Where is John
 ? bedroom
-Mary journeyed to the bedroom.
-John journeyed to the bedroom.
-$ 1
-@ Where is John
-? bedroom
-Mary journeyed to the bedroom.
 Daniel journeyed to the kitchen.
-$ 1
+Mary journeyed to the bedroom.
+$ 0
 @  Where is Daniel
 ? kitchen
-Mary journeyed to the bedroom.
 Daniel went back to the garden.
-$ 0
+Mary journeyed to the bedroom.
+$ 1
 @  Where is Mary
 ? bedroom
-Daniel journeyed to the garden.
 John moved to the garden.
-$ 0
+Daniel journeyed to the garden.
+$ 1
 @ Where is Daniel
 ? garden
-Daniel travelled to the bathroom.
 Sandra went back to the garden.
-$ 0
+Daniel travelled to the bathroom.
+$ 1
 @ Where is Daniel
 ? bathroom
 Mary journeyed to the bedroom.
@@ -1747,14 +1747,14 @@ John journeyed to the kitchen.
 $ 0
 @  Where is Sandra
 ? garden
-John journeyed to the kitchen.
 Sandra went back to the office.
-$ 1
+John journeyed to the kitchen.
+$ 0
 @  Where is Sandra
 ? office
-John journeyed to the office.
 Sandra moved to the bathroom.
-$ 1
+John journeyed to the office.
+$ 0
 @ Where is Sandra
 ? bathroom
 Sandra went back to the hallway.
@@ -1767,19 +1767,19 @@ John moved to the bedroom.
 $ 0
 @ Where is Daniel
 ? kitchen
+John went back to the office.
 Mary went back to the bedroom.
-John went back to the office.
-$ 1
-@  Where is John
-? office
-John went back to the office.
-Sandra went back to the bedroom.
 $ 0
 @  Where is John
 ? office
-Sandra journeyed to the bathroom.
-Mary travelled to the hallway.
+Sandra went back to the bedroom.
+John went back to the office.
 $ 1
+@  Where is John
+? office
+Mary travelled to the hallway.
+Sandra journeyed to the bathroom.
+$ 0
 @ Where is Mary
 ? hallway
 Sandra moved to the kitchen.
@@ -1807,29 +1807,29 @@ Mary went to the hallway.
 $ 0
 @ Where is Daniel
 ? bathroom
-Daniel went to the bathroom.
 Mary went to the kitchen.
-$ 1
+Daniel went to the bathroom.
+$ 0
 @ Where is Mary
 ? kitchen
-Daniel went to the office.
 Mary went to the kitchen.
-$ 0
+Daniel went to the office.
+$ 1
 @ Where is Daniel
 ? office
-John went to the kitchen.
 Sandra travelled to the garden.
-$ 0
+John went to the kitchen.
+$ 1
 @  Where is John
 ? kitchen
-Sandra went back to the hallway.
 Mary journeyed to the hallway.
-$ 0
+Sandra went back to the hallway.
+$ 1
 @  Where is Sandra
 ? hallway
-Sandra journeyed to the bedroom.
 Mary went back to the hallway.
-$ 0
+Sandra journeyed to the bedroom.
+$ 1
 @ Where is Sandra
 ? bedroom
 John went back to the hallway.
@@ -1842,9 +1842,9 @@ Mary moved to the kitchen.
 $ 0
 @ Where is Sandra
 ? kitchen
-Daniel travelled to the office.
 Mary moved to the kitchen.
-$ 0
+Daniel travelled to the office.
+$ 1
 @  Where is Daniel
 ? office
 Mary moved to the kitchen.
@@ -1867,9 +1867,9 @@ Mary moved to the bedroom.
 $ 1
 @ Where is Mary
 ? bedroom
-Sandra journeyed to the office.
 Daniel travelled to the kitchen.
-$ 0
+Sandra journeyed to the office.
+$ 1
 @  Where is Sandra
 ? office
 Daniel travelled to the kitchen.
@@ -1877,24 +1877,24 @@ Sandra travelled to the hallway.
 $ 0
 @  Where is Daniel
 ? kitchen
-John travelled to the bedroom.
 Mary moved to the bedroom.
-$ 0
+John travelled to the bedroom.
+$ 1
 @ Where is John
 ? bedroom
+Sandra moved to the bathroom.
 John went back to the bathroom.
+$ 0
+@ Where is Sandra
+? bathroom
+Daniel journeyed to the office.
 Sandra moved to the bathroom.
 $ 1
 @ Where is Sandra
 ? bathroom
-Sandra moved to the bathroom.
 Daniel journeyed to the office.
-$ 0
-@ Where is Sandra
-? bathroom
 John journeyed to the bedroom.
-Daniel journeyed to the office.
-$ 0
+$ 1
 @  Where is John
 ? bedroom
 John went to the bathroom.
@@ -1906,19 +1906,19 @@ John moved to the office.
 $ 0
 @ Where is John
 ? office
-John went to the hallway.
 Sandra journeyed to the hallway.
-$ 0
+John went to the hallway.
+$ 1
 @ Where is John
 ? hallway
-John journeyed to the bathroom.
 Daniel went to the bathroom.
-$ 0
+John journeyed to the bathroom.
+$ 1
 @ Where is John
 ? bathroom
-Sandra moved to the garden.
 John moved to the office.
-$ 1
+Sandra moved to the garden.
+$ 0
 @  Where is John
 ? office
 Daniel went to the kitchen.
@@ -1926,9 +1926,9 @@ Sandra moved to the hallway.
 $ 0
 @  Where is Daniel
 ? kitchen
-Mary travelled to the garden.
 Daniel moved to the bathroom.
-$ 0
+Mary travelled to the garden.
+$ 1
 @ Where is Mary
 ? garden
 John went to the hallway.
@@ -1936,19 +1936,19 @@ Sandra went back to the kitchen.
 $ 0
 @ Where is John
 ? hallway
-Daniel went back to the garden.
 John travelled to the garden.
-$ 1
+Daniel went back to the garden.
+$ 0
 @ Where is John
 ? garden
-Mary went to the bathroom.
 Sandra went back to the hallway.
-$ 0
+Mary went to the bathroom.
+$ 1
 @  Where is Mary
 ? bathroom
-Sandra went back to the hallway.
 Daniel travelled to the bathroom.
-$ 1
+Sandra went back to the hallway.
+$ 0
 @  Where is Daniel
 ? bathroom
 Mary travelled to the hallway.
@@ -1956,9 +1956,9 @@ John moved to the hallway.
 $ 1
 @ Where is John
 ? hallway
-Sandra went back to the hallway.
 Mary travelled to the hallway.
-$ 1
+Sandra went back to the hallway.
+$ 0
 @ Where is Mary
 ? hallway
 Daniel travelled to the kitchen.
@@ -1981,34 +1981,34 @@ Mary moved to the bedroom.
 $ 0
 @ Where is Sandra
 ? garden
-Mary journeyed to the hallway.
 Daniel went to the bedroom.
-$ 0
+Mary journeyed to the hallway.
+$ 1
 @ Where is Mary
 ? hallway
-Sandra went back to the garden.
 Daniel journeyed to the office.
-$ 0
+Sandra went back to the garden.
+$ 1
 @ Where is Sandra
 ? garden
-Daniel went back to the bedroom.
 Mary went back to the office.
-$ 1
+Daniel went back to the bedroom.
+$ 0
 @  Where is Mary
 ? office
-John moved to the office.
 Mary went back to the office.
-$ 0
+John moved to the office.
+$ 1
 @  Where is John
 ? office
-John travelled to the bathroom.
 Sandra moved to the hallway.
-$ 1
+John travelled to the bathroom.
+$ 0
 @ Where is Sandra
 ? hallway
-Sandra moved to the hallway.
 Daniel travelled to the hallway.
-$ 1
+Sandra moved to the hallway.
+$ 0
 @ Where is Daniel
 ? hallway
 Daniel travelled to the hallway.
@@ -2016,9 +2016,9 @@ Mary went to the hallway.
 $ 0
 @ Where is Daniel
 ? hallway
-Mary went to the hallway.
 Daniel journeyed to the kitchen.
-$ 1
+Mary went to the hallway.
+$ 0
 @  Where is Daniel
 ? kitchen
 Daniel journeyed to the kitchen.
@@ -2026,29 +2026,29 @@ Mary went to the bedroom.
 $ 0
 @  Where is Daniel
 ? kitchen
-Sandra travelled to the kitchen.
 Daniel journeyed to the hallway.
-$ 0
+Sandra travelled to the kitchen.
+$ 1
 @ Where is Sandra
 ? kitchen
-John journeyed to the hallway.
 Sandra travelled to the office.
-$ 1
+John journeyed to the hallway.
+$ 0
 @ Where is Sandra
 ? office
-Daniel journeyed to the office.
 Sandra went to the hallway.
-$ 1
+Daniel journeyed to the office.
+$ 0
 @ Where is Sandra
 ? hallway
-Daniel went back to the bedroom.
 Sandra moved to the bedroom.
-$ 1
+Daniel went back to the bedroom.
+$ 0
 @  Where is Sandra
 ? bedroom
-Daniel travelled to the kitchen.
 John moved to the office.
-$ 0
+Daniel travelled to the kitchen.
+$ 1
 @  Where is Daniel
 ? kitchen
 Mary went to the hallway.
@@ -2056,19 +2056,19 @@ Sandra travelled to the bedroom.
 $ 0
 @ Where is Mary
 ? hallway
-Sandra journeyed to the kitchen.
 Mary went to the hallway.
-$ 1
+Sandra journeyed to the kitchen.
+$ 0
 @ Where is Mary
 ? hallway
-Daniel journeyed to the office.
 Sandra travelled to the bathroom.
-$ 0
+Daniel journeyed to the office.
+$ 1
 @ Where is Daniel
 ? office
-Daniel journeyed to the bedroom.
 John went back to the hallway.
-$ 0
+Daniel journeyed to the bedroom.
+$ 1
 @  Where is Daniel
 ? bedroom
 Mary went back to the bathroom.
@@ -2080,9 +2080,9 @@ Daniel travelled to the hallway.
 $ 0
 @ Where is Daniel
 ? hallway
-Sandra travelled to the bathroom.
 Daniel travelled to the hallway.
-$ 0
+Sandra travelled to the bathroom.
+$ 1
 @ Where is Sandra
 ? bathroom
 John went to the bathroom.
@@ -2095,9 +2095,9 @@ Sandra went to the garden.
 $ 0
 @  Where is Mary
 ? garden
-Mary went back to the bedroom.
 John went back to the bedroom.
-$ 0
+Mary went back to the bedroom.
+$ 1
 @  Where is Mary
 ? bedroom
 Mary went back to the bedroom.
@@ -2105,19 +2105,19 @@ John moved to the bedroom.
 $ 0
 @ Where is Mary
 ? bedroom
-Daniel moved to the office.
 John moved to the bedroom.
-$ 1
+Daniel moved to the office.
+$ 0
 @ Where is John
 ? bedroom
-Mary moved to the garden.
 Daniel moved to the office.
-$ 1
+Mary moved to the garden.
+$ 0
 @ Where is Daniel
 ? office
-Sandra went to the bathroom.
 John went back to the garden.
-$ 0
+Sandra went to the bathroom.
+$ 1
 @  Where is Sandra
 ? bathroom
 Sandra travelled to the kitchen.
@@ -2135,9 +2135,9 @@ Daniel journeyed to the hallway.
 $ 0
 @ Where is Sandra
 ? office
-John went back to the bathroom.
 Daniel moved to the bedroom.
-$ 1
+John went back to the bathroom.
+$ 0
 @ Where is Daniel
 ? bedroom
 Sandra went back to the bedroom.
@@ -2160,9 +2160,9 @@ Sandra travelled to the hallway.
 $ 0
 @ Where is Mary
 ? hallway
-Mary went back to the office.
 Daniel went to the bathroom.
-$ 1
+Mary went back to the office.
+$ 0
 @ Where is Daniel
 ? bathroom
 Mary moved to the bathroom.
@@ -2175,9 +2175,9 @@ Mary moved to the bathroom.
 $ 1
 @  Where is Mary
 ? bathroom
-Mary journeyed to the garden.
 John went to the office.
-$ 0
+Mary journeyed to the garden.
+$ 1
 @ Where is Mary
 ? garden
 Mary journeyed to the garden.
@@ -2190,9 +2190,9 @@ Mary journeyed to the garden.
 $ 1
 @ Where is Mary
 ? garden
-Mary travelled to the hallway.
 John went to the bedroom.
-$ 1
+Mary travelled to the hallway.
+$ 0
 @  Where is John
 ? bedroom
 Sandra moved to the bedroom.
@@ -2205,9 +2205,9 @@ Sandra travelled to the bathroom.
 $ 0
 @ Where is Mary
 ? office
-Mary moved to the bathroom.
 Sandra travelled to the hallway.
-$ 1
+Mary moved to the bathroom.
+$ 0
 @ Where is Sandra
 ? hallway
 John went to the office.
@@ -2215,14 +2215,14 @@ Sandra journeyed to the office.
 $ 1
 @ Where is Sandra
 ? office
-John travelled to the kitchen.
 Sandra journeyed to the office.
-$ 0
+John travelled to the kitchen.
+$ 1
 @  Where is John
 ? kitchen
-Daniel went back to the kitchen.
 Sandra journeyed to the office.
-$ 1
+Daniel went back to the kitchen.
+$ 0
 @  Where is Sandra
 ? office
 Mary moved to the bathroom.
@@ -2239,9 +2239,9 @@ Sandra went to the office.
 $ 0
 @ Where is Daniel
 ? bathroom
-John journeyed to the kitchen.
 Daniel journeyed to the bathroom.
-$ 1
+John journeyed to the kitchen.
+$ 0
 @  Where is Daniel
 ? bathroom
 Daniel journeyed to the bathroom.
@@ -2254,9 +2254,9 @@ Daniel went to the kitchen.
 $ 0
 @ Where is Sandra
 ? kitchen
-Mary went to the hallway.
 John moved to the bedroom.
-$ 0
+Mary went to the hallway.
+$ 1
 @ Where is Mary
 ? hallway
 Mary travelled to the kitchen.
@@ -2278,9 +2278,9 @@ Daniel went to the hallway.
 $ 0
 @ Where is Daniel
 ? hallway
-Mary travelled to the hallway.
 John went to the hallway.
-$ 0
+Mary travelled to the hallway.
+$ 1
 @ Where is Mary
 ? hallway
 John went to the hallway.
@@ -2288,14 +2288,14 @@ Mary went to the kitchen.
 $ 0
 @ Where is John
 ? hallway
-John went back to the bathroom.
 Mary went to the kitchen.
-$ 0
+John went back to the bathroom.
+$ 1
 @  Where is John
 ? bathroom
-Daniel moved to the kitchen.
 Mary went to the hallway.
-$ 1
+Daniel moved to the kitchen.
+$ 0
 @  Where is Mary
 ? hallway
 John went back to the hallway.
@@ -2313,9 +2313,9 @@ Sandra moved to the bathroom.
 $ 0
 @ Where is John
 ? garden
-Sandra moved to the bathroom.
 Mary went back to the kitchen.
-$ 0
+Sandra moved to the bathroom.
+$ 1
 @  Where is Sandra
 ? bathroom
 John went to the bedroom.
@@ -2327,14 +2327,14 @@ Daniel went back to the bedroom.
 $ 0
 @ Where is Daniel
 ? bedroom
-Daniel went back to the bedroom.
 Sandra moved to the kitchen.
-$ 1
+Daniel went back to the bedroom.
+$ 0
 @ Where is Sandra
 ? kitchen
-Sandra journeyed to the bedroom.
 Mary went to the kitchen.
-$ 0
+Sandra journeyed to the bedroom.
+$ 1
 @ Where is Sandra
 ? bedroom
 Daniel moved to the bathroom.
@@ -2362,9 +2362,9 @@ Daniel went to the hallway.
 $ 0
 @ Where is Sandra
 ? kitchen
-Daniel went back to the kitchen.
 John went back to the bathroom.
-$ 1
+Daniel went back to the kitchen.
+$ 0
 @  Where is John
 ? bathroom
 John travelled to the hallway.
@@ -2372,14 +2372,14 @@ Daniel went to the bedroom.
 $ 1
 @  Where is Daniel
 ? bedroom
-Daniel travelled to the bathroom.
 Sandra moved to the kitchen.
-$ 1
+Daniel travelled to the bathroom.
+$ 0
 @ Where is Sandra
 ? kitchen
-Mary journeyed to the garden.
 Daniel travelled to the bathroom.
-$ 1
+Mary journeyed to the garden.
+$ 0
 @ Where is Daniel
 ? bathroom
 Sandra went back to the hallway.
@@ -2392,9 +2392,9 @@ Mary went to the kitchen.
 $ 1
 @  Where is Mary
 ? kitchen
-Daniel went back to the bedroom.
 John moved to the office.
-$ 1
+Daniel went back to the bedroom.
+$ 0
 @  Where is John
 ? office
 John went back to the garden.
@@ -2407,9 +2407,9 @@ Sandra journeyed to the bathroom.
 $ 1
 @ Where is Sandra
 ? bathroom
-John moved to the bathroom.
 Sandra journeyed to the bathroom.
-$ 1
+John moved to the bathroom.
+$ 0
 @ Where is Sandra
 ? bathroom
 Daniel went to the bathroom.
@@ -2417,23 +2417,23 @@ Sandra journeyed to the hallway.
 $ 0
 @  Where is Daniel
 ? bathroom
-Sandra journeyed to the hallway.
 Daniel went to the bathroom.
-$ 0
+Sandra journeyed to the hallway.
+$ 1
 @  Where is Sandra
 ? hallway
 John went to the bathroom.
 $ 0
 @ Where is John
 ? bathroom
-Sandra journeyed to the garden.
 John went to the bathroom.
-$ 1
-@ Where is John
-? bathroom
-John journeyed to the bathroom.
 Sandra journeyed to the garden.
 $ 0
+@ Where is John
+? bathroom
+Sandra journeyed to the garden.
+John journeyed to the bathroom.
+$ 1
 @ Where is John
 ? bathroom
 Mary journeyed to the garden.
@@ -2446,9 +2446,9 @@ Daniel journeyed to the bathroom.
 $ 1
 @  Where is Daniel
 ? bathroom
-Mary moved to the bedroom.
 Sandra travelled to the garden.
-$ 0
+Mary moved to the bedroom.
+$ 1
 @ Where is Mary
 ? bedroom
 Mary moved to the bedroom.
@@ -2461,14 +2461,14 @@ Sandra travelled to the kitchen.
 $ 0
 @ Where is Daniel
 ? garden
-Mary travelled to the hallway.
 John went to the hallway.
-$ 1
+Mary travelled to the hallway.
+$ 0
 @  Where is John
 ? hallway
-Mary travelled to the hallway.
 Daniel moved to the bathroom.
-$ 0
+Mary travelled to the hallway.
+$ 1
 @  Where is Mary
 ? hallway
 Mary went to the kitchen.
@@ -2476,9 +2476,9 @@ Daniel went to the bedroom.
 $ 0
 @ Where is Mary
 ? kitchen
-Mary travelled to the bedroom.
 John journeyed to the bathroom.
-$ 0
+Mary travelled to the bedroom.
+$ 1
 @ Where is Mary
 ? bedroom
 Sandra went to the office.
@@ -2486,9 +2486,9 @@ Mary travelled to the bedroom.
 $ 1
 @ Where is Mary
 ? bedroom
-Daniel went back to the hallway.
 Sandra moved to the kitchen.
-$ 1
+Daniel went back to the hallway.
+$ 0
 @  Where is Sandra
 ? kitchen
 Sandra journeyed to the bedroom.
@@ -2500,14 +2500,14 @@ Daniel went back to the garden.
 $ 0
 @ Where is Daniel
 ? garden
-John travelled to the kitchen.
 Daniel went back to the office.
-$ 1
+John travelled to the kitchen.
+$ 0
 @ Where is Daniel
 ? office
-John went to the office.
 Daniel went back to the office.
-$ 1
+John went to the office.
+$ 0
 @ Where is Daniel
 ? office
 Sandra moved to the kitchen.
@@ -2520,14 +2520,14 @@ John travelled to the garden.
 $ 1
 @  Where is John
 ? garden
-Sandra journeyed to the hallway.
 Mary travelled to the bathroom.
-$ 1
+Sandra journeyed to the hallway.
+$ 0
 @ Where is Mary
 ? bathroom
-Mary moved to the bedroom.
 John moved to the office.
-$ 0
+Mary moved to the bedroom.
+$ 1
 @ Where is Mary
 ? bedroom
 Mary went back to the bathroom.
@@ -2535,14 +2535,14 @@ John moved to the office.
 $ 1
 @ Where is John
 ? office
-John moved to the bathroom.
 Mary went back to the kitchen.
-$ 1
+John moved to the bathroom.
+$ 0
 @  Where is Mary
 ? kitchen
-John moved to the bathroom.
 Daniel went back to the kitchen.
-$ 0
+John moved to the bathroom.
+$ 1
 @  Where is John
 ? bathroom
 John went back to the hallway.
@@ -2565,18 +2565,18 @@ Sandra went to the kitchen.
 $ 0
 @  Where is Daniel
 ? garden
-Mary went to the office.
 Daniel moved to the bathroom.
-$ 1
+Mary went to the office.
+$ 0
 @  Where is Daniel
 ? bathroom
 Sandra went to the garden.
 $ 0
 @ Where is Sandra
 ? garden
-Mary went back to the garden.
 Daniel went to the kitchen.
-$ 0
+Mary went back to the garden.
+$ 1
 @ Where is Mary
 ? garden
 Sandra travelled to the garden.
@@ -2584,14 +2584,14 @@ Daniel went to the kitchen.
 $ 1
 @ Where is Daniel
 ? kitchen
-Mary went to the garden.
 Sandra travelled to the garden.
-$ 1
+Mary went to the garden.
+$ 0
 @  Where is Sandra
 ? garden
-Sandra moved to the hallway.
 Mary moved to the bathroom.
-$ 1
+Sandra moved to the hallway.
+$ 0
 @  Where is Mary
 ? bathroom
 Daniel journeyed to the kitchen.
@@ -2599,9 +2599,9 @@ John went back to the kitchen.
 $ 1
 @ Where is John
 ? kitchen
-Mary went to the hallway.
 John moved to the office.
-$ 1
+Mary went to the hallway.
+$ 0
 @ Where is John
 ? office
 John moved to the office.
@@ -2609,9 +2609,9 @@ Mary went to the garden.
 $ 0
 @ Where is John
 ? office
-Daniel travelled to the hallway.
 Mary went to the garden.
-$ 1
+Daniel travelled to the hallway.
+$ 0
 @  Where is Mary
 ? garden
 Mary went to the garden.
@@ -2623,29 +2623,29 @@ John moved to the garden.
 $ 0
 @ Where is John
 ? garden
-Sandra moved to the office.
 Daniel went back to the bedroom.
-$ 0
+Sandra moved to the office.
+$ 1
 @ Where is Sandra
 ? office
-Sandra journeyed to the garden.
 John moved to the bathroom.
-$ 0
+Sandra journeyed to the garden.
+$ 1
 @ Where is Sandra
 ? garden
+John travelled to the garden.
 Daniel travelled to the bathroom.
-John travelled to the garden.
-$ 1
+$ 0
 @  Where is John
 ? garden
+John travelled to the garden.
 Sandra travelled to the hallway.
-John travelled to the garden.
-$ 1
+$ 0
 @  Where is John
 ? garden
-Mary travelled to the garden.
 Sandra went to the garden.
-$ 1
+Mary travelled to the garden.
+$ 0
 @ Where is Sandra
 ? garden
 Daniel went back to the bedroom.
@@ -2653,14 +2653,14 @@ Mary travelled to the garden.
 $ 1
 @ Where is Mary
 ? garden
-Sandra travelled to the garden.
 Daniel went to the kitchen.
-$ 0
+Sandra travelled to the garden.
+$ 1
 @ Where is Sandra
 ? garden
-Daniel went to the kitchen.
 Mary travelled to the kitchen.
-$ 0
+Daniel went to the kitchen.
+$ 1
 @  Where is Daniel
 ? kitchen
 Sandra travelled to the garden.
@@ -2688,9 +2688,9 @@ Daniel moved to the bedroom.
 $ 1
 @  Where is Daniel
 ? bedroom
-John moved to the bedroom.
 Sandra travelled to the garden.
-$ 1
+John moved to the bedroom.
+$ 0
 @  Where is Sandra
 ? garden
 Mary travelled to the bedroom.
@@ -2703,9 +2703,9 @@ Mary travelled to the hallway.
 $ 1
 @ Where is Mary
 ? hallway
-Mary travelled to the kitchen.
 Daniel journeyed to the hallway.
-$ 1
+Mary travelled to the kitchen.
+$ 0
 @ Where is Daniel
 ? hallway
 Daniel went to the bathroom.
@@ -2727,19 +2727,19 @@ Mary moved to the hallway.
 $ 0
 @ Where is Sandra
 ? bathroom
-Mary journeyed to the office.
 Sandra moved to the bathroom.
-$ 0
+Mary journeyed to the office.
+$ 1
 @ Where is Mary
 ? office
-Sandra travelled to the garden.
 Mary journeyed to the bathroom.
-$ 0
+Sandra travelled to the garden.
+$ 1
 @  Where is Sandra
 ? garden
-John travelled to the hallway.
 Mary went to the kitchen.
-$ 1
+John travelled to the hallway.
+$ 0
 @  Where is Mary
 ? kitchen
 Sandra went to the kitchen.
@@ -2747,19 +2747,19 @@ Daniel went back to the bathroom.
 $ 0
 @ Where is Sandra
 ? kitchen
-Daniel journeyed to the hallway.
 Mary journeyed to the kitchen.
-$ 1
+Daniel journeyed to the hallway.
+$ 0
 @ Where is Mary
 ? kitchen
-Mary journeyed to the kitchen.
 Sandra went to the office.
-$ 1
+Mary journeyed to the kitchen.
+$ 0
 @ Where is Sandra
 ? office
-Sandra went back to the hallway.
 Mary moved to the office.
-$ 1
+Sandra went back to the hallway.
+$ 0
 @  Where is Mary
 ? office
 Mary moved to the office.
@@ -2767,14 +2767,14 @@ Daniel journeyed to the office.
 $ 0
 @  Where is Mary
 ? office
-John travelled to the hallway.
 Mary travelled to the bathroom.
-$ 0
+John travelled to the hallway.
+$ 1
 @ Where is John
 ? hallway
-Daniel moved to the office.
 Sandra went to the bedroom.
-$ 0
+Daniel moved to the office.
+$ 1
 @ Where is Daniel
 ? office
 Daniel journeyed to the bathroom.
@@ -2801,19 +2801,19 @@ Daniel moved to the kitchen.
 $ 1
 @ Where is Daniel
 ? kitchen
-John travelled to the office.
 Daniel went to the hallway.
-$ 0
+John travelled to the office.
+$ 1
 @ Where is John
 ? office
-Sandra travelled to the bathroom.
 Mary moved to the bathroom.
-$ 1
+Sandra travelled to the bathroom.
+$ 0
 @  Where is Mary
 ? bathroom
-Sandra journeyed to the office.
 John went to the bathroom.
-$ 1
+Sandra journeyed to the office.
+$ 0
 @  Where is John
 ? bathroom
 Sandra moved to the kitchen.
@@ -2829,9 +2829,9 @@ Sandra journeyed to the hallway.
 $ 1
 @ Where is Sandra
 ? hallway
-Mary went to the office.
 John went back to the garden.
-$ 0
+Mary went to the office.
+$ 1
 @  Where is Mary
 ? office
 Mary went back to the bedroom.
@@ -2839,19 +2839,19 @@ John went back to the garden.
 $ 1
 @  Where is John
 ? garden
-Daniel went back to the bedroom.
 John travelled to the office.
-$ 1
+Daniel went back to the bedroom.
+$ 0
 @ Where is John
 ? office
-Daniel journeyed to the office.
 Sandra travelled to the hallway.
-$ 0
+Daniel journeyed to the office.
+$ 1
 @ Where is Daniel
 ? office
-Daniel travelled to the bathroom.
 Mary travelled to the garden.
-$ 0
+Daniel travelled to the bathroom.
+$ 1
 @ Where is Daniel
 ? bathroom
 Daniel travelled to the bathroom.
@@ -2859,9 +2859,9 @@ Sandra moved to the office.
 $ 0
 @  Where is Daniel
 ? bathroom
-Sandra went to the kitchen.
 Mary went to the kitchen.
-$ 1
+Sandra went to the kitchen.
+$ 0
 @  Where is Mary
 ? kitchen
 Sandra moved to the bedroom.
@@ -2869,9 +2869,9 @@ John went back to the hallway.
 $ 0
 @ Where is Sandra
 ? bedroom
-Daniel went back to the office.
 Sandra went to the bathroom.
-$ 0
+Daniel went back to the office.
+$ 1
 @ Where is Daniel
 ? office
 Daniel went back to the office.
@@ -2879,9 +2879,9 @@ Sandra moved to the bedroom.
 $ 0
 @ Where is Daniel
 ? office
-Mary travelled to the hallway.
 John journeyed to the garden.
-$ 0
+Mary travelled to the hallway.
+$ 1
 @  Where is Mary
 ? hallway
 Sandra moved to the bedroom.
@@ -2898,19 +2898,19 @@ Mary moved to the hallway.
 $ 0
 @ Where is John
 ? garden
-John moved to the hallway.
 Sandra travelled to the hallway.
-$ 0
+John moved to the hallway.
+$ 1
 @ Where is John
 ? hallway
-Daniel journeyed to the hallway.
 Mary moved to the garden.
-$ 1
+Daniel journeyed to the hallway.
+$ 0
 @  Where is Mary
 ? garden
-Sandra travelled to the hallway.
 Mary travelled to the bedroom.
-$ 0
+Sandra travelled to the hallway.
+$ 1
 @  Where is Sandra
 ? hallway
 Sandra travelled to the bathroom.
@@ -2923,24 +2923,24 @@ Sandra travelled to the office.
 $ 0
 @ Where is Mary
 ? hallway
-Sandra went to the bathroom.
 Daniel went back to the office.
-$ 0
+Sandra went to the bathroom.
+$ 1
 @ Where is Sandra
 ? bathroom
-John journeyed to the bedroom.
 Sandra went back to the office.
-$ 0
+John journeyed to the bedroom.
+$ 1
 @  Where is John
 ? bedroom
-Sandra travelled to the garden.
 Daniel went to the bedroom.
-$ 0
+Sandra travelled to the garden.
+$ 1
 @  Where is Sandra
 ? garden
-Sandra went to the garden.
 Mary journeyed to the hallway.
-$ 1
+Sandra went to the garden.
+$ 0
 @ Where is Mary
 ? hallway
 Sandra journeyed to the hallway.
@@ -2953,9 +2953,9 @@ Mary went back to the kitchen.
 $ 1
 @ Where is Mary
 ? kitchen
-Sandra travelled to the bathroom.
 Daniel went back to the bedroom.
-$ 0
+Sandra travelled to the bathroom.
+$ 1
 @  Where is Sandra
 ? bathroom
 Daniel went back to the bedroom.
@@ -2967,9 +2967,9 @@ Mary travelled to the garden.
 $ 0
 @ Where is Mary
 ? garden
-Mary travelled to the garden.
 Sandra went back to the office.
-$ 0
+Mary travelled to the garden.
+$ 1
 @ Where is Mary
 ? garden
 John journeyed to the kitchen.
@@ -2977,9 +2977,9 @@ Sandra travelled to the bathroom.
 $ 0
 @ Where is John
 ? kitchen
-Mary went back to the hallway.
 Daniel journeyed to the garden.
-$ 0
+Mary went back to the hallway.
+$ 1
 @  Where is Mary
 ? hallway
 Mary travelled to the kitchen.
@@ -2991,9 +2991,9 @@ Sandra went to the hallway.
 $ 0
 @ Where is Sandra
 ? hallway
-Mary went back to the garden.
 Sandra journeyed to the office.
-$ 1
+Mary went back to the garden.
+$ 0
 @ Where is Sandra
 ? office
 Mary went back to the garden.
@@ -3015,9 +3015,9 @@ Sandra journeyed to the kitchen.
 $ 0
 @ Where is Sandra
 ? kitchen
-Daniel journeyed to the bedroom.
 Sandra moved to the garden.
-$ 1
+Daniel journeyed to the bedroom.
+$ 0
 @ Where is Sandra
 ? garden
 Sandra moved to the garden.
@@ -3039,9 +3039,9 @@ Daniel moved to the bedroom.
 $ 0
 @ Where is Daniel
 ? bedroom
-Daniel journeyed to the hallway.
 Sandra moved to the office.
-$ 0
+Daniel journeyed to the hallway.
+$ 1
 @ Where is Daniel
 ? hallway
 Sandra went to the garden.
@@ -3054,9 +3054,9 @@ Mary journeyed to the garden.
 $ 0
 @  Where is John
 ? garden
-Sandra journeyed to the hallway.
 John moved to the garden.
-$ 1
+Sandra journeyed to the hallway.
+$ 0
 @  Where is John
 ? garden
 Daniel journeyed to the bedroom.
@@ -3064,9 +3064,9 @@ John travelled to the garden.
 $ 1
 @ Where is John
 ? garden
-Mary went to the kitchen.
 John travelled to the garden.
-$ 1
+Mary went to the kitchen.
+$ 0
 @ Where is John
 ? garden
 Sandra moved to the bedroom.
@@ -3079,14 +3079,14 @@ Sandra moved to the bedroom.
 $ 0
 @  Where is Daniel
 ? bedroom
-Sandra moved to the bathroom.
 Daniel travelled to the bedroom.
-$ 1
+Sandra moved to the bathroom.
+$ 0
 @  Where is Daniel
 ? bedroom
-Sandra went to the kitchen.
 John travelled to the bathroom.
-$ 0
+Sandra went to the kitchen.
+$ 1
 @ Where is Sandra
 ? kitchen
 Mary moved to the bedroom.
@@ -3094,24 +3094,24 @@ Daniel went to the garden.
 $ 0
 @ Where is Mary
 ? bedroom
-John moved to the hallway.
 Sandra moved to the bathroom.
-$ 1
+John moved to the hallway.
+$ 0
 @ Where is Sandra
 ? bathroom
+John went back to the kitchen.
 Daniel journeyed to the hallway.
-John went back to the kitchen.
-$ 1
+$ 0
 @  Where is John
 ? kitchen
+John went back to the kitchen.
 Sandra went back to the hallway.
-John went back to the kitchen.
-$ 1
+$ 0
 @  Where is John
 ? kitchen
-Mary went back to the bathroom.
 Sandra moved to the office.
-$ 1
+Mary went back to the bathroom.
+$ 0
 @ Where is Sandra
 ? office
 Sandra moved to the kitchen.
@@ -3119,24 +3119,24 @@ Mary travelled to the office.
 $ 1
 @ Where is Mary
 ? office
-Mary went back to the garden.
 Sandra moved to the bedroom.
-$ 0
+Mary went back to the garden.
+$ 1
 @ Where is Mary
 ? garden
-John went to the hallway.
 Daniel went back to the bathroom.
-$ 1
+John went to the hallway.
+$ 0
 @  Where is Daniel
 ? bathroom
-Daniel went back to the bathroom.
 John went back to the bathroom.
-$ 1
+Daniel went back to the bathroom.
+$ 0
 @  Where is John
 ? bathroom
-Daniel went to the garden.
 Mary travelled to the garden.
-$ 0
+Daniel went to the garden.
+$ 1
 @ Where is Daniel
 ? garden
 Daniel went to the garden.
@@ -3144,14 +3144,14 @@ Mary went back to the hallway.
 $ 1
 @ Where is Mary
 ? hallway
-Mary went back to the hallway.
 Daniel moved to the garden.
-$ 0
+Mary went back to the hallway.
+$ 1
 @ Where is Mary
 ? hallway
-Mary went back to the hallway.
 John travelled to the bathroom.
-$ 0
+Mary went back to the hallway.
+$ 1
 @  Where is Mary
 ? hallway
 Mary moved to the office.
@@ -3159,19 +3159,19 @@ Sandra went back to the kitchen.
 $ 1
 @  Where is Sandra
 ? kitchen
-Sandra travelled to the bathroom.
 Mary went to the office.
-$ 1
+Sandra travelled to the bathroom.
+$ 0
 @ Where is Mary
 ? office
-Daniel journeyed to the kitchen.
 Sandra went to the hallway.
-$ 1
+Daniel journeyed to the kitchen.
+$ 0
 @ Where is Sandra
 ? hallway
-John journeyed to the bedroom.
 Sandra travelled to the office.
-$ 1
+John journeyed to the bedroom.
+$ 0
 @ Where is Sandra
 ? office
 Daniel moved to the hallway.
@@ -3184,14 +3184,14 @@ Sandra went back to the garden.
 $ 0
 @  Where is Daniel
 ? hallway
-Sandra journeyed to the garden.
 Daniel travelled to the bathroom.
-$ 0
+Sandra journeyed to the garden.
+$ 1
 @ Where is Sandra
 ? garden
-Daniel travelled to the bathroom.
 Sandra travelled to the hallway.
-$ 1
+Daniel travelled to the bathroom.
+$ 0
 @ Where is Sandra
 ? hallway
 Daniel travelled to the bathroom.
@@ -3204,14 +3204,14 @@ Sandra went back to the garden.
 $ 0
 @  Where is John
 ? bedroom
-Sandra moved to the kitchen.
 John journeyed to the kitchen.
-$ 1
+Sandra moved to the kitchen.
+$ 0
 @  Where is John
 ? kitchen
-Sandra went to the bedroom.
 Mary moved to the bedroom.
-$ 1
+Sandra went to the bedroom.
+$ 0
 @ Where is Mary
 ? bedroom
 John went to the office.
@@ -3219,24 +3219,24 @@ Daniel journeyed to the garden.
 $ 0
 @ Where is John
 ? office
-Mary travelled to the bathroom.
 Daniel moved to the hallway.
-$ 0
+Mary travelled to the bathroom.
+$ 1
 @ Where is Mary
 ? bathroom
+John moved to the garden.
 Mary travelled to the bathroom.
+$ 1
+@  Where is Mary
+? bathroom
+Mary went to the bedroom.
 John moved to the garden.
 $ 0
 @  Where is Mary
-? bathroom
-John moved to the garden.
-Mary went to the bedroom.
-$ 1
-@  Where is Mary
 ? bedroom
-Mary moved to the kitchen.
 John travelled to the office.
-$ 1
+Mary moved to the kitchen.
+$ 0
 @ Where is John
 ? office
 Daniel went back to the kitchen.
@@ -3244,19 +3244,19 @@ John travelled to the office.
 $ 0
 @ Where is Daniel
 ? kitchen
-Sandra went back to the hallway.
 John travelled to the bedroom.
-$ 1
+Sandra went back to the hallway.
+$ 0
 @ Where is John
 ? bedroom
-Mary moved to the office.
 Daniel travelled to the garden.
-$ 1
+Mary moved to the office.
+$ 0
 @  Where is Daniel
 ? garden
-Daniel travelled to the garden.
 John went to the office.
-$ 0
+Daniel travelled to the garden.
+$ 1
 @  Where is Daniel
 ? garden
 Daniel went to the bedroom.
@@ -3264,34 +3264,34 @@ Mary travelled to the bathroom.
 $ 0
 @ Where is Daniel
 ? bedroom
-John travelled to the hallway.
 Daniel went to the bedroom.
-$ 1
+John travelled to the hallway.
+$ 0
 @ Where is Daniel
 ? bedroom
-Mary travelled to the hallway.
 John travelled to the garden.
-$ 1
+Mary travelled to the hallway.
+$ 0
 @ Where is John
 ? garden
-Mary moved to the bathroom.
 Sandra went to the office.
-$ 0
+Mary moved to the bathroom.
+$ 1
 @  Where is Mary
 ? bathroom
-John went to the hallway.
 Mary journeyed to the garden.
-$ 0
+John went to the hallway.
+$ 1
 @  Where is John
 ? hallway
-Mary moved to the garden.
 John moved to the hallway.
-$ 1
+Mary moved to the garden.
+$ 0
 @ Where is John
 ? hallway
-John moved to the hallway.
 Mary went to the bathroom.
-$ 0
+John moved to the hallway.
+$ 1
 @ Where is John
 ? hallway
 John went to the kitchen.
@@ -3299,29 +3299,29 @@ Mary went back to the bedroom.
 $ 1
 @ Where is Mary
 ? bedroom
-Mary went back to the bedroom.
 John went to the bathroom.
-$ 0
+Mary went back to the bedroom.
+$ 1
 @  Where is Mary
 ? bedroom
-Sandra went back to the hallway.
 John travelled to the bedroom.
-$ 0
+Sandra went back to the hallway.
+$ 1
 @  Where is Sandra
 ? hallway
+John went to the bedroom.
 Daniel journeyed to the bedroom.
-John went to the bedroom.
-$ 1
-@ Where is John
-? bedroom
-Sandra went back to the bedroom.
-John went to the bedroom.
-$ 1
-@ Where is John
-? bedroom
-Daniel journeyed to the hallway.
-Mary journeyed to the hallway.
 $ 0
+@ Where is John
+? bedroom
+John went to the bedroom.
+Sandra went back to the bedroom.
+$ 0
+@ Where is John
+? bedroom
+Mary journeyed to the hallway.
+Daniel journeyed to the hallway.
+$ 1
 @ Where is Daniel
 ? hallway
 Mary journeyed to the garden.
@@ -3349,24 +3349,24 @@ Sandra went back to the bedroom.
 $ 0
 @ Where is Daniel
 ? garden
-Sandra went back to the bedroom.
 Daniel travelled to the hallway.
-$ 1
-@  Where is Daniel
-? hallway
-Daniel moved to the hallway.
 Sandra went back to the bedroom.
 $ 0
 @  Where is Daniel
 ? hallway
-Mary went back to the kitchen.
-Sandra travelled to the kitchen.
+Sandra went back to the bedroom.
+Daniel moved to the hallway.
 $ 1
+@  Where is Daniel
+? hallway
+Sandra travelled to the kitchen.
+Mary went back to the kitchen.
+$ 0
 @ Where is Sandra
 ? kitchen
-Sandra travelled to the bedroom.
 John moved to the bathroom.
-$ 0
+Sandra travelled to the bedroom.
+$ 1
 @ Where is Sandra
 ? bedroom
 Daniel went to the hallway.
@@ -3384,9 +3384,9 @@ Daniel moved to the office.
 $ 0
 @  Where is Sandra
 ? kitchen
-Mary moved to the kitchen.
 Sandra went to the kitchen.
-$ 1
+Mary moved to the kitchen.
+$ 0
 @ Where is Sandra
 ? kitchen
 Mary went to the office.
@@ -3394,9 +3394,9 @@ Sandra moved to the hallway.
 $ 0
 @ Where is Mary
 ? office
-Mary went to the office.
 Sandra journeyed to the garden.
-$ 0
+Mary went to the office.
+$ 1
 @ Where is Mary
 ? office
 Daniel went back to the kitchen.
@@ -3419,9 +3419,9 @@ Mary travelled to the kitchen.
 $ 1
 @ Where is Mary
 ? kitchen
-John went to the bedroom.
 Mary travelled to the kitchen.
-$ 0
+John went to the bedroom.
+$ 1
 @ Where is John
 ? bedroom
 John journeyed to the garden.
@@ -3429,9 +3429,9 @@ Mary moved to the bathroom.
 $ 0
 @  Where is John
 ? garden
-Daniel travelled to the bathroom.
 John journeyed to the garden.
-$ 0
+Daniel travelled to the bathroom.
+$ 1
 @  Where is Daniel
 ? bathroom
 Daniel travelled to the hallway.
@@ -3449,14 +3449,14 @@ John journeyed to the hallway.
 $ 1
 @ Where is John
 ? hallway
-Daniel went back to the hallway.
 John journeyed to the hallway.
-$ 0
+Daniel went back to the hallway.
+$ 1
 @  Where is Daniel
 ? hallway
-John went to the bathroom.
 Daniel went back to the hallway.
-$ 0
+John went to the bathroom.
+$ 1
 @  Where is John
 ? bathroom
 John went back to the office.
@@ -3468,9 +3468,9 @@ Mary journeyed to the garden.
 $ 0
 @ Where is Daniel
 ? bathroom
-John went back to the office.
 Sandra went to the bathroom.
-$ 0
+John went back to the office.
+$ 1
 @ Where is John
 ? office
 Daniel went to the bedroom.
@@ -3478,9 +3478,9 @@ Sandra went to the hallway.
 $ 1
 @  Where is Sandra
 ? hallway
-John went back to the bedroom.
 Mary moved to the kitchen.
-$ 0
+John went back to the bedroom.
+$ 1
 @  Where is John
 ? bedroom
 Mary went back to the kitchen.
@@ -3493,9 +3493,9 @@ Mary travelled to the bathroom.
 $ 0
 @ Where is Daniel
 ? bedroom
-Mary travelled to the bathroom.
 Sandra journeyed to the kitchen.
-$ 0
+Mary travelled to the bathroom.
+$ 1
 @ Where is Mary
 ? bathroom
 Daniel journeyed to the bathroom.
@@ -3503,9 +3503,9 @@ Mary travelled to the bathroom.
 $ 1
 @  Where is Mary
 ? bathroom
-John travelled to the office.
 Daniel went back to the kitchen.
-$ 1
+John travelled to the office.
+$ 0
 @  Where is Daniel
 ? kitchen
 Sandra moved to the garden.
@@ -3513,14 +3513,14 @@ Mary moved to the bedroom.
 $ 0
 @ Where is Sandra
 ? garden
-John travelled to the office.
 Sandra journeyed to the office.
-$ 0
+John travelled to the office.
+$ 1
 @ Where is John
 ? office
-Sandra journeyed to the hallway.
 Mary journeyed to the garden.
-$ 0
+Sandra journeyed to the hallway.
+$ 1
 @ Where is Sandra
 ? hallway
 Sandra went back to the garden.
@@ -3528,9 +3528,9 @@ Mary journeyed to the garden.
 $ 1
 @  Where is Mary
 ? garden
-John went back to the bathroom.
 Daniel went back to the kitchen.
-$ 1
+John went back to the bathroom.
+$ 0
 @  Where is Daniel
 ? kitchen
 Mary journeyed to the office.
@@ -3548,9 +3548,9 @@ Sandra journeyed to the bathroom.
 $ 0
 @ Where is Daniel
 ? office
-Daniel went to the office.
 Mary moved to the office.
-$ 0
+Daniel went to the office.
+$ 1
 @  Where is Daniel
 ? office
 Mary moved to the office.
@@ -3568,9 +3568,9 @@ Mary moved to the office.
 $ 1
 @ Where is Mary
 ? office
-John journeyed to the hallway.
 Mary went back to the kitchen.
-$ 1
+John journeyed to the hallway.
+$ 0
 @ Where is Mary
 ? kitchen
 Daniel moved to the office.
@@ -3593,14 +3593,14 @@ Daniel went to the bedroom.
 $ 1
 @ Where is Daniel
 ? bedroom
-Mary travelled to the office.
 Sandra went back to the hallway.
-$ 0
+Mary travelled to the office.
+$ 1
 @ Where is Mary
 ? office
-John went back to the kitchen.
 Mary went back to the garden.
-$ 1
+John went back to the kitchen.
+$ 0
 @  Where is Mary
 ? garden
 Mary journeyed to the bathroom.
@@ -3612,14 +3612,14 @@ John went back to the hallway.
 $ 0
 @ Where is John
 ? hallway
-Daniel went back to the office.
 John went back to the hallway.
-$ 1
+Daniel went back to the office.
+$ 0
 @ Where is John
 ? hallway
-John went back to the hallway.
 Daniel moved to the bedroom.
-$ 0
+John went back to the hallway.
+$ 1
 @ Where is John
 ? hallway
 Mary went to the office.
@@ -3632,14 +3632,14 @@ John moved to the bedroom.
 $ 0
 @  Where is Mary
 ? kitchen
-John journeyed to the kitchen.
 Sandra went to the garden.
-$ 0
+John journeyed to the kitchen.
+$ 1
 @ Where is John
 ? kitchen
-Daniel moved to the garden.
 John went back to the office.
-$ 1
+Daniel moved to the garden.
+$ 0
 @ Where is John
 ? office
 John went back to the office.
@@ -3657,34 +3657,34 @@ Sandra went to the garden.
 $ 1
 @  Where is Sandra
 ? garden
-John travelled to the office.
 Daniel travelled to the hallway.
-$ 0
+John travelled to the office.
+$ 1
 @ Where is John
 ? office
+Daniel went back to the office.
 John travelled to the office.
-Daniel went back to the office.
-$ 1
-@ Where is Daniel
-? office
-Mary went to the hallway.
-Daniel went back to the office.
-$ 1
-@ Where is Daniel
-? office
-Sandra went to the garden.
-Mary travelled to the office.
 $ 0
+@ Where is Daniel
+? office
+Daniel went back to the office.
+Mary went to the hallway.
+$ 0
+@ Where is Daniel
+? office
+Mary travelled to the office.
+Sandra went to the garden.
+$ 1
 @  Where is Sandra
 ? garden
-John journeyed to the bedroom.
 Mary travelled to the office.
-$ 1
+John journeyed to the bedroom.
+$ 0
 @  Where is Mary
 ? office
-Daniel journeyed to the hallway.
 Sandra went back to the bathroom.
-$ 1
+Daniel journeyed to the hallway.
+$ 0
 @ Where is Sandra
 ? bathroom
 John went to the bedroom.
@@ -3702,19 +3702,19 @@ Sandra went back to the hallway.
 $ 1
 @  Where is Sandra
 ? hallway
-John went back to the hallway.
 Sandra went back to the hallway.
-$ 0
+John went back to the hallway.
+$ 1
 @  Where is John
 ? hallway
-Sandra went to the hallway.
 Daniel went to the bathroom.
-$ 0
+Sandra went to the hallway.
+$ 1
 @ Where is Sandra
 ? hallway
-John went to the office.
 Sandra journeyed to the garden.
-$ 0
+John went to the office.
+$ 1
 @ Where is John
 ? office
 Mary went to the bedroom.
@@ -3722,9 +3722,9 @@ Sandra journeyed to the garden.
 $ 1
 @ Where is Sandra
 ? garden
-Sandra journeyed to the hallway.
 Daniel went to the bedroom.
-$ 0
+Sandra journeyed to the hallway.
+$ 1
 @  Where is Sandra
 ? hallway
 Mary went to the bedroom.
@@ -3732,14 +3732,14 @@ Daniel journeyed to the hallway.
 $ 0
 @  Where is Mary
 ? bedroom
-Mary moved to the bathroom.
 Sandra went to the hallway.
-$ 0
+Mary moved to the bathroom.
+$ 1
 @ Where is Mary
 ? bathroom
-Daniel went back to the kitchen.
 Mary went back to the kitchen.
-$ 0
+Daniel went back to the kitchen.
+$ 1
 @ Where is Daniel
 ? kitchen
 Daniel journeyed to the office.
@@ -3747,24 +3747,24 @@ John went back to the bathroom.
 $ 0
 @ Where is Daniel
 ? office
-Daniel went back to the garden.
 John went back to the bathroom.
-$ 0
+Daniel went back to the garden.
+$ 1
 @  Where is Daniel
 ? garden
-Sandra moved to the bathroom.
 Mary went to the office.
-$ 0
+Sandra moved to the bathroom.
+$ 1
 @  Where is Sandra
 ? bathroom
-Mary went back to the bedroom.
 Daniel went to the office.
-$ 0
+Mary went back to the bedroom.
+$ 1
 @ Where is Mary
 ? bedroom
-Mary journeyed to the garden.
 John moved to the kitchen.
-$ 1
+Mary journeyed to the garden.
+$ 0
 @ Where is John
 ? kitchen
 John moved to the kitchen.
@@ -3772,28 +3772,28 @@ Sandra journeyed to the hallway.
 $ 1
 @ Where is Sandra
 ? hallway
-Mary went to the bathroom.
 Sandra went back to the bathroom.
-$ 1
+Mary went to the bathroom.
+$ 0
 @  Where is Sandra
 ? bathroom
-John moved to the bedroom.
 Daniel went to the garden.
-$ 1
+John moved to the bedroom.
+$ 0
 @  Where is Daniel
 ? garden
 Mary went to the bathroom.
 $ 0
 @ Where is Mary
 ? bathroom
-John journeyed to the hallway.
 Mary went back to the hallway.
-$ 1
+John journeyed to the hallway.
+$ 0
 @ Where is Mary
 ? hallway
-Mary went back to the hallway.
 Sandra went back to the office.
-$ 0
+Mary went back to the hallway.
+$ 1
 @ Where is Mary
 ? hallway
 John travelled to the garden.
@@ -3820,9 +3820,9 @@ Mary went back to the office.
 $ 0
 @ Where is Sandra
 ? bedroom
-Sandra moved to the hallway.
 Mary went to the garden.
-$ 1
+Sandra moved to the hallway.
+$ 0
 @  Where is Mary
 ? garden
 Sandra journeyed to the office.
@@ -3845,14 +3845,14 @@ Sandra went to the hallway.
 $ 1
 @ Where is Sandra
 ? hallway
-John went back to the office.
 Mary travelled to the hallway.
-$ 1
+John went back to the office.
+$ 0
 @  Where is Mary
 ? hallway
-Sandra journeyed to the bathroom.
 John went to the bedroom.
-$ 0
+Sandra journeyed to the bathroom.
+$ 1
 @  Where is Sandra
 ? bathroom
 John journeyed to the hallway.
@@ -3865,9 +3865,9 @@ Mary moved to the bedroom.
 $ 0
 @ Where is Daniel
 ? office
-Mary went back to the hallway.
 John journeyed to the bathroom.
-$ 1
+Mary went back to the hallway.
+$ 0
 @ Where is John
 ? bathroom
 Mary went back to the hallway.
@@ -3885,9 +3885,9 @@ Sandra journeyed to the bathroom.
 $ 0
 @ Where is Daniel
 ? garden
-John travelled to the garden.
 Daniel went to the office.
-$ 0
+John travelled to the garden.
+$ 1
 @ Where is John
 ? garden
 Mary went back to the hallway.
@@ -3895,9 +3895,9 @@ Daniel went back to the hallway.
 $ 1
 @ Where is Daniel
 ? hallway
-John went to the bedroom.
 Mary went back to the kitchen.
-$ 0
+John went to the bedroom.
+$ 1
 @  Where is John
 ? bedroom
 John travelled to the hallway.
@@ -3905,14 +3905,14 @@ Mary journeyed to the garden.
 $ 1
 @  Where is Mary
 ? garden
-John journeyed to the bedroom.
 Sandra travelled to the kitchen.
-$ 1
+John journeyed to the bedroom.
+$ 0
 @ Where is Sandra
 ? kitchen
-Sandra journeyed to the office.
 John journeyed to the hallway.
-$ 0
+Sandra journeyed to the office.
+$ 1
 @ Where is Sandra
 ? office
 Mary moved to the office.
@@ -3940,19 +3940,19 @@ Sandra travelled to the hallway.
 $ 0
 @ Where is John
 ? kitchen
-Mary journeyed to the garden.
 John journeyed to the hallway.
-$ 1
+Mary journeyed to the garden.
+$ 0
 @ Where is John
 ? hallway
-John journeyed to the hallway.
 Sandra moved to the kitchen.
-$ 0
+John journeyed to the hallway.
+$ 1
 @  Where is John
 ? hallway
-Sandra moved to the kitchen.
 Daniel journeyed to the garden.
-$ 1
+Sandra moved to the kitchen.
+$ 0
 @  Where is Daniel
 ? garden
 John went to the hallway.
@@ -3960,9 +3960,9 @@ Sandra went to the bedroom.
 $ 1
 @ Where is Sandra
 ? bedroom
-Sandra journeyed to the office.
 John moved to the garden.
-$ 0
+Sandra journeyed to the office.
+$ 1
 @ Where is Sandra
 ? office
 Sandra journeyed to the office.
@@ -3990,14 +3990,14 @@ Sandra went to the garden.
 $ 1
 @ Where is Sandra
 ? garden
-Sandra travelled to the office.
 Daniel journeyed to the bathroom.
-$ 0
+Sandra travelled to the office.
+$ 1
 @ Where is Sandra
 ? office
-Mary travelled to the bathroom.
 Daniel went back to the office.
-$ 0
+Mary travelled to the bathroom.
+$ 1
 @  Where is Mary
 ? bathroom
 Mary went to the hallway.
@@ -4005,14 +4005,14 @@ Sandra went to the bathroom.
 $ 0
 @  Where is Mary
 ? hallway
-Mary went back to the bedroom.
 Daniel went to the kitchen.
-$ 0
+Mary went back to the bedroom.
+$ 1
 @ Where is Mary
 ? bedroom
-Daniel moved to the garden.
 Sandra travelled to the kitchen.
-$ 1
+Daniel moved to the garden.
+$ 0
 @ Where is Sandra
 ? kitchen
 Daniel moved to the garden.
@@ -4020,9 +4020,9 @@ Mary moved to the kitchen.
 $ 0
 @ Where is Daniel
 ? garden
-Mary moved to the office.
 Sandra moved to the hallway.
-$ 0
+Mary moved to the office.
+$ 1
 @  Where is Mary
 ? office
 Mary moved to the office.
@@ -4030,19 +4030,19 @@ Daniel moved to the kitchen.
 $ 1
 @  Where is Daniel
 ? kitchen
-Mary went back to the kitchen.
 Sandra travelled to the bathroom.
-$ 0
-@ Where is Mary
-? kitchen
-John journeyed to the office.
-Mary moved to the garden.
+Mary went back to the kitchen.
 $ 1
 @ Where is Mary
-? garden
-Sandra journeyed to the bathroom.
+? kitchen
+Mary moved to the garden.
 John journeyed to the office.
 $ 0
+@ Where is Mary
+? garden
+John journeyed to the office.
+Sandra journeyed to the bathroom.
+$ 1
 @ Where is Sandra
 ? bathroom
 John moved to the garden.
@@ -4050,9 +4050,9 @@ Daniel went back to the hallway.
 $ 0
 @  Where is John
 ? garden
-Daniel went back to the bedroom.
 Mary went to the office.
-$ 1
+Daniel went back to the bedroom.
+$ 0
 @  Where is Mary
 ? office
 Daniel moved to the office.
@@ -4060,9 +4060,9 @@ John went back to the garden.
 $ 1
 @ Where is John
 ? garden
-John went back to the bathroom.
 Sandra went to the hallway.
-$ 0
+John went back to the bathroom.
+$ 1
 @ Where is John
 ? bathroom
 John went back to the bathroom.
@@ -4070,49 +4070,49 @@ Mary travelled to the garden.
 $ 1
 @ Where is Mary
 ? garden
-Mary travelled to the garden.
 John went back to the office.
-$ 0
+Mary travelled to the garden.
+$ 1
 @  Where is Mary
 ? garden
-John went back to the office.
 Sandra went to the office.
-$ 0
+John went back to the office.
+$ 1
 @  Where is John
 ? office
-Mary went back to the kitchen.
 Daniel travelled to the garden.
-$ 0
+Mary went back to the kitchen.
+$ 1
 @ Where is Mary
 ? kitchen
-Mary travelled to the garden.
 Daniel travelled to the garden.
-$ 1
+Mary travelled to the garden.
+$ 0
 @ Where is Daniel
 ? garden
-John went back to the bedroom.
 Mary travelled to the garden.
-$ 1
+John went back to the bedroom.
+$ 0
 @ Where is Mary
 ? garden
-Sandra travelled to the kitchen.
 John went back to the bedroom.
-$ 1
+Sandra travelled to the kitchen.
+$ 0
 @  Where is John
 ? bedroom
-John moved to the hallway.
 Daniel moved to the bedroom.
-$ 1
+John moved to the hallway.
+$ 0
 @  Where is Daniel
 ? bedroom
-John journeyed to the bedroom.
 Mary went to the office.
-$ 1
+John journeyed to the bedroom.
+$ 0
 @ Where is Mary
 ? office
-Mary went to the hallway.
 John moved to the office.
-$ 0
+Mary went to the hallway.
+$ 1
 @ Where is Mary
 ? hallway
 Sandra travelled to the office.
@@ -4120,9 +4120,9 @@ John travelled to the bedroom.
 $ 0
 @ Where is Sandra
 ? office
-Daniel travelled to the kitchen.
 Mary went to the kitchen.
-$ 0
+Daniel travelled to the kitchen.
+$ 1
 @  Where is Daniel
 ? kitchen
 Sandra journeyed to the bedroom.
@@ -4135,9 +4135,9 @@ Sandra went to the kitchen.
 $ 0
 @ Where is Daniel
 ? kitchen
-John went back to the bedroom.
 Daniel went to the bathroom.
-$ 0
+John went back to the bedroom.
+$ 1
 @ Where is John
 ? bedroom
 Daniel went back to the office.
@@ -4155,9 +4155,9 @@ Daniel went back to the bathroom.
 $ 0
 @  Where is Sandra
 ? office
-John went back to the bathroom.
 Mary journeyed to the hallway.
-$ 1
+John went back to the bathroom.
+$ 0
 @ Where is Mary
 ? hallway
 John went back to the bedroom.
@@ -4165,14 +4165,14 @@ Daniel travelled to the bedroom.
 $ 0
 @ Where is John
 ? bedroom
-Mary went to the garden.
 Daniel moved to the kitchen.
-$ 1
+Mary went to the garden.
+$ 0
 @ Where is Daniel
 ? kitchen
-Mary journeyed to the kitchen.
 Daniel went to the hallway.
-$ 0
+Mary journeyed to the kitchen.
+$ 1
 @  Where is Mary
 ? kitchen
 Mary went back to the hallway.
@@ -4193,9 +4193,9 @@ Sandra went to the bedroom.
 $ 0
 @ Where is John
 ? kitchen
-John journeyed to the kitchen.
 Daniel went back to the kitchen.
-$ 0
+John journeyed to the kitchen.
+$ 1
 @  Where is John
 ? kitchen
 Sandra journeyed to the hallway.
@@ -4203,19 +4203,19 @@ Mary went back to the bathroom.
 $ 0
 @  Where is Sandra
 ? hallway
-Daniel went to the hallway.
 John travelled to the bathroom.
-$ 1
+Daniel went to the hallway.
+$ 0
 @ Where is John
 ? bathroom
-Mary journeyed to the kitchen.
 John moved to the kitchen.
-$ 1
+Mary journeyed to the kitchen.
+$ 0
 @ Where is John
 ? kitchen
-John travelled to the bathroom.
 Daniel travelled to the bathroom.
-$ 0
+John travelled to the bathroom.
+$ 1
 @ Where is John
 ? bathroom
 Sandra travelled to the hallway.
@@ -4223,29 +4223,29 @@ Daniel went to the garden.
 $ 0
 @  Where is Sandra
 ? hallway
-Mary travelled to the hallway.
 John journeyed to the bedroom.
-$ 0
+Mary travelled to the hallway.
+$ 1
 @  Where is Mary
 ? hallway
-John went to the bedroom.
 Daniel went to the bedroom.
-$ 1
+John went to the bedroom.
+$ 0
 @ Where is Daniel
 ? bedroom
-Daniel went to the bedroom.
 John went back to the bedroom.
-$ 1
+Daniel went to the bedroom.
+$ 0
 @ Where is John
 ? bedroom
-John went to the garden.
 Daniel went to the bedroom.
-$ 1
-@ Where is Daniel
-? bedroom
-Daniel went to the office.
 John went to the garden.
 $ 0
+@ Where is Daniel
+? bedroom
+John went to the garden.
+Daniel went to the office.
+$ 1
 @  Where is Daniel
 ? office
 Daniel went to the office.
@@ -4253,29 +4253,29 @@ John moved to the office.
 $ 1
 @  Where is John
 ? office
-Sandra moved to the hallway.
 Daniel moved to the garden.
-$ 0
+Sandra moved to the hallway.
+$ 1
 @ Where is Sandra
 ? hallway
-Daniel moved to the garden.
 John went to the office.
-$ 0
+Daniel moved to the garden.
+$ 1
 @ Where is Daniel
 ? garden
-John went back to the hallway.
 Sandra moved to the hallway.
-$ 0
+John went back to the hallway.
+$ 1
 @ Where is John
 ? hallway
-Mary journeyed to the bedroom.
 Sandra journeyed to the office.
-$ 0
+Mary journeyed to the bedroom.
+$ 1
 @  Where is Mary
 ? bedroom
-Sandra travelled to the hallway.
 Mary went back to the bathroom.
-$ 1
+Sandra travelled to the hallway.
+$ 0
 @  Where is Mary
 ? bathroom
 Mary journeyed to the bedroom.
@@ -4288,19 +4288,19 @@ Mary journeyed to the garden.
 $ 0
 @ Where is Sandra
 ? garden
-John moved to the office.
 Sandra moved to the bedroom.
-$ 0
+John moved to the office.
+$ 1
 @ Where is John
 ? office
-Sandra moved to the bathroom.
 Daniel moved to the bedroom.
-$ 0
-@  Where is Sandra
-? bathroom
-John went to the garden.
 Sandra moved to the bathroom.
 $ 1
+@  Where is Sandra
+? bathroom
+Sandra moved to the bathroom.
+John went to the garden.
+$ 0
 @  Where is Sandra
 ? bathroom
 Sandra went to the hallway.
@@ -4313,14 +4313,14 @@ Daniel journeyed to the office.
 $ 0
 @ Where is John
 ? garden
-Daniel moved to the bedroom.
 Mary journeyed to the bathroom.
-$ 1
+Daniel moved to the bedroom.
+$ 0
 @ Where is Mary
 ? bathroom
-Daniel went back to the office.
 John went back to the kitchen.
-$ 0
+Daniel went back to the office.
+$ 1
 @  Where is Daniel
 ? office
 Daniel went to the kitchen.
@@ -4338,19 +4338,19 @@ Mary travelled to the bedroom.
 $ 0
 @ Where is Daniel
 ? hallway
-John went to the garden.
 Daniel journeyed to the hallway.
-$ 1
+John went to the garden.
+$ 0
 @ Where is Daniel
 ? hallway
-Daniel journeyed to the bathroom.
 John moved to the hallway.
-$ 0
+Daniel journeyed to the bathroom.
+$ 1
 @  Where is Daniel
 ? bathroom
-John travelled to the kitchen.
 Daniel moved to the hallway.
-$ 0
+John travelled to the kitchen.
+$ 1
 @  Where is John
 ? kitchen
 Daniel went to the bedroom.
@@ -4358,14 +4358,14 @@ Sandra went to the bathroom.
 $ 1
 @ Where is Sandra
 ? bathroom
-Mary went to the garden.
 Sandra moved to the hallway.
-$ 1
+Mary went to the garden.
+$ 0
 @ Where is Sandra
 ? hallway
-Sandra moved to the hallway.
 Mary journeyed to the kitchen.
-$ 0
+Sandra moved to the hallway.
+$ 1
 @ Where is Sandra
 ? hallway
 John went to the kitchen.
@@ -4383,14 +4383,14 @@ Mary went to the hallway.
 $ 1
 @ Where is Mary
 ? hallway
-Mary journeyed to the bathroom.
 Daniel journeyed to the hallway.
-$ 1
+Mary journeyed to the bathroom.
+$ 0
 @ Where is Daniel
 ? hallway
-Mary journeyed to the bathroom.
 Daniel travelled to the office.
-$ 1
+Mary journeyed to the bathroom.
+$ 0
 @ Where is Daniel
 ? office
 Mary went back to the bathroom.
@@ -4398,14 +4398,14 @@ Daniel travelled to the office.
 $ 0
 @  Where is Mary
 ? bathroom
-Mary went to the hallway.
 Daniel went to the bedroom.
-$ 0
+Mary went to the hallway.
+$ 1
 @  Where is Mary
 ? hallway
-Daniel went to the kitchen.
 John travelled to the kitchen.
-$ 0
+Daniel went to the kitchen.
+$ 1
 @ Where is Daniel
 ? kitchen
 Daniel went to the kitchen.
@@ -4423,9 +4423,9 @@ Mary moved to the bedroom.
 $ 1
 @  Where is Mary
 ? bedroom
-Sandra went to the office.
 John journeyed to the garden.
-$ 1
+Sandra went to the office.
+$ 0
 @  Where is John
 ? garden
 Daniel went to the office.
@@ -4433,9 +4433,9 @@ Mary travelled to the garden.
 $ 0
 @ Where is Daniel
 ? office
-Sandra journeyed to the kitchen.
 Daniel travelled to the kitchen.
-$ 1
+Sandra journeyed to the kitchen.
+$ 0
 @ Where is Daniel
 ? kitchen
 Mary went back to the hallway.
@@ -4448,9 +4448,9 @@ Sandra journeyed to the bathroom.
 $ 0
 @  Where is Mary
 ? bathroom
-John journeyed to the garden.
 Sandra went to the garden.
-$ 1
+John journeyed to the garden.
+$ 0
 @  Where is Sandra
 ? garden
 John went to the garden.
@@ -4468,9 +4468,9 @@ Sandra moved to the kitchen.
 $ 0
 @ Where is Daniel
 ? bedroom
-Mary went back to the garden.
 Daniel went to the office.
-$ 0
+Mary went back to the garden.
+$ 1
 @  Where is Mary
 ? garden
 Sandra travelled to the hallway.
@@ -4483,14 +4483,14 @@ Daniel moved to the hallway.
 $ 0
 @ Where is Sandra
 ? office
-Daniel travelled to the garden.
 Mary moved to the bathroom.
-$ 0
+Daniel travelled to the garden.
+$ 1
 @ Where is Daniel
 ? garden
-Sandra moved to the garden.
 Mary moved to the bathroom.
-$ 0
+Sandra moved to the garden.
+$ 1
 @ Where is Sandra
 ? garden
 Daniel went to the bathroom.
@@ -4523,9 +4523,9 @@ John journeyed to the bathroom.
 $ 0
 @  Where is Sandra
 ? office
-Sandra went back to the kitchen.
 Mary moved to the bathroom.
-$ 1
+Sandra went back to the kitchen.
+$ 0
 @  Where is Mary
 ? bathroom
 John went to the hallway.
@@ -4537,9 +4537,9 @@ John went to the hallway.
 $ 0
 @ Where is Sandra
 ? kitchen
-John moved to the bedroom.
 Sandra went back to the bathroom.
-$ 1
+John moved to the bedroom.
+$ 0
 @ Where is Sandra
 ? bathroom
 Daniel journeyed to the office.
@@ -4547,24 +4547,24 @@ Sandra went to the hallway.
 $ 1
 @  Where is Sandra
 ? hallway
-Sandra went to the hallway.
 Daniel travelled to the garden.
-$ 1
+Sandra went to the hallway.
+$ 0
 @  Where is Daniel
 ? garden
-Sandra journeyed to the bathroom.
 Daniel moved to the garden.
-$ 1
+Sandra journeyed to the bathroom.
+$ 0
 @ Where is Daniel
 ? garden
-Daniel went back to the kitchen.
 Mary went back to the garden.
-$ 0
+Daniel went back to the kitchen.
+$ 1
 @ Where is Daniel
 ? kitchen
-Daniel went back to the kitchen.
 Mary went back to the bathroom.
-$ 0
+Daniel went back to the kitchen.
+$ 1
 @ Where is Daniel
 ? kitchen
 John went back to the bedroom.
@@ -4572,9 +4572,9 @@ Mary went back to the bathroom.
 $ 0
 @  Where is John
 ? bedroom
-Daniel journeyed to the bathroom.
 John went back to the office.
-$ 1
+Daniel journeyed to the bathroom.
+$ 0
 @  Where is John
 ? office
 John journeyed to the office.
@@ -4591,23 +4591,23 @@ John journeyed to the office.
 $ 0
 @ Where is Mary
 ? bathroom
-John journeyed to the garden.
 Sandra went to the bathroom.
-$ 0
+John journeyed to the garden.
+$ 1
 @  Where is John
 ? garden
-John went back to the bathroom.
 Sandra journeyed to the office.
-$ 1
+John went back to the bathroom.
+$ 0
 @  Where is Sandra
 ? office
 Mary journeyed to the garden.
 $ 0
 @ Where is Mary
 ? garden
-Mary went back to the hallway.
 Daniel went back to the garden.
-$ 1
+Mary went back to the hallway.
+$ 0
 @ Where is Daniel
 ? garden
 John travelled to the bedroom.
@@ -4620,19 +4620,19 @@ Mary went to the kitchen.
 $ 1
 @  Where is Mary
 ? kitchen
-Mary went to the kitchen.
 John went back to the garden.
-$ 1
+Mary went to the kitchen.
+$ 0
 @  Where is John
 ? garden
-John journeyed to the bedroom.
 Mary moved to the garden.
-$ 0
-@ Where is John
-? bedroom
-Mary travelled to the garden.
 John journeyed to the bedroom.
 $ 1
+@ Where is John
+? bedroom
+John journeyed to the bedroom.
+Mary travelled to the garden.
+$ 0
 @ Where is John
 ? bedroom
 Mary went back to the bedroom.
@@ -4640,9 +4640,9 @@ Sandra went back to the office.
 $ 0
 @ Where is Mary
 ? bedroom
-Mary went back to the bedroom.
 Sandra travelled to the kitchen.
-$ 1
+Mary went back to the bedroom.
+$ 0
 @  Where is Sandra
 ? kitchen
 Mary went to the bathroom.
@@ -4650,19 +4650,19 @@ Sandra moved to the hallway.
 $ 1
 @  Where is Sandra
 ? hallway
-Mary travelled to the kitchen.
 Sandra moved to the office.
-$ 1
+Mary travelled to the kitchen.
+$ 0
 @ Where is Sandra
 ? office
+Mary journeyed to the kitchen.
 Sandra moved to the office.
-Mary journeyed to the kitchen.
-$ 1
+$ 0
 @ Where is Mary
 ? kitchen
-Daniel went to the bedroom.
 Mary journeyed to the kitchen.
-$ 1
+Daniel went to the bedroom.
+$ 0
 @ Where is Mary
 ? kitchen
 Sandra travelled to the office.
@@ -4675,9 +4675,9 @@ Mary journeyed to the kitchen.
 $ 0
 @  Where is Sandra
 ? office
-Daniel journeyed to the kitchen.
 John journeyed to the office.
-$ 1
+Daniel journeyed to the kitchen.
+$ 0
 @ Where is John
 ? office
 Daniel travelled to the bedroom.
@@ -4685,9 +4685,9 @@ Sandra journeyed to the bathroom.
 $ 0
 @ Where is Daniel
 ? bedroom
-Mary travelled to the bedroom.
 John travelled to the kitchen.
-$ 1
+Mary travelled to the bedroom.
+$ 0
 @ Where is John
 ? kitchen
 Mary went back to the garden.
@@ -4705,9 +4705,9 @@ Sandra journeyed to the hallway.
 $ 0
 @ Where is Mary
 ? bedroom
-Mary went back to the office.
 Sandra moved to the bedroom.
-$ 0
+Mary went back to the office.
+$ 1
 @ Where is Mary
 ? office
 Daniel moved to the bedroom.
@@ -4715,9 +4715,9 @@ Sandra moved to the kitchen.
 $ 0
 @ Where is Daniel
 ? bedroom
-Sandra went to the hallway.
 Mary journeyed to the bathroom.
-$ 0
+Sandra went to the hallway.
+$ 1
 @  Where is Sandra
 ? hallway
 John travelled to the hallway.
@@ -4740,14 +4740,14 @@ John went back to the kitchen.
 $ 1
 @ Where is John
 ? kitchen
-Daniel went to the garden.
 John went to the office.
-$ 0
+Daniel went to the garden.
+$ 1
 @  Where is Daniel
 ? garden
-Daniel went to the garden.
 Sandra journeyed to the garden.
-$ 0
+Daniel went to the garden.
+$ 1
 @  Where is Daniel
 ? garden
 Daniel travelled to the office.
@@ -4775,14 +4775,14 @@ Mary journeyed to the garden.
 $ 1
 @  Where is Mary
 ? garden
-Daniel went back to the office.
 John moved to the garden.
-$ 1
+Daniel went back to the office.
+$ 0
 @ Where is John
 ? garden
-Mary went back to the garden.
 John moved to the garden.
-$ 1
+Mary went back to the garden.
+$ 0
 @ Where is John
 ? garden
 Mary went back to the garden.
@@ -4795,14 +4795,14 @@ Daniel went back to the hallway.
 $ 0
 @  Where is Sandra
 ? kitchen
-Mary moved to the bathroom.
 Sandra went to the bathroom.
-$ 1
+Mary moved to the bathroom.
+$ 0
 @  Where is Sandra
 ? bathroom
-John journeyed to the hallway.
 Sandra went to the bathroom.
-$ 0
+John journeyed to the hallway.
+$ 1
 @ Where is John
 ? hallway
 John went to the kitchen.
@@ -4820,9 +4820,9 @@ Mary travelled to the garden.
 $ 0
 @  Where is John
 ? kitchen
-Mary travelled to the garden.
 John travelled to the office.
-$ 0
+Mary travelled to the garden.
+$ 1
 @  Where is Mary
 ? garden
 Sandra went to the kitchen.
@@ -4835,9 +4835,9 @@ John journeyed to the kitchen.
 $ 1
 @ Where is John
 ? kitchen
-Daniel journeyed to the garden.
 Sandra went back to the bathroom.
-$ 0
+Daniel journeyed to the garden.
+$ 1
 @ Where is Daniel
 ? garden
 Sandra went back to the bathroom.
@@ -4845,9 +4845,9 @@ Mary moved to the bathroom.
 $ 0
 @  Where is Sandra
 ? bathroom
-John went back to the office.
 Mary went to the kitchen.
-$ 1
+John went back to the office.
+$ 0
 @  Where is Mary
 ? kitchen
 John travelled to the office.
@@ -4855,19 +4855,19 @@ Sandra moved to the bedroom.
 $ 0
 @ Where is John
 ? office
-Mary went to the hallway.
 Daniel travelled to the hallway.
-$ 1
+Mary went to the hallway.
+$ 0
 @ Where is Daniel
 ? hallway
-Sandra moved to the kitchen.
 Mary travelled to the office.
-$ 1
+Sandra moved to the kitchen.
+$ 0
 @ Where is Mary
 ? office
-Sandra moved to the kitchen.
 Daniel moved to the garden.
-$ 0
+Sandra moved to the kitchen.
+$ 1
 @  Where is Sandra
 ? kitchen
 John went back to the hallway.
@@ -4875,9 +4875,9 @@ Daniel travelled to the bedroom.
 $ 1
 @  Where is Daniel
 ? bedroom
-John travelled to the hallway.
 Mary went to the kitchen.
-$ 0
+John travelled to the hallway.
+$ 1
 @ Where is John
 ? hallway
 John travelled to the kitchen.
@@ -4885,9 +4885,9 @@ Mary went to the kitchen.
 $ 1
 @ Where is Mary
 ? kitchen
-Mary travelled to the office.
 John travelled to the kitchen.
-$ 1
+Mary travelled to the office.
+$ 0
 @ Where is John
 ? kitchen
 Mary travelled to the office.
@@ -4910,9 +4910,9 @@ Mary went back to the bathroom.
 $ 0
 @ Where is Daniel
 ? office
-Daniel went back to the kitchen.
 Mary travelled to the bedroom.
-$ 1
+Daniel went back to the kitchen.
+$ 0
 @ Where is Mary
 ? bedroom
 Daniel went back to the kitchen.
