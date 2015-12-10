@@ -77,8 +77,8 @@ if __name__ == '__main__':
         print(" data type: ", data_type)
     else:
         print(" running")
-        nn_type = "dynam_net_theano"
-        data_type = "babi_medium"
+        nn_type = "mem_net"
+        data_type = "wiki_qa"
 
 
     main(nn_type, data_type)

@@ -16,6 +16,8 @@ class WikiProcessor(object):
 
     def process(self, extract_yes_no=1):
 
+        extract_yes_no = 0
+
         docs = {}
 
         nums = ['S08','S09','S10']
@@ -52,11 +54,17 @@ class WikiProcessor(object):
         if extract_yes_no:
             self._extract_yes_or_no(docs)
 
+        self.vocab = set()
+        self.word2idx = {}
+        self.idx2word = {}
+        self.cur_idx = 0
+
         lines, max_seqlen = self._convert_to_mem_net_format(docs)
-        lines, vocab, word2idx, idx2word, max_sent_len = self._word2idx(lines, docs)
+
+        lines, self.vocab, self.word2idx, self.idx2word, max_sent_len = self._word2idx(lines, docs)
         test_lines, train_lines = self._split_test_train(lines)
 
-        return vocab, train_lines, test_lines, word2idx, idx2word, max_seqlen, max_sent_len
+        return self.vocab, train_lines, test_lines, self.word2idx, self.idx2word, max_seqlen, max_sent_len
 
     def _split_test_train(self, lines):
         percent_train = 0.9
@@ -92,6 +100,18 @@ class WikiProcessor(object):
             for q in docs[d]['questions'].keys():
                 a = docs[d]['questions'][q]
                 lines.append({'answer': a['answer'], 'text': q, 'type': 'q', 'refs': [1], 'id': cur_line})
+
+                # for qw in q.split():
+                #     self.vocab.add(qw)
+                #     self.word2idx[qw] = self.cur_idx
+                #     self.idx2word[self.cur_idx] = qw
+                #     self.cur_idx += 1
+
+                # self.vocab.add(a['answer'])
+                # self.word2idx[a['answer']] = self.cur_idx
+                # self.idx2word[self.cur_idx] = a['answer']
+                # self.cur_idx += 1
+
                 cur_line += 1
             if cur_line > max_seqlen:
                 max_seqlen = cur_line
@@ -108,11 +128,11 @@ class WikiProcessor(object):
             docs[d]['questions'] = updated_questions
 
     def _word2idx(self, lines, docs):
-        word2idx, idx2word = {}, {}
-        cur_idx, max_sent_len, max_seq_len = 0, 0, 0
-        vocab = set()
+        #word2idx, idx2word = {}, {}
+        max_sent_len, max_seq_len = 0, 0
+        #vocab = set()
 
-        cur_idx = 0
+        #cur_idx = 0
         for p in docs.keys():
             if len(docs[p]['article']) > max_seq_len:
                 max_seq_len = len(docs[p]['article'])
@@ -121,14 +141,41 @@ class WikiProcessor(object):
         for l in lines:
             sent = nltk.word_tokenize(l['text'])
             for w in sent:
-                if w not in word2idx:
-                    vocab.add(w)
-                    word2idx[w] = cur_idx
-                    idx2word[cur_idx] = w
-                    cur_idx += 1
+                if w not in self.word2idx:
+                    self.vocab.add(w)
+                    self.word2idx[w] = self.cur_idx
+                    self.idx2word[self.cur_idx] = w
+                    self.cur_idx += 1
 
             if len(sent) < MAX_SENT_LEN:
                 cur_l = l
                 new_lines.append(cur_l)
 
-        return new_lines, vocab, word2idx, idx2word, MAX_SENT_LEN
+
+        self.vocab.add("yes")
+        self.word2idx["yes"] = self.cur_idx
+        self.idx2word[self.cur_idx] = "yes"
+        self.cur_idx += 1
+        self.vocab.add("no")
+        self.word2idx["no"] = self.cur_idx
+        self.idx2word[self.cur_idx] = "no"
+        self.cur_idx += 1
+        self.vocab.add("Yes")
+        self.word2idx["Yes"] = self.cur_idx
+        self.idx2word[self.cur_idx] = "Yes"
+        self.cur_idx += 1
+        self.vocab.add("yes.")
+        self.word2idx["yes."] = self.cur_idx
+        self.idx2word[self.cur_idx] = "yes."
+        self.cur_idx += 1
+        self.vocab.add("no.")
+        self.word2idx["no."] = self.cur_idx
+        self.idx2word[self.cur_idx] = "no."
+        self.cur_idx += 1
+        self.vocab.add("Yes.")
+        self.word2idx["Yes."] = self.cur_idx
+        self.idx2word[self.cur_idx] = "Yes."
+        self.cur_idx += 1
+
+
+        return new_lines, self.vocab, self.word2idx, self.idx2word, MAX_SENT_LEN

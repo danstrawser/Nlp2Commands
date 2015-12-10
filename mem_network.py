@@ -107,6 +107,7 @@ class TransposedDenseLayer(lasagne.layers.DenseLayer):
 class MemoryNetworkLayer(lasagne.layers.MergeLayer):
 
     def __init__(self, incomings, vocab, embedding_size, A, A_T, C, C_T, nonlinearity=lasagne.nonlinearities.softmax, **kwargs):
+
         super(MemoryNetworkLayer, self).__init__(incomings, **kwargs)
         if len(incomings) != 3:
             raise NotImplementedError
@@ -172,6 +173,7 @@ class Model:
         vocab, word_to_idx, idx_to_word, max_seqlen, max_sentlen = self.get_vocab(lines)
 
         if data_source == 'wiki_qa':
+            print(" ran")
             proc = WikiProcessor('data/wiki_qa/')
             vocab, train_lines, test_lines, word_to_idx, idx_to_word, max_seqlen, max_sentlen = proc.process()
             lines = np.concatenate([train_lines, test_lines], axis=0)
@@ -180,6 +182,11 @@ class Model:
             proc = CNNProcessor("simplified")
             vocab, train_lines, test_lines, word_to_idx, idx_to_word, max_seqlen, max_sentlen = proc.process()
             lines = np.concatenate([train_lines, test_lines], axis=0)
+
+
+        print(" word2 idx: ", len(test_lines))
+        print(" vocab: ", len(vocab))
+        print(" len word2idx: ", len(word_to_idx))
 
         self.data = {'train': {}, 'test': {}}
         # C is question indices, Q is quesitons with offset, Y is answers
@@ -234,6 +241,7 @@ class Model:
 
     def build_network(self, nonlinearity):
         batch_size, max_seqlen, max_sentlen, embedding_size, vocab = self.batch_size, self.max_seqlen, self.max_sentlen, self.embedding_size, self.vocab
+
         # embedding size is 20, max seq len is 15, max sent len is 7.
         c = T.imatrix()
         q = T.ivector()
@@ -331,7 +339,21 @@ class Model:
         n_batches = len(dataset['Y']) // self.batch_size
         y_pred = np.concatenate([self.predict(dataset, i) for i in range(n_batches)]).astype(np.int32) - 1
 
-        y_true = [self.vocab.index(y) for y in dataset['Y'][:len(y_pred)]]
+        y_true = []
+        for y in dataset['Y'][:len(y_pred)]:
+            #print(" y: ", y)
+            #print(" y idx: ", self.vocab.index(y))
+            if y not in self.vocab:
+                print(" not in list: ", y)
+                #self.vocab[y] = 100000
+                y_true.append(0)
+                print(" past!")
+            else:
+                y_true.append(self.vocab.index(y))
+
+
+
+        #y_true = [self.vocab.index(y) for y in dataset['Y'][:len(y_pred)]]
         print(metrics.confusion_matrix(y_true, y_pred))
         print(metrics.classification_report(y_true, y_pred))
         errors = []
@@ -339,8 +361,6 @@ class Model:
             if t != p:
                 errors.append((i, self.lb.classes_[p]))
         return metrics.f1_score(y_true, y_pred, average='weighted', pos_label=None), errors
-
-
 
     def train(self, n_epochs=100, shuffle_batch=False):
         epoch = 0
