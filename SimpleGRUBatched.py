@@ -56,7 +56,7 @@ class SimpleGRUBatched(object):
         max_number_of_episodes_read = 1
         self.initialization_randomization = 1
 
-        nh = 10 # Dimension of the hidden layer
+        nh = 20 # Dimension of the hidden layer
         self.num_hidden_units = nh
         num_hidden_units = nh
         num_hidden_units_facts = num_hidden_units
