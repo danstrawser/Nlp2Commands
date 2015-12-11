@@ -56,7 +56,7 @@ class SimpleGRUBatched(object):
         max_number_of_episodes_read = 1
         self.initialization_randomization = 1
 
-        nh = 20 # Dimension of the hidden layer
+        nh = 10 # Dimension of the hidden layer
         self.num_hidden_units = nh
         num_hidden_units = nh
         num_hidden_units_facts = num_hidden_units
@@ -134,7 +134,7 @@ class SimpleGRUBatched(object):
 
     def train(self):
         # self.X_train, self.mask_train, self.question_train, self.Y_train, self.X_test, self.mask_test, self.question_test, self.Y_test, word2idx, idx2word, dimension_fact_embeddings = self.process_data()
-        lr = .001
+        lr = .01
         max_epochs = 20000
         print(" Starting training...")
         last_ll = 100000
