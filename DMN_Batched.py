@@ -10,7 +10,7 @@ from nltk.tokenize import RegexpTokenizer
 import random
 from random import shuffle
 
-class SimpleGRUBatched(object):
+class DMN_Batched(object):
 
     # We take as input a string of "facts"
     def __init__(self):
@@ -20,15 +20,17 @@ class SimpleGRUBatched(object):
         self.preprocess_babi_set_for_dmn()
 
         self.X_train, self.mask_sentences_train, self.fact_ordering_train, self.question_train, self.question_train_mask, self.Y_train, self.X_test, self.mask_sentences_test, self.fact_ordering_test, self.question_test, self.question_test_mask, self.Y_test, self.word2idx, self.idx2word, dimension_fact_embeddings, max_queslen, max_sentlen, total_sequence_length = self.process_data("embeddings")
-        self.GRU_x_train, self.GRU_x_test, self.GRU_w_mask_train, self.GRU_w_mask_test = [], [], [], []
 
-        for x, xm, q, qm in zip(self.X_train, self.mask_sentences_train, self.question_train, self.question_train_mask):
-            self.GRU_x_train.append(np.concatenate((q, x), axis=1))
-            self.GRU_w_mask_train.append(np.concatenate((qm, xm), axis=1))
 
-        for x, xm, q, qm in zip(self.X_train, self.mask_sentences_test, self.question_test, self.question_test_mask):
-            self.GRU_x_train.append(np.concatenate((q, x), axis=1))
-            self.GRU_w_mask_train.append(np.concatenate((qm, xm), axis=1))
+        #self.GRU_x_train, self.GRU_x_test, self.GRU_w_mask_train, self.GRU_w_mask_test = [], [], [], []
+
+        # for x, xm, q, qm in zip(self.X_train, self.mask_sentences_train, self.question_train, self.question_train_mask):
+        #     self.GRU_x_train.append(np.concatenate((q, x), axis=1))
+        #     self.GRU_w_mask_train.append(np.concatenate((qm, xm), axis=1))
+        #
+        # for x, xm, q, qm in zip(self.X_train, self.mask_sentences_test, self.question_test, self.question_test_mask):
+        #     self.GRU_x_train.append(np.concatenate((q, x), axis=1))
+        #     self.GRU_w_mask_train.append(np.concatenate((qm, xm), axis=1))
 
         print(" Building model... ")
         number_word_classes = max(self.idx2word.keys(), key=int) + 1
@@ -48,20 +50,22 @@ class SimpleGRUBatched(object):
         num_hidden_units_questions = num_hidden_units_episodes
         num_hidden_units_words = num_hidden_units_questions
         self.num_word_classes = number_word_classes
-        total_len_word_seq = len(self.GRU_x_train[0])
+        total_len_word_seq = total_sequence_length
 
         self.initialize_dmn_params(nh, num_hidden_units_words, num_hidden_units_facts, num_hidden_units_episodes, num_hidden_units_questions, dimension_word_embeddings, dimension_fact_embeddings, max_fact_seqlen, max_number_of_episodes_read, number_word_classes, total_number_of_sentences_per_episode)
 
         # INPUT VARIABLES
         word_idxs = T.lmatrix("word_indices") # Dimensions are (num_batches, sequence_word_idxs)
         word_mask = T.TensorType(dtype='int32', broadcastable=(False, False, True))('word_mask')
-
         y_sentence = T.lmatrix('y_sentence')  # Dimensions are (answer_for_each_batch),
         lr = T.scalar('lr')
+
         hid_init = T.dot(np.ones((self.n_batches, 1)), self.h0_gru)
 
         W_in_stacked = T.concatenate([self.W_word_reset_gate_x, self.W_word_update_gate_x, self.W_word_hidden_gate_x], axis=1)  # I think your issue is that this should have # dim word embeddings
         W_hid_stacked = T.concatenate([self.W_word_reset_gate_h, self.W_word_update_gate_h, self.W_word_hidden_gate_h], axis=1)
+
+        question_encoding = self.GRU_question(num_hidden_units_questions, max_queslen)
 
         def slice_w(x, n):
              return x[:, n*num_hidden_units_facts:(n+1)*num_hidden_units_facts]
@@ -83,7 +87,7 @@ class SimpleGRUBatched(object):
 
             return h_cur
 
-        cur_h_state = hid_init
+        cur_h_state = question_encoding
         for idx in range(total_len_word_seq):
             x_cur = self.emb[word_idxs[:, idx]]  # This will produce a matrix of size (n_batch, word_dimensions)
             cur_h_state = gru_layer(x_cur, cur_h_state, word_mask[:, idx])
@@ -97,11 +101,48 @@ class SimpleGRUBatched(object):
         sentence_updates = OrderedDict((p, p - lr*g) for p, g in zip(self.params, sentence_gradients))  # computes the update for each of the params.
 
         print("Compiling fcns...")
-        self.classify = theano.function(inputs=[word_idxs, word_mask], outputs=y_pred, on_unused_input='warn')
-        self.sentence_train = theano.function(inputs=[word_idxs, word_mask, y_sentence, lr], outputs=sentence_nll, updates=sentence_updates, on_unused_input='warn')
+        self.classify = theano.function(inputs=[word_idxs, word_mask, self.question_idxs, self.question_mask], outputs=y_pred, on_unused_input='warn')
+        self.sentence_train = theano.function(inputs=[word_idxs, word_mask, self.question_idxs, self.question_mask, y_sentence, lr], outputs=sentence_nll, updates=sentence_updates, on_unused_input='warn')
         #self.debug_output = theano.function(inputs=[word_idxs, word_mask, y_sentence, lr], outputs=[sentence_nll], on_unused_input='warn')
 
         print("Done compiling!")
+
+    def GRU_question(self, num_hidden_units_questions, max_question_len):
+
+        self.question_idxs = T.lmatrix("question_indices") # dim:  (n_batch, idx_question_word)
+        self.question_mask = T.TensorType(dtype='int32', broadcastable=(False, False, True))('question_mask')
+
+        hid_init_question = T.dot(np.ones((self.n_batches, 1)), self.h0_questions)
+
+        def slice_w(x, n):
+            return x[:, n*num_hidden_units_questions:(n+1)*num_hidden_units_questions]
+
+        W_in_stacked = T.concatenate([self.W_question_reset_gate_x, self.W_question_update_gate_x, self.W_question_hidden_gate_x], axis=1)
+        W_hid_stacked = T.concatenate([self.W_question_reset_gate_h, self.W_question_update_gate_h, self.W_question_hidden_gate_h], axis=1)
+
+        def question_gru_recursion(x_cur, h_prev, q_mask):
+
+            input_n = T.dot(x_cur, W_in_stacked)
+            hid_input = T.dot(h_prev, W_hid_stacked)
+            resetgate = slice_w(hid_input, 0) + slice_w(input_n, 0)
+            updategate = slice_w(hid_input, 1) + slice_w(input_n, 1)
+            resetgate = T.tanh(resetgate)
+            updategate = T.tanh(updategate)
+
+            hidden_update = slice_w(input_n, 2) + resetgate * slice_w(hid_input, 2)
+            hidden_update = T.tanh(hidden_update)
+            h_cur = (1 - updategate) * h_prev + updategate * hidden_update
+            h_cur = q_mask * h_cur + (1 - q_mask) * h_prev
+
+            return h_cur
+
+        state = hid_init_question
+        for idx in range(max_question_len):
+            x_cur = self.emb[self.question_idxs[:, idx]]  # This will produce a matrix of size (n_batch, word_dimensions)
+            state = question_gru_recursion(x_cur, state, self.question_mask[:, idx])
+
+        return state
+
 
     def idx2sentence(self, x):
         cur_sent = ""
@@ -125,21 +166,27 @@ class SimpleGRUBatched(object):
             ll = 0
             num_train_correct, tot_num_train = 0, 0
 
-            x_batch, x_mask_batch, y_batch = [], [], []
+            x_batch, x_mask_batch, q_batch, q_mask_batch, y_batch = [], [], [], [], []
 
             total_num_batches = 0
             for idx in shuffled_idxs:
 
-                x_batch.append(self.GRU_x_train[idx])
-                x_mask_batch.append(self.GRU_w_mask_train[idx])
+                x_batch.append(self.X_train[idx])
+                x_mask_batch.append(self.mask_sentences_train[idx])
+                q_batch.append(self.question_train[idx])
+                q_mask_batch.append(self.question_train_mask[idx])
                 y_batch.append(self.Y_train[idx])
 
                 if len(x_batch) == self.n_batches:
-                    total_num_batches += 1
-                    x_mask_batch, y_batch2 = self._gen_new_batches(x_mask_batch, y_batch)
-                    ll += self.sentence_train(x_batch, x_mask_batch, y_batch2, lr)
 
-                    x_batch, x_mask_batch, y_batch = [], [], []
+                    total_num_batches += 1
+                    x_mask_batch, q_mask_batch, y_batch2 = self._gen_new_batches(x_mask_batch, q_mask_batch, y_batch)
+
+                    ll += self.sentence_train(x_batch, x_mask_batch, q_batch, q_mask_batch, y_batch2, lr)
+
+                    x_batch, x_mask_batch, q_batch, q_mask_batch, y_batch = [], [], [], [], []
+
+            print(" ONE LL : " , ll)
 
             if e % 1000 == 0:
                 lr /= 2
@@ -148,26 +195,29 @@ class SimpleGRUBatched(object):
             shuffle(shuffled_idxs)
             for idx in shuffled_idxs:
 
-                x_batch.append(self.GRU_x_train[idx])
-                x_mask_batch.append(self.GRU_w_mask_train[idx])
+                x_batch.append(self.X_train[idx])
+                x_mask_batch.append(self.mask_sentences_train[idx])
+                q_batch.append(self.question_train[idx])
+                q_mask_batch.append(self.question_train_mask[idx])
                 y_batch.append(self.Y_train[idx])
 
                 if len(x_batch) == self.n_batches:
+
                     test_batch_idx += 1
-                    x_mask_batch, y_batch2 = self._gen_new_batches(x_mask_batch, None)
-                    y_pred = self.classify(x_batch, x_mask_batch)
+                    x_mask_batch, q_mask_batch, y_batch2 = self._gen_new_batches(x_mask_batch, q_mask_batch, y_batch)
+                    y_pred = self.classify(x_batch, x_mask_batch, q_batch, q_mask_batch)
 
                     for idx, yp, ya in zip(range(len(y_pred)), y_pred, y_batch):
                         if yp == ya:
                             num_train_correct += 1
                         tot_num_train += 1
-                    x_batch, x_mask_batch, y_batch = [], [], []
+                    x_batch, x_mask_batch, q_batch, q_mask_batch, y_batch = [], [], [], [], []
 
             print(" at epoch, ", e ," avg one ll : ", ll / total_num_batches)
             print(" ratio training data predicted correctly: ", num_train_correct / tot_num_train)
 
 
-    def _gen_new_batches(self, x_mask_batch, y_batch):
+    def _gen_new_batches(self, x_mask_batch, q_mask_batch, y_batch):
         new_masks = []
         for x in x_mask_batch:
             new_batch = []
@@ -176,8 +226,16 @@ class SimpleGRUBatched(object):
             new_masks.append(np.asarray(new_batch))
         x_mask_batch = new_masks
 
+        new_masks = []
+        for q in q_mask_batch:
+            new_batch = []
+            for m_val in q:
+                new_batch.append([m_val])
+            new_masks.append(np.asarray(new_batch))
+        q_mask_batch = new_masks
+
         if y_batch is None:
-            return x_mask_batch, None
+            return x_mask_batch, q_mask_batch, None
         else:
             new_y = []
             for y in y_batch:
@@ -187,7 +245,7 @@ class SimpleGRUBatched(object):
                 cur_vec[y] = 1
                 new_y.append(np.asarray(cur_vec))
 
-            return x_mask_batch, np.asarray(new_y)
+            return x_mask_batch, q_mask_batch, np.asarray(new_y)
 
     def initialize_dmn_params(self, nh, num_hidden_units_words, num_hidden_units_facts, num_hidden_units_episodes, num_hidden_units_questions, dimension_word_embeddings, dimension_fact_embeddings, max_fact_seqlen, max_number_of_episodes_read, number_word_classes, total_number_of_sentences_per_episode):
 
@@ -211,6 +269,25 @@ class SimpleGRUBatched(object):
 
         self.params = [self.emb, self.W_word_reset_gate_h, self.W_word_reset_gate_x, self.W_word_hidden_gate_h, self.W_word_hidden_gate_x,
                        self.W_word_update_gate_h, self.W_word_update_gate_x, self.W_output_to_answer, self.h0_gru]
+
+        # Question GRU Parameters
+        self.W_question_reset_gate_h = theano.shared(name='W_question_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_questions, num_hidden_units_questions)).astype(theano.config.floatX))
+        self.W_question_reset_gate_x = theano.shared(name='W_question_reset_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_questions)).astype(theano.config.floatX))
+        self.W_question_update_gate_h = theano.shared(name='W_question_update_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_questions, num_hidden_units_questions)).astype(theano.config.floatX))
+        self.W_question_update_gate_x = theano.shared(name='W_question_update_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_questions)).astype(theano.config.floatX))
+        self.W_question_hidden_gate_h = theano.shared(name='W_question_hidden_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_questions, num_hidden_units_questions)).astype(theano.config.floatX))
+        self.W_question_hidden_gate_x = theano.shared(name='W_question_hidden_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_questions)).astype(theano.config.floatX))
+
+        self.h0_questions = theano.shared(name='h0_questions', value=np.zeros((1, num_hidden_units_questions), dtype=theano.config.floatX))
+
+        self.params.extend((self.W_question_reset_gate_h, self.W_question_reset_gate_x, self.W_question_update_gate_h, self.W_question_update_gate_x, self.W_question_hidden_gate_h, self.W_question_hidden_gate_x,
+                        self.h0_questions))
+
+
+
+
+
+
 
 
     def preprocess_babi_set_for_dmn(self):

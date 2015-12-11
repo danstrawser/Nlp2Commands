@@ -217,7 +217,6 @@ class DMN_SimplerGate(object):
 
             input_n = T.dot(x_cur, W_in_stacked)
             hid_input = T.dot(h_prev, W_hid_stacked)
-
             resetgate = slice_w(hid_input, 0) + slice_w(input_n, 0)
             updategate = slice_w(hid_input, 1) + slice_w(input_n, 1)
             resetgate = T.tanh(resetgate)
