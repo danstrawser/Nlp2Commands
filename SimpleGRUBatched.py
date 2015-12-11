@@ -22,23 +22,22 @@ class SimpleGRUBatched(object):
     # We take as input a string of "facts"
     def __init__(self, num_fact_hidden_units, number_word_classes, dimension_fact_embeddings, num_episode_hidden_units, max_number_of_facts_read):
 
-        n_batches = 8
+        self.n_batches = 10
         dimension_fact_embeddings = 8
         print(" Starting dmn no scan... ")
-        #self.preprocess_babi_set_for_dmn()
+        self.preprocess_babi_set_for_dmn()
 
         print(" Starting dmn no scidxsan... ")
         self.X_train, self.mask_sentences_train, self.fact_ordering_train, self.question_train, self.question_train_mask, self.Y_train, self.X_test, self.mask_sentences_test, self.fact_ordering_test, self.question_test, self.question_test_mask, self.Y_test, word2idx, self.idx2word, dimension_fact_embeddings, max_queslen, max_sentlen, total_sequence_length = self.process_data("embeddings")
-
         self.GRU_x_train, self.GRU_x_test, self.GRU_w_mask_train, self.GRU_w_mask_test = [], [], [], []
 
         for x, xm, q, qm in zip(self.X_train, self.mask_sentences_train, self.question_train, self.question_train_mask):
             self.GRU_x_train.append(np.concatenate((x, q), axis=1))
+            self.GRU_w_mask_train.append(np.concatenate((xm, qm), axis=1))
 
         for x, xm, q, qm in zip(self.X_train, self.mask_sentences_test, self.question_test, self.question_test_mask):
             self.GRU_x_train.append(np.concatenate((x, q), axis=1))
-
-
+            self.GRU_w_mask_train.append(np.concatenate((xm, qm), axis=1))
 
         print(" Building model... ")
         number_word_classes = max(self.idx2word.keys(), key=int) + 1
@@ -47,7 +46,7 @@ class SimpleGRUBatched(object):
 
         total_number_of_sentences_per_episode = int(total_sequence_length / max_fact_seqlen)
         max_number_of_facts_read = 1
-        dimension_word_embeddings = 10
+        dimension_word_embeddings = 9
         max_number_of_episodes_read = 1
         self.initialization_randomization = 1
 
@@ -65,17 +64,21 @@ class SimpleGRUBatched(object):
         # INPUT VARIABLES
         word_idxs = T.lmatrix("word_indices") # Dimensions are (num_batches, sequence_word_idxs)
         word_mask = T.lmatrix("word_mask")  # Dimensions are (num_batches, sequence_word_mask_idxs)
-        facts_input = T.lmatrix("fact_indices")  # Dimensions are (num_batches, sequence_facts)
         y_sentence = T.lvector('y_sentence')  # Dimensions are (answer_for_each_batch),
+        lr = T.scalar('lr')
 
-        hid_init = T.dot(np.ones((n_batches, 1)), self.h0_gru)
+        hid_init = T.dot(np.ones((self.n_batches, 1)), self.h0_gru)
+
         W_in_stacked = T.concatenate([self.W_word_reset_gate_x, self.W_word_update_gate_x, self.W_word_hidden_gate_x], axis=1)  # I think your issue is that this should have # dim word embeddings
         W_hid_stacked = T.concatenate([self.W_word_reset_gate_h, self.W_word_update_gate_h, self.W_word_hidden_gate_h], axis=1)
 
 
         def slice_w(x, n):
-            return x[:, n*num_hidden_units_facts:(n+1)*num_hidden_units_facts]
+             return x[:, n*num_hidden_units_facts:(n+1)*num_hidden_units_facts]
 
+        # hid_input = None
+        input_n = None
+        #hidden_update = None
         def gru_layer(x_cur, h_prev, w_mask):
 
             input_n = T.dot(x_cur, W_in_stacked)  # input_n will have dimension (n_batches, W_in_stacked_n_cols)
@@ -91,20 +94,36 @@ class SimpleGRUBatched(object):
             h_cur = (1 - updategate) * hidden_update + updategate * hidden_update
 
             h_cur = w_mask * h_cur + (1 - w_mask) * h_prev
-            # h_cur = T.tanh(T.dot(self.W_fact_to_hidden, x_cur) + T.dot(self.W_hidden_to_hidden, h_prev))
+
             return h_cur
 
         cur_h_state = hid_init
         for idx in range(total_len_word_seq):
+            x_cur = self.emb[word_idxs[:, idx]]  # This will produce a matrix of size (n_batch, word_dimensions)
+            word_mask_cur = word_mask[:, idx]
+            #cur_h_state = gru_layer(x_cur, cur_h_state, word_mask_cur)
 
-            x_cur = self.emb[word_idxs[:][idx]]  # This will produce a matrix of size (n_batch, word_dimensions)
-            word_mask_cur = word_mask[:][idx]
-            cur_h_state = gru_layer(x_cur, cur_h_state, word_mask_cur)
+            input_n = T.dot(x_cur, W_in_stacked)  # input_n will have dimension (n_batches, W_in_stacked_n_cols)
+            hid_input = T.dot(cur_h_state, W_hid_stacked)
 
-        output = T.nnet.softmax(T.dot(self.W_episode_to_word, cur_h_state) + self.b_episode_to_word)
-        p_y_given_x_sentence = output[:, 0, :]
+            #resetgate = slice_w(hid_input, 0) + slice_w(input_n, 0)
+            #updategate = slice_w(hid_input, 1) + slice_w(input_n, 1)
+            #resetgate = T.tanh(resetgate)
+            #updategate = T.tanh(updategate)
 
-        y_pred = T.argmax(p_y_given_x_sentence, axis=0)
+            #hidden_update = slice_w(input_n, 2) + resetgate * slice_w(hid_input, 2)
+            #hidden_update = T.tanh(hidden_update)
+            #h_cur = (1 - updategate) * hidden_update + updategate * hidden_update
+
+            #h_cur = word_mask_cur * h_cur + (1 - word_mask_cur) * cur_h_state
+
+
+
+        output = T.nnet.softmax(T.dot(cur_h_state, self.W_output_to_answer))
+
+        p_y_given_x_sentence = output  # output[:, 0, :]
+
+        y_pred = T.argmax(p_y_given_x_sentence, axis=1)
         lr = T.scalar('lr')
         sentence_nll = -T.mean(T.log(p_y_given_x_sentence)[y_sentence])
 
@@ -112,11 +131,12 @@ class SimpleGRUBatched(object):
         sentence_updates = OrderedDict((p, p - lr*g) for p, g in zip(self.params, sentence_gradients))  # computes the update for each of the params.
 
         print("Compiling fcns...")
-        self.classify = theano.function(inputs=[word_idxs, word_mask, self.question_idxs, self.question_mask], outputs=y_pred)
-        self.sentence_train = theano.function(inputs=[word_idxs, word_mask, self.question_idxs, self.question_mask, y_sentence, lr], outputs=sentence_nll, updates=sentence_updates)
+        #self.classify = theano.function(inputs=[word_idxs, word_mask], outputs=y_pred)
+        #self.sentence_train = theano.function(inputs=[word_idxs, word_mask, y_sentence, lr], outputs=sentence_nll, updates=sentence_updates)
+
+        self.debug_output = theano.function(inputs=[word_idxs, word_mask, y_sentence, lr], outputs=[x_cur, slice_w(hid_input, 0), slice_w(input_n, 0)], on_unused_input='warn')
 
         print("Done compiling!")
-
 
 
     def train(self):
@@ -134,86 +154,68 @@ class SimpleGRUBatched(object):
             ll = 0
             num_train_correct, tot_num_train = 0, 0
 
+            x_batch, x_mask_batch, y_batch = [], [], []
+
             ll_fact = 0
             for idx in shuffled_idxs:
 
-                x, word_mask, fact_ordering, q, mask_question, y = self.X_train[idx], self.mask_sentences_train[idx], self.fact_ordering_train[idx], self.question_train[idx], self.question_train_mask[idx], self.Y_train[idx]
-                ll_fact += self.fact_train([x], [word_mask], fact_ordering, q, mask_question, lr)
+                x_batch.append(self.GRU_x_train[idx])
+                x_mask_batch.append(self.GRU_w_mask_train[idx])
+                y_batch.append(self.Y_train[idx])
 
-#                 val_you = self.eval_fact_train([x], [word_mask], fact_ordering, q, mask_question, lr)
-#                 print(" one val you: ", val_you)
-#                 gdm = self.get_gdmn([x], [word_mask], fact_ordering, q, mask_question, lr)
-#
-#                 print(" this is gdm :" , gdm)
-#                 curf = self.get_curf([x], [word_mask], fact_ordering, q, mask_question, lr)
-#                 print(" curf: ", curf)
-#                 res = self.t_dot([x], [word_mask], fact_ordering, q, mask_question, lr)
-#
-#                 print(" res: ", res)
-#
-            print(" This is the ll fact: ", ll_fact)
+                if idx % self.n_batches == 0:
+                    print(" idx: ", idx)
+                    #ll_fact += self.sentence_train(x_batch, x_mask_batch, y_batch, lr)
+                    print(" x batch shape: ", np.asarray(x_batch).shape)
 
-            for idx in shuffled_idxs:
-                x, word_mask, fact_ordering, q, mask_question, y = self.X_train[idx], self.mask_sentences_train[idx], self.fact_ordering_train[idx], self.question_train[idx], self.question_train_mask[idx], self.Y_train[idx]
-                ll += self.sentence_train([x], [word_mask], q, mask_question, y, lr)
+                    x_cur, hid, input = self.debug_output(x_batch, x_mask_batch, y_batch, lr)
+                    print(" x cur: ", x_cur.shape)
+                    print(" hid input ", hid.shape)
+                    print(" in: ", input.shape)
+                    assert(1 == 2)
+                    #x_batch, x_mask_batch, y_batch = [], [], []
 
-                outin = self.out_in([x], [word_mask], q, mask_question, y, lr)
-                sm = self.sm([x], [word_mask], q, mask_question, y, lr)
-
-                #print(" soft max res: ", sm)
+            print(" got it ")
+            assert(1 == 2)
 
 
-            shuffle(shuffled_idxs)
-            for idx in shuffled_idxs:
-                x, word_mask, fact_ordering, q, mask_question, y = self.X_train[idx], self.mask_sentences_train[idx], self.fact_ordering_train[idx], self.question_train[idx], self.question_train_mask[idx], self.Y_train[idx]
-                predictions_test = self.classify([x], [word_mask], q, mask_question)
-                if predictions_test == y:
-                    num_train_correct += 1
-                tot_num_train += 1
+            # shuffle(shuffled_idxs)
+            # for idx in shuffled_idxs:
+            #     x, w_mask, = self.GRU_x_train[idx], self.GRU_w_mask_train[idx]
+            #
+            #     predictions_test = self.classify([x], [w_mask])[0]
+            #     if predictions_test == y:
+            #         num_train_correct += 1
+            #     tot_num_train += 1
 
-#
+
             print(" ratio training data predicted correctly: ", num_train_correct / tot_num_train)
 
-            correct = 0
-            total_tests = 0
-            for idx in range(len(self.X_test)):
-                x, word_mask, fact_ordering, q, mask_question, y = self.X_test[idx], self.mask_sentences_test[idx], self.fact_ordering_test[idx], self.question_test[idx], self.question_test_mask[idx], self.Y_test[idx]
-                predictions_test = self.classify([x], [word_mask], q, mask_question)
 
-#                 if e % 5 == 0:
-#                     if predictions_test != y:
-#                         print(" wrong, this is question: ", self.idx2sentence(q))
-#                         print(" Wrong, this is sentence: ", self.idx2sentence(x[0]))
-#                         print(" sentence mask: ", sentence_mask)
-#                         print(" word mask: ", word_mask)
-#
-#                         print(" Wrong! this is predction: ", self.idx2word[int(predictions_test)], " and this y: ", self.idx2word[int(y)])
-#                     else:
-#                         print("This is predction: ", self.idx2word[int(predictions_test)], " and this y: ", self.idx2word[int(y)])
-#
-                if predictions_test == y:
-                    correct += 1
-                total_tests += 1
+    def initialize_dmn_params(self, nh, num_hidden_units_words, num_hidden_units_facts, num_hidden_units_episodes, num_hidden_units_questions, dimension_word_embeddings, dimension_fact_embeddings, max_fact_seqlen, max_number_of_episodes_read, number_word_classes, total_number_of_sentences_per_episode):
 
-            print("epoch , " , e, " training ll: ", ll, " ll improvement: ", last_ll - ll, " ratio correct: ", correct / total_tests)
-#
-            if ll < min_ll_seen:
-                min_ll_seen = ll
-            if correct / total_tests > best_correct_seen:
-                best_correct_seen = correct / total_tests
+        num_hidden_units = 8
 
-            print(" best ll so far: ", min_ll_seen, " and best ratio: ", best_correct_seen)
+        # Initializers
+        self.emb = theano.shared(name='embeddings_prob', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (number_word_classes, dimension_word_embeddings)).astype(theano.config.floatX))
 
-            last_ll = ll
+        # GRU Word Parameters
+        self.W_word_reset_gate_h = theano.shared(name='W_word_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_words, num_hidden_units_words)).astype(theano.config.floatX))
+        self.W_word_reset_gate_x = theano.shared(name='W_word_reset_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_words)).astype(theano.config.floatX))
+        self.W_word_update_gate_h = theano.shared(name='W_word_update_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_words, num_hidden_units_words)).astype(theano.config.floatX))
+        self.W_word_update_gate_x = theano.shared(name='W_word_update_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_words)).astype(theano.config.floatX))
+        self.W_word_hidden_gate_h = theano.shared(name='W_word_hidden_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_words, num_hidden_units_words)).astype(theano.config.floatX))
+        self.W_word_hidden_gate_x = theano.shared(name='W_word_hidden_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_words)).astype(theano.config.floatX))
 
-            if last_ll < ll:
-                pass
-#                 #lr = 0.95 * lr
-#             else:
-#                 lr *= 1
-#
-#             if e % 25 == 0:
-#                 lr /= 2
+        self.W_output_to_answer = theano.shared(name='W_word_to_fact_vector', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, num_hidden_units_words)).astype(theano.config.floatX))
+        #self.b_output_to_answer = theano.shared(name='b_word_to_fact_vector', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, num_hidden_units_episodes).astype(theano.config.floatX))
+
+        self.h0_gru = theano.shared(name='h0_gru', value=np.zeros((1, num_hidden_units), dtype=theano.config.floatX))
+
+        self.params = [self.emb, self.W_word_reset_gate_h, self.W_word_reset_gate_x, self.W_word_hidden_gate_h, self.W_word_hidden_gate_x,
+                       self.W_word_update_gate_h, self.W_word_update_gate_x, self.W_output_to_answer, self.h0_gru]
+
+
 
 
     def preprocess_babi_set_for_dmn(self):
@@ -510,94 +512,3 @@ class SimpleGRUBatched(object):
 
         return X_train_vec, mask_sentences_train, fact_ordering_train, Question_train_vec, Question_train_mask, Y_train_vec, X_test_vec, mask_sentences_test, fact_ordering_test, Question_test_vec, Question_test_mask, Y_test_vec, word2idx, idx2word, len(word2idx), max_queslen, max_sentence_len, total_sequence_length
 
-
-    def initialize_dmn_params(self, nh, num_hidden_units_words, num_hidden_units_facts, num_hidden_units_episodes, num_hidden_units_questions, dimension_word_embeddings, dimension_fact_embeddings, max_fact_seqlen, max_number_of_episodes_read, number_word_classes, total_number_of_sentences_per_episode):
-
-
-        num_hidden_units = 8
-
-        # Initializers
-        self.emb = theano.shared(name='embeddings_prob', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (number_word_classes, dimension_word_embeddings)).astype(theano.config.floatX))
-        #self.h0_facts_reading_1 = theano.shared(name='h0_facts', value=np.zeros(nh, dtype=theano.config.floatX))
-        #self.h0_facts_reading_2 = theano.shared(name='h0_facts', value=np.zeros(nh, dtype=theano.config.floatX))
-        #self.h0_facts = [self.h0_facts_reading_1]
-        #self.h0_episodes = theano.shared(name='h0_episodes', value=np.zeros(num_hidden_units_episodes, dtype=theano.config.floatX))
-
-        #self.emb_helper = theano.shared(name='embeddings_prob_helper', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (number_word_classes, dimension_word_embeddings)).astype(theano.config.floatX))
-        #self.h0_facts_reading_1_helper = theano.shared(name='h0_facts_helper', value=np.zeros(nh, dtype=theano.config.floatX))
-        #self.h0_facts_reading_2_helper = theano.shared(name='h0_facts_helper', value=np.zeros(nh, dtype=theano.config.floatX))
-        #self.h0_facts_helper = [self.h0_facts_reading_1]
-        #self.h0_episodes_helper = theano.shared(name='h0_episodes_helper', value=np.zeros(num_hidden_units_episodes, dtype=theano.config.floatX))
-        #self.initialization_randomization_helper = 0
-
-        # GRU Word Parameters
-        self.W_word_reset_gate_h = theano.shared(name='W_word_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_words, num_hidden_units_words)).astype(theano.config.floatX))
-        self.W_word_reset_gate_x = theano.shared(name='W_word_reset_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_words)).astype(theano.config.floatX))
-        self.W_word_update_gate_h = theano.shared(name='W_word_update_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_words, num_hidden_units_words)).astype(theano.config.floatX))
-        self.W_word_update_gate_x = theano.shared(name='W_word_update_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_words)).astype(theano.config.floatX))
-        self.W_word_hidden_gate_h = theano.shared(name='W_word_hidden_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_words, num_hidden_units_words)).astype(theano.config.floatX))
-        self.W_word_hidden_gate_x = theano.shared(name='W_word_hidden_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_words)).astype(theano.config.floatX))
-
-        self.W_word_to_fact_vector = theano.shared(name='W_word_to_fact_vector', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_words, num_hidden_units_episodes)).astype(theano.config.floatX))
-        self.b_word_to_fact_vector = theano.shared(name='b_word_to_fact_vector', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, num_hidden_units_episodes).astype(theano.config.floatX))
-
-        dimension_fact_embeddings = 8
-
-        self.h0_gru = theano.shared(name='h0_gru', value=np.zeros(num_hidden_units, dtype=theano.config.floatX))
-
-
-
-        # # GRU Episode Parameters
-        # self.W_episode_reset_gate_h = theano.shared(name='W_episode_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, num_hidden_units_episodes)).astype(theano.config.floatX))
-        # self.W_episode_reset_gate_x = theano.shared(name='W_episode_reset_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, dimension_fact_embeddings)).astype(theano.config.floatX))
-        # self.W_episode_update_gate_h = theano.shared(name='W_episode_update_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, num_hidden_units_episodes)).astype(theano.config.floatX))
-        # self.W_episode_update_gate_x = theano.shared(name='W_episode_update_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, dimension_fact_embeddings)).astype(theano.config.floatX))
-        # self.W_episode_hidden_gate_h = theano.shared(name='W_episode_hidden_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, num_hidden_units_episodes)).astype(theano.config.floatX))
-        # self.W_episode_hidden_gate_x = theano.shared(name='W_episode_hidden_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, dimension_fact_embeddings)).astype(theano.config.floatX))
-        #
-        # # W_episode to word is (21 x 8)
-        # self.W_episode_to_word = theano.shared(name='W_fact_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (number_word_classes, num_hidden_units_facts)).astype(theano.config.floatX))
-        # self.b_episode_to_word = theano.shared(name='W_fact_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, number_word_classes).astype(theano.config.floatX))
-        #
-        # # DMN Gate Parameters
-        # num_rows_z_dmn = 2
-        # inner_dmn_dimension = 8
-        #
-        # # W_dmn_2:  size (8, 2).  W_dmn_1 size (8,1), b_dmn_1 = 1, b_dmn-2 = 1
-        #
-        # self.W_dmn_1 = theano.shared(name='W_dmn_1', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts , 1)).astype(theano.config.floatX))
-        # self.W_dmn_2 = theano.shared(name='W_dmn_2', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, total_number_of_sentences_per_episode)).astype(theano.config.floatX))
-        #
-        # self.b_dmn_1 = theano.shared(name='b_dmn_1', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (1)).astype(theano.config.floatX))
-        # self.b_dmn_2 = theano.shared(name='b_dmn_2', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (1)).astype(theano.config.floatX))
-        # #self.W_dmn_b = theano.shared(name='W_dmn_2', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, num_hidden_units_questions)).astype(theano.config.floatX))
-        #
-        # self.params = [self.W_word_reset_gate_h, self.W_word_reset_gate_x, self.W_word_update_gate_h, self.W_word_update_gate_x, self.W_word_hidden_gate_h, self.W_word_hidden_gate_x,
-        #                self.W_word_to_fact_vector, self.b_word_to_fact_vector, self.W_episode_reset_gate_h, self.W_episode_reset_gate_x, self.W_episode_update_gate_h, self.W_episode_update_gate_x,
-        #                self.W_episode_hidden_gate_h, self.W_episode_hidden_gate_x, self.W_episode_to_word, self.b_episode_to_word, self.W_dmn_1, self.W_dmn_2, self.b_dmn_1, self.b_dmn_2]
-        #
-        # # Question GRU Parameters
-        # self.W_question_reset_gate_h = theano.shared(name='W_question_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_questions, num_hidden_units_questions)).astype(theano.config.floatX))
-        # self.W_question_reset_gate_x = theano.shared(name='W_question_reset_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_questions)).astype(theano.config.floatX))
-        # self.W_question_update_gate_h = theano.shared(name='W_question_update_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_questions, num_hidden_units_questions)).astype(theano.config.floatX))
-        # self.W_question_update_gate_x = theano.shared(name='W_question_update_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_questions)).astype(theano.config.floatX))
-        # self.W_question_hidden_gate_h = theano.shared(name='W_question_hidden_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_questions, num_hidden_units_questions)).astype(theano.config.floatX))
-        # self.W_question_hidden_gate_x = theano.shared(name='W_question_hidden_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_questions)).astype(theano.config.floatX))
-        #
-        # self.W_question_to_vector = theano.shared(name='W_question_to_vector', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_questions, num_hidden_units_episodes)).astype(theano.config.floatX))
-        # self.b_question_to_vector = theano.shared(name='b_question_to_vector', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, num_hidden_units_episodes).astype(theano.config.floatX))
-        #
-        # self.h0_questions = theano.shared(name='h0_questions', value=np.zeros(num_hidden_units_questions, dtype=theano.config.floatX))
-        #
-        #
-        #
-        #
-        # self.params.extend((self.W_question_reset_gate_h, self.W_question_reset_gate_x, self.W_question_update_gate_h, self.W_question_update_gate_x, self.W_question_hidden_gate_h, self.W_question_hidden_gate_x,
-        #                     self.W_question_to_vector, self.b_question_to_vector, self.h0_questions))
-        #
-        # self.fact_params = [self.W_question_reset_gate_x, self.W_question_reset_gate_h, self.W_question_update_gate_h, self.W_question_update_gate_x, self.W_question_hidden_gate_h, self.W_question_hidden_gate_x,
-        #                     self.W_question_to_vector, self.b_question_to_vector, self.h0_questions, self.emb, self.W_dmn_1, self.W_dmn_2, self.b_dmn_1, self.b_dmn_2, self.W_word_to_fact_vector, self.b_word_to_fact_vector,
-        #                     self.W_word_reset_gate_h, self.W_word_reset_gate_x, self.W_word_update_gate_h, self.W_word_update_gate_x, self.W_word_hidden_gate_h, self.W_word_hidden_gate_x]
-        #
-        #
-        #
