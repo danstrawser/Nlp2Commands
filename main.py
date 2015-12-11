@@ -13,6 +13,7 @@ from DMNPureTheano2 import DMNPureTheano2
 from DMNPureTheano3 import DMNPureTheano3
 from DMN_SimplerGate import DMN_SimplerGate
 from DMN_No_Scan import DMN_No_Scan
+from SimpleGRUBatched import SimpleGRUBatched
 from dynamic_mem_net import DynamicMemNet
 from babi_processor import BabiProcessor
 import sys
@@ -60,7 +61,7 @@ def main(nn_type, data_type):
         dn.train()
     elif nn_type == "dynam_net_theano":
         #num_fact_hidden_units, number_classes, number_fact_embeddings, dimension_fact_embeddings, num_episode_hidden_units
-        dmn_t = DMN_SimplerGate(20, 20, 20, 20, 2)
+        dmn_t = SimpleGRUBatched(20, 20, 20, 20, 2)
         dmn_t.train()
         print("Finished DMN Theano")
 
@@ -77,8 +78,8 @@ if __name__ == '__main__':
         print(" data type: ", data_type)
     else:
         print(" running")
-        nn_type = "mem_net"
-        data_type = "wiki_qa"
+        nn_type = "dynam_net_theano"
+        data_type = "babi_medium"
 
 
     main(nn_type, data_type)

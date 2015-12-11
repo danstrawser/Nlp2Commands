@@ -1,657 +1,364 @@
-'''
-Build a tweet sentiment analyzer
-'''
-from collections import OrderedDict
-import cPickle as pkl
-import sys
-import time
-
-import numpy
+import numpy as np
 import theano
-from theano import config
-import theano.tensor as tensor
-from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
+import theano.tensor as T
+from .. import nonlinearities
+from .. import init
+from ..utils import unroll_scan
 
-import imdb
+from lasagne.base import MergeLayer
+from lasagne.input import InputLayer
+from lasagne.dense import DenseLayer
+from . import helper
+import lasagne
 
-datasets = {'imdb': (imdb.load_data, imdb.prepare_data)}
-
-# Set the random number generators' seeds for consistency
-SEED = 123
-numpy.random.seed(SEED)
-
-def numpy_floatX(data):
-    return numpy.asarray(data, dtype=config.floatX)
-
-
-def get_minibatches_idx(n, minibatch_size, shuffle=False):
-    """
-    Used to shuffle the dataset at each iteration.
-    """
-
-    idx_list = numpy.arange(n, dtype="int32")
-
-    if shuffle:
-        numpy.random.shuffle(idx_list)
-
-    minibatches = []
-    minibatch_start = 0
-    for i in range(n // minibatch_size):
-        minibatches.append(idx_list[minibatch_start:
-                                    minibatch_start + minibatch_size])
-        minibatch_start += minibatch_size
-
-    if (minibatch_start != n):
-        # Make a minibatch out of what is left
-        minibatches.append(idx_list[minibatch_start:])
-
-    return zip(range(len(minibatches)), minibatches)
-
-
-def get_dataset(name):
-    return datasets[name][0], datasets[name][1]
-
-
-def zipp(params, tparams):
-    """
-    When we reload the model. Needed for the GPU stuff.
-    """
-    for kk, vv in params.iteritems():
-        tparams[kk].set_value(vv)
-
-
-def unzip(zipped):
-    """
-    When we pickle the model. Needed for the GPU stuff.
-    """
-    new_params = OrderedDict()
-    for kk, vv in zipped.iteritems():
-        new_params[kk] = vv.get_value()
-    return new_params
-
-
-def dropout_layer(state_before, use_noise, trng):
-    proj = tensor.switch(use_noise,
-                         (state_before *
-                          trng.binomial(state_before.shape,
-                                        p=0.5, n=1,
-                                        dtype=state_before.dtype)),
-                         state_before * 0.5)
-    return proj
-
-
-def _p(pp, name):
-    return '%s_%s' % (pp, name)
-
-
-def init_params(options):
-    """
-    Global (not LSTM) parameter. For the embeding and the classifier.
-    """
-    params = OrderedDict()
-    # embedding
-    randn = numpy.random.rand(options['n_words'],
-                              options['dim_proj'])
-    params['Wemb'] = (0.01 * randn).astype(config.floatX)
-    params = get_layer(options['encoder'])[0](options,
-                                              params,
-                                              prefix=options['encoder'])
-    # classifier
-    params['U'] = 0.01 * numpy.random.randn(options['dim_proj'],
-                                            options['ydim']).astype(config.floatX)
-    params['b'] = numpy.zeros((options['ydim'],)).astype(config.floatX)
-
-    return params
-
-
-def load_params(path, params):
-    pp = numpy.load(path)
-    for kk, vv in params.iteritems():
-        if kk not in pp:
-            raise Warning('%s is not in the archive' % kk)
-        params[kk] = pp[kk]
-
-    return params
-
-
-def init_tparams(params):
-    tparams = OrderedDict()
-    for kk, pp in params.iteritems():
-        tparams[kk] = theano.shared(params[kk], name=kk)
-    return tparams
-
-
-def get_layer(name):
-    fns = layers[name]
-    return fns
-
-
-def ortho_weight(ndim):
-    W = numpy.random.randn(ndim, ndim)
-    u, s, v = numpy.linalg.svd(W)
-    return u.astype(config.floatX)
-
-
-def param_init_lstm(options, params, prefix='lstm'):
-    """
-    Init the LSTM parameter:
-
-    :see: init_params
-    """
-    W = numpy.concatenate([ortho_weight(options['dim_proj']),
-                           ortho_weight(options['dim_proj']),
-                           ortho_weight(options['dim_proj']),
-                           ortho_weight(options['dim_proj'])], axis=1)
-    params[_p(prefix, 'W')] = W
-    U = numpy.concatenate([ortho_weight(options['dim_proj']),
-                           ortho_weight(options['dim_proj']),
-                           ortho_weight(options['dim_proj']),
-                           ortho_weight(options['dim_proj'])], axis=1)
-    params[_p(prefix, 'U')] = U
-    b = numpy.zeros((4 * options['dim_proj'],))
-    params[_p(prefix, 'b')] = b.astype(config.floatX)
-
-    return params
-
-
-def lstm_layer(tparams, state_below, options, prefix='lstm', mask=None):
-    nsteps = state_below.shape[0]
-    if state_below.ndim == 3:
-        n_samples = state_below.shape[1]
-    else:
-        n_samples = 1
-
-    assert mask is not None
-
-    def _slice(_x, n, dim):
-        if _x.ndim == 3:
-            return _x[:, :, n * dim:(n + 1) * dim]
-        return _x[:, n * dim:(n + 1) * dim]
-
-    def _step(m_, x_, h_, c_):
-        preact = tensor.dot(h_, tparams[_p(prefix, 'U')])
-        preact += x_
-
-        i = tensor.nnet.sigmoid(_slice(preact, 0, options['dim_proj']))
-        f = tensor.nnet.sigmoid(_slice(preact, 1, options['dim_proj']))
-        o = tensor.nnet.sigmoid(_slice(preact, 2, options['dim_proj']))
-        c = tensor.tanh(_slice(preact, 3, options['dim_proj']))
-
-        c = f * c_ + i * c
-        c = m_[:, None] * c + (1. - m_)[:, None] * c_
-
-        h = o * tensor.tanh(c)
-        h = m_[:, None] * h + (1. - m_)[:, None] * h_
-
-        return h, c
-
-    state_below = (tensor.dot(state_below, tparams[_p(prefix, 'W')]) +
-                   tparams[_p(prefix, 'b')])
-
-    dim_proj = options['dim_proj']
-    rval, updates = theano.scan(_step,
-                                sequences=[mask, state_below],
-                                outputs_info=[tensor.alloc(numpy_floatX(0.),
-                                                           n_samples,
-                                                           dim_proj),
-                                              tensor.alloc(numpy_floatX(0.),
-                                                           n_samples,
-                                                           dim_proj)],
-                                name=_p(prefix, '_layers'),
-                                n_steps=nsteps)
-    return rval[0]
-
-
-# ff: Feed Forward (normal neural net), only useful to put after lstm
-#     before the classifier.
-layers = {'lstm': (param_init_lstm, lstm_layer)}
-
-
-def sgd(lr, tparams, grads, x, mask, y, cost):
-    """ Stochastic Gradient Descent
-
-    :note: A more complicated version of sgd then needed.  This is
-        done like that for adadelta and rmsprop.
-
-    """
-    # New set of shared variable that will contain the gradient
-    # for a mini-batch.
-    gshared = [theano.shared(p.get_value() * 0., name='%s_grad' % k)
-               for k, p in tparams.iteritems()]
-    gsup = [(gs, g) for gs, g in zip(gshared, grads)]
-
-    # Function that computes gradients for a mini-batch, but do not
-    # updates the weights.
-    f_grad_shared = theano.function([x, mask, y], cost, updates=gsup,
-                                    name='sgd_f_grad_shared')
-
-    pup = [(p, p - lr * g) for p, g in zip(tparams.values(), gshared)]
-
-    # Function that updates the weights from the previously computed
-    # gradient.
-    f_update = theano.function([lr], [], updates=pup,
-                               name='sgd_f_update')
-
-    return f_grad_shared, f_update
-
-
-def adadelta(lr, tparams, grads, x, mask, y, cost):
-    """
-    An adaptive learning rate optimizer
-
+class GRULayer(lasagne.layers.MergeLayer):
+    r"""
+    lasagne.layers.recurrent.GRULayer(incoming, num_units,
+    resetgate=lasagne.layers.Gate(W_cell=None),
+    updategate=lasagne.layers.Gate(W_cell=None),
+    hidden_update=lasagne.layers.Gate(
+    W_cell=None, lasagne.nonlinearities.tanh),
+    hid_init=lasagne.init.Constant(0.), backwards=False, learn_init=False,
+    gradient_steps=-1, grad_clipping=0, unroll_scan=False,
+    precompute_input=True, mask_input=None, only_return_final=False, **kwargs)
+    Gated Recurrent Unit (GRU) Layer
+    Implements the recurrent step proposed in [1]_, which computes the output
+    by
+    .. math ::
+        r_t &= \sigma_r(x_t W_{xr} + h_{t - 1} W_{hr} + b_r)\\
+        u_t &= \sigma_u(x_t W_{xu} + h_{t - 1} W_{hu} + b_u)\\
+        c_t &= \sigma_c(x_t W_{xc} + r_t \odot (h_{t - 1} W_{hc}) + b_c)\\
+        h_t &= (1 - u_t) \odot h_{t - 1} + u_t \odot c_t
     Parameters
     ----------
-    lr : Theano SharedVariable
-        Initial learning rate
-    tpramas: Theano SharedVariable
-        Model parameters
-    grads: Theano variable
-        Gradients of cost w.r.t to parameres
-    x: Theano variable
-        Model inputs
-    mask: Theano variable
-        Sequence mask
-    y: Theano variable
-        Targets
-    cost: Theano variable
-        Objective fucntion to minimize
-
-    Notes
-    -----
-    For more information, see [ADADELTA]_.
-
-    .. [ADADELTA] Matthew D. Zeiler, *ADADELTA: An Adaptive Learning
-       Rate Method*, arXiv:1212.5701.
-    """
-
-    zipped_grads = [theano.shared(p.get_value() * numpy_floatX(0.),
-                                  name='%s_grad' % k)
-                    for k, p in tparams.iteritems()]
-    running_up2 = [theano.shared(p.get_value() * numpy_floatX(0.),
-                                 name='%s_rup2' % k)
-                   for k, p in tparams.iteritems()]
-    running_grads2 = [theano.shared(p.get_value() * numpy_floatX(0.),
-                                    name='%s_rgrad2' % k)
-                      for k, p in tparams.iteritems()]
-
-    zgup = [(zg, g) for zg, g in zip(zipped_grads, grads)]
-    rg2up = [(rg2, 0.95 * rg2 + 0.05 * (g ** 2))
-             for rg2, g in zip(running_grads2, grads)]
-
-    f_grad_shared = theano.function([x, mask, y], cost, updates=zgup + rg2up,
-                                    name='adadelta_f_grad_shared')
-
-    updir = [-tensor.sqrt(ru2 + 1e-6) / tensor.sqrt(rg2 + 1e-6) * zg
-             for zg, ru2, rg2 in zip(zipped_grads,
-                                     running_up2,
-                                     running_grads2)]
-    ru2up = [(ru2, 0.95 * ru2 + 0.05 * (ud ** 2))
-             for ru2, ud in zip(running_up2, updir)]
-    param_up = [(p, p + ud) for p, ud in zip(tparams.values(), updir)]
-
-    f_update = theano.function([lr], [], updates=ru2up + param_up,
-                               on_unused_input='ignore',
-                               name='adadelta_f_update')
-
-    return f_grad_shared, f_update
-
-
-def rmsprop(lr, tparams, grads, x, mask, y, cost):
-    """
-    A variant of  SGD that scales the step size by running average of the
-    recent step norms.
-
-    Parameters
+    incoming : a :class:`lasagne.layers.Layer` instance or a tuple
+        The layer feeding into this layer, or the expected input shape.
+    num_units : int
+        Number of hidden units in the layer.
+    resetgate : Gate
+        Parameters for the reset gate (:math:`r_t`): :math:`W_{xr}`,
+        :math:`W_{hr}`, :math:`b_r`, and :math:`\sigma_r`.
+    updategate : Gate
+        Parameters for the update gate (:math:`u_t`): :math:`W_{xu}`,
+        :math:`W_{hu}`, :math:`b_u`, and :math:`\sigma_u`.
+    hidden_update : Gate
+        Parameters for the hidden update (:math:`c_t`): :math:`W_{xc}`,
+        :math:`W_{hc}`, :math:`b_c`, and :math:`\sigma_c`.
+    hid_init : callable, np.ndarray, theano.shared or TensorVariable
+        Initializer for initial hidden state (:math:`h_0`).  If a
+        TensorVariable (Theano expression) is supplied, it will not be learned
+        regardless of the value of `learn_init`.
+    backwards : bool
+        If True, process the sequence backwards and then reverse the
+        output again such that the output from the layer is always
+        from :math:`x_1` to :math:`x_n`.
+    learn_init : bool
+        If True, initial hidden values are learned. If `hid_init` is a
+        TensorVariable then the TensorVariable is used and
+        `learn_init` is ignored.
+    gradient_steps : int
+        Number of timesteps to include in the backpropagated gradient.
+        If -1, backpropagate through the entire sequence.
+    grad_clipping : float
+        If nonzero, the gradient messages are clipped to the given value during
+        the backward pass.  See [1]_ (p. 6) for further explanation.
+    unroll_scan : bool
+        If True the recursion is unrolled instead of using scan. For some
+        graphs this gives a significant speed up but it might also consume
+        more memory. When `unroll_scan` is True, backpropagation always
+        includes the full sequence, so `gradient_steps` must be set to -1 and
+        the input sequence length must be known at compile time (i.e., cannot
+        be given as None).
+    precompute_input : bool
+        If True, precompute input_to_hid before iterating through
+        the sequence. This can result in a speedup at the expense of
+        an increase in memory usage.
+    mask_input : :class:`lasagne.layers.Layer`
+        Layer which allows for a sequence mask to be input, for when sequences
+        are of variable length.  Default `None`, which means no mask will be
+        supplied (i.e. all sequences are of the same length).
+    only_return_final : bool
+        If True, only return the final sequential output (e.g. for tasks where
+        a single target value for the entire sequence is desired).  In this
+        case, Theano makes an optimization which saves memory.
+    References
     ----------
-    lr : Theano SharedVariable
-        Initial learning rate
-    tpramas: Theano SharedVariable
-        Model parameters
-    grads: Theano variable
-        Gradients of cost w.r.t to parameres
-    x: Theano variable
-        Model inputs
-    mask: Theano variable
-        Sequence mask
-    y: Theano variable
-        Targets
-    cost: Theano variable
-        Objective fucntion to minimize
-
+    .. [1] Cho, Kyunghyun, et al: On the properties of neural
+       machine translation: Encoder-decoder approaches.
+       arXiv preprint arXiv:1409.1259 (2014).
+    .. [2] Chung, Junyoung, et al.: Empirical Evaluation of Gated
+       Recurrent Neural Networks on Sequence Modeling.
+       arXiv preprint arXiv:1412.3555 (2014).
+    .. [3] Graves, Alex: "Generating sequences with recurrent neural networks."
+           arXiv preprint arXiv:1308.0850 (2013).
     Notes
     -----
-    For more information, see [Hint2014]_.
-
-    .. [Hint2014] Geoff Hinton, *Neural Networks for Machine Learning*,
-       lecture 6a,
-       http://cs.toronto.edu/~tijmen/csc321/slides/lecture_slides_lec6.pdf
+    An alternate update for the candidate hidden state is proposed in [2]_:
+    .. math::
+        c_t &= \sigma_c(x_t W_{ic} + (r_t \odot h_{t - 1})W_{hc} + b_c)\\
+    We use the formulation from [1]_ because it allows us to do all matrix
+    operations in a single dot product.
     """
-
-    zipped_grads = [theano.shared(p.get_value() * numpy_floatX(0.),
-                                  name='%s_grad' % k)
-                    for k, p in tparams.iteritems()]
-    running_grads = [theano.shared(p.get_value() * numpy_floatX(0.),
-                                   name='%s_rgrad' % k)
-                     for k, p in tparams.iteritems()]
-    running_grads2 = [theano.shared(p.get_value() * numpy_floatX(0.),
-                                    name='%s_rgrad2' % k)
-                      for k, p in tparams.iteritems()]
-
-    zgup = [(zg, g) for zg, g in zip(zipped_grads, grads)]
-    rgup = [(rg, 0.95 * rg + 0.05 * g) for rg, g in zip(running_grads, grads)]
-    rg2up = [(rg2, 0.95 * rg2 + 0.05 * (g ** 2))
-             for rg2, g in zip(running_grads2, grads)]
-
-    f_grad_shared = theano.function([x, mask, y], cost,
-                                    updates=zgup + rgup + rg2up,
-                                    name='rmsprop_f_grad_shared')
-
-    updir = [theano.shared(p.get_value() * numpy_floatX(0.),
-                           name='%s_updir' % k)
-             for k, p in tparams.iteritems()]
-    updir_new = [(ud, 0.9 * ud - 1e-4 * zg / tensor.sqrt(rg2 - rg ** 2 + 1e-4))
-                 for ud, zg, rg, rg2 in zip(updir, zipped_grads, running_grads,
-                                            running_grads2)]
-    param_up = [(p, p + udn[1])
-                for p, udn in zip(tparams.values(), updir_new)]
-    f_update = theano.function([lr], [], updates=updir_new + param_up,
-                               on_unused_input='ignore',
-                               name='rmsprop_f_update')
-
-    return f_grad_shared, f_update
-
-
-def build_model(tparams, options):
-    trng = RandomStreams(SEED)
-
-    # Used for dropout.
-    use_noise = theano.shared(numpy_floatX(0.))
-
-    x = tensor.matrix('x', dtype='int64')
-    mask = tensor.matrix('mask', dtype=config.floatX)
-    y = tensor.vector('y', dtype='int64')
-
-    n_timesteps = x.shape[0]
-    n_samples = x.shape[1]
-
-    emb = tparams['Wemb'][x.flatten()].reshape([n_timesteps,
-                                                n_samples,
-                                                options['dim_proj']])
-    
-    # where it calls the lstm layer
-    proj = get_layer(options['encoder'])[1](tparams, emb, options,
-                                            prefix=options['encoder'],
-                                            mask=mask)
-    
-    if options['encoder'] == 'lstm':
-        proj = (proj * mask[:, :, None]).sum(axis=0)
-        proj = proj / mask.sum(axis=0)[:, None]
-    if options['use_dropout']:
-        proj = dropout_layer(proj, use_noise, trng)
-
-    pred = tensor.nnet.softmax(tensor.dot(proj, tparams['U']) + tparams['b'])
-
-    f_pred_prob = theano.function([x, mask], pred, name='f_pred_prob')
-    f_pred = theano.function([x, mask], pred.argmax(axis=1), name='f_pred')
-
-    off = 1e-8
-    if pred.dtype == 'float16':
-        off = 1e-6
-
-    cost = -tensor.log(pred[tensor.arange(n_samples), y] + off).mean()
-
-    return use_noise, x, mask, y, f_pred_prob, f_pred, cost
-
-
-def pred_probs(f_pred_prob, prepare_data, data, iterator, verbose=False):
-    """ If you want to use a trained model, this is useful to compute
-    the probabilities of new examples.
-    """
-    n_samples = len(data[0])
-    probs = numpy.zeros((n_samples, 2)).astype(config.floatX)
-
-    n_done = 0
-
-    for _, valid_index in iterator:
-        x, mask, y = prepare_data([data[0][t] for t in valid_index],
-                                  numpy.array(data[1])[valid_index],
-                                  maxlen=None)
-        pred_probs = f_pred_prob(x, mask)
-        probs[valid_index, :] = pred_probs
-
-        n_done += len(valid_index)
-        if verbose:
-            print '%d/%d samples classified' % (n_done, n_samples)
-
-    return probs
-
-
-def pred_error(f_pred, prepare_data, data, iterator, verbose=False):
-    """
-    Just compute the error
-    f_pred: Theano fct computing the prediction
-    prepare_data: usual prepare_data for that dataset.
-    """
-    valid_err = 0
-    for _, valid_index in iterator:
-        x, mask, y = prepare_data([data[0][t] for t in valid_index],
-                                  numpy.array(data[1])[valid_index],
-                                  maxlen=None)
-        preds = f_pred(x, mask)
-        targets = numpy.array(data[1])[valid_index]
-        valid_err += (preds == targets).sum()
-    valid_err = 1. - numpy_floatX(valid_err) / len(data[0])
-
-    return valid_err
-
-
-def train_lstm(
-    dim_proj=128,  # word embeding dimension and LSTM number of hidden units.
-    patience=10,  # Number of epoch to wait before early stop if no progress
-    max_epochs=5000,  # The maximum number of epoch to run
-    dispFreq=10,  # Display to stdout the training progress every N updates
-    decay_c=0.,  # Weight decay for the classifier applied to the U weights.
-    lrate=0.0001,  # Learning rate for sgd (not used for adadelta and rmsprop)
-    n_words=10000,  # Vocabulary size
-    optimizer=adadelta,  # sgd, adadelta and rmsprop available, sgd very hard to use, not recommanded (probably need momentum and decaying learning rate).
-    encoder='lstm',  # TODO: can be removed must be lstm.
-    saveto='lstm_model.npz',  # The best model will be saved there
-    validFreq=370,  # Compute the validation error after this number of update.
-    saveFreq=1110,  # Save the parameters after every saveFreq updates
-    maxlen=100,  # Sequence longer then this get ignored
-    batch_size=16,  # The batch size during training.
-    valid_batch_size=64,  # The batch size used for validation/test set.
-    dataset='imdb',
-
-    # Parameter for extra option
-    noise_std=0.,
-    use_dropout=True,  # if False slightly faster, but worst test error
-                       # This frequently need a bigger model.
-    reload_model=None,  # Path to a saved model we want to start from.
-    test_size=-1,  # If >0, we keep only this number of test example.
-):
-
-    # Model options
-    model_options = locals().copy()
-    print "model options", model_options
-
-    load_data, prepare_data = get_dataset(dataset)
-
-    print 'Loading data'
-    train, valid, test = load_data(n_words=n_words, valid_portion=0.05,
-                                   maxlen=maxlen)
-    if test_size > 0:
-        # The test set is sorted by size, but we want to keep random
-        # size example.  So we must select a random selection of the
-        # examples.
-        idx = numpy.arange(len(test[0]))
-        numpy.random.shuffle(idx)
-        idx = idx[:test_size]
-        test = ([test[0][n] for n in idx], [test[1][n] for n in idx])
-
-    ydim = numpy.max(train[1]) + 1
-
-    model_options['ydim'] = ydim
-
-    print 'Building model'
-    # This create the initial parameters as numpy ndarrays.
-    # Dict name (string) -> numpy ndarray
-    params = init_params(model_options)
-
-    if reload_model:
-        load_params('lstm_model.npz', params)
-
-    # This create Theano Shared Variable from the parameters.
-    # Dict name (string) -> Theano Tensor Shared Variable
-    # params and tparams have different copy of the weights.
-    tparams = init_tparams(params)
-
-    # use_noise is for dropout
-    (use_noise, x, mask,
-     y, f_pred_prob, f_pred, cost) = build_model(tparams, model_options)
-
-    if decay_c > 0.:
-        decay_c = theano.shared(numpy_floatX(decay_c), name='decay_c')
-        weight_decay = 0.
-        weight_decay += (tparams['U'] ** 2).sum()
-        weight_decay *= decay_c
-        cost += weight_decay
-
-    f_cost = theano.function([x, mask, y], cost, name='f_cost')
-
-    grads = tensor.grad(cost, wrt=tparams.values())
-    f_grad = theano.function([x, mask, y], grads, name='f_grad')
-
-    lr = tensor.scalar(name='lr')
-    f_grad_shared, f_update = optimizer(lr, tparams, grads,
-                                        x, mask, y, cost)
-
-    print 'Optimization'
-
-    kf_valid = get_minibatches_idx(len(valid[0]), valid_batch_size)
-    kf_test = get_minibatches_idx(len(test[0]), valid_batch_size)
-
-    print "%d train examples" % len(train[0])
-    print "%d valid examples" % len(valid[0])
-    print "%d test examples" % len(test[0])
-
-    history_errs = []
-    best_p = None
-    bad_count = 0
-
-    if validFreq == -1:
-        validFreq = len(train[0]) / batch_size
-    if saveFreq == -1:
-        saveFreq = len(train[0]) / batch_size
-
-    uidx = 0  # the number of update done
-    estop = False  # early stop
-    start_time = time.time()
-    try:
-        for eidx in range(max_epochs):
-            n_samples = 0
-
-            # Get new shuffled index for the training set.
-            kf = get_minibatches_idx(len(train[0]), batch_size, shuffle=True)
-
-            for _, train_index in kf:
-                uidx += 1
-                use_noise.set_value(1.)
-
-                # Select the random examples for this minibatch
-                y = [train[1][t] for t in train_index]
-                x = [train[0][t]for t in train_index]
-
-                # Get the data in numpy.ndarray format
-                # This swap the axis!
-                # Return something of shape (minibatch maxlen, n samples)
-                x, mask, y = prepare_data(x, y)
-                n_samples += x.shape[1]
-
-                cost = f_grad_shared(x, mask, y)
-                f_update(lrate)
-
-                if numpy.isnan(cost) or numpy.isinf(cost):
-                    print 'bad cost detected: ', cost
-                    return 1., 1., 1.
-
-                if numpy.mod(uidx, dispFreq) == 0:
-                    print 'Epoch ', eidx, 'Update ', uidx, 'Cost ', cost
-
-                if saveto and numpy.mod(uidx, saveFreq) == 0:
-                    print 'Saving...',
-
-                    if best_p is not None:
-                        params = best_p
-                    else:
-                        params = unzip(tparams)
-                    numpy.savez(saveto, history_errs=history_errs, **params)
-                    pkl.dump(model_options, open('%s.pkl' % saveto, 'wb'), -1)
-                    print 'Done'
-
-                if numpy.mod(uidx, validFreq) == 0:
-                    use_noise.set_value(0.)
-                    train_err = pred_error(f_pred, prepare_data, train, kf)
-                    valid_err = pred_error(f_pred, prepare_data, valid,
-                                           kf_valid)
-                    test_err = pred_error(f_pred, prepare_data, test, kf_test)
-
-                    history_errs.append([valid_err, test_err])
-
-                    if (best_p is None or
-                        valid_err <= numpy.array(history_errs)[:,
-                                                               0].min()):
-
-                        best_p = unzip(tparams)
-                        bad_counter = 0
-
-                    print ('Train ', train_err, 'Valid ', valid_err,
-                           'Test ', test_err)
-
-                    if (len(history_errs) > patience and
-                        valid_err >= numpy.array(history_errs)[:-patience,
-                                                               0].min()):
-                        bad_counter += 1
-                        if bad_counter > patience:
-                            print 'Early Stop!'
-                            estop = True
-                            break
-
-            print 'Seen %d samples' % n_samples
-
-            if estop:
-                break
-
-    except KeyboardInterrupt:
-        print "Training interupted"
-
-    end_time = time.time()
-    if best_p is not None:
-        zipp(best_p, tparams)
-    else:
-        best_p = unzip(tparams)
-
-    use_noise.set_value(0.)
-    kf_train_sorted = get_minibatches_idx(len(train[0]), batch_size)
-    train_err = pred_error(f_pred, prepare_data, train, kf_train_sorted)
-    valid_err = pred_error(f_pred, prepare_data, valid, kf_valid)
-    test_err = pred_error(f_pred, prepare_data, test, kf_test)
-
-    print 'Train ', train_err, 'Valid ', valid_err, 'Test ', test_err
-    if saveto:
-        numpy.savez(saveto, train_err=train_err,
-                    valid_err=valid_err, test_err=test_err,
-                    history_errs=history_errs, **best_p)
-    print 'The code run for %d epochs, with %f sec/epochs' % (
-        (eidx + 1), (end_time - start_time) / (1. * (eidx + 1)))
-    print >> sys.stderr, ('Training took %.1fs' %
-                          (end_time - start_time))
-    return train_err, valid_err, test_err
-
-
-if __name__ == '__main__':
-    # See function train for all possible parameter and there definition.
-    train_lstm(
-        max_epochs=100,
-        test_size=500,
-    )
+    def __init__(self, incoming, num_units,
+                 resetgate=Gate(W_cell=None),
+                 updategate=Gate(W_cell=None),
+                 hidden_update=Gate(W_cell=None,
+                                    nonlinearity=nonlinearities.tanh),
+                 hid_init=init.Constant(0.),
+                 backwards=False,
+                 learn_init=False,
+                 gradient_steps=-1,
+                 grad_clipping=0,
+                 unroll_scan=False,
+                 precompute_input=True,
+                 mask_input=None,
+                 only_return_final=False,
+                 **kwargs):
+
+        # This layer inherits from a MergeLayer, because it can have two
+        # inputs - the layer input, and the mask.  We will just provide the
+        # layer input as incomings, unless a mask input was provided.
+        incomings = [incoming]
+        if mask_input is not None:
+            incomings.append(mask_input)
+
+        # Initialize parent layer
+        super(GRULayer, self).__init__(incomings, **kwargs)
+
+        self.learn_init = learn_init
+        self.num_units = num_units
+        self.grad_clipping = grad_clipping
+        self.backwards = backwards
+        self.gradient_steps = gradient_steps
+        self.unroll_scan = unroll_scan
+        self.precompute_input = precompute_input
+        self.only_return_final = only_return_final
+
+        if unroll_scan and gradient_steps != -1:
+            raise ValueError(
+                "Gradient steps must be -1 when unroll_scan is true.")
+
+        # Retrieve the dimensionality of the incoming layer
+        input_shape = self.input_shapes[0]
+
+        if unroll_scan and input_shape[1] is None:
+            raise ValueError("Input sequence length cannot be specified as "
+                             "None when unroll_scan is True")
+
+        # Input dimensionality is the output dimensionality of the input layer
+        num_inputs = np.prod(input_shape[2:])
+
+        def add_gate_params(gate, gate_name):
+            """ Convenience function for adding layer parameters from a Gate
+            instance. """
+            return (self.add_param(gate.W_in, (num_inputs, num_units),
+                                   name="W_in_to_{}".format(gate_name)),
+                    self.add_param(gate.W_hid, (num_units, num_units),
+                                   name="W_hid_to_{}".format(gate_name)),
+                    self.add_param(gate.b, (num_units,),
+                                   name="b_{}".format(gate_name),
+                                   regularizable=False),
+                    gate.nonlinearity)
+
+        # Add in all parameters from gates
+        (self.W_in_to_updategate, self.W_hid_to_updategate, self.b_updategate,
+         self.nonlinearity_updategate) = add_gate_params(updategate,
+                                                         'updategate')
+        (self.W_in_to_resetgate, self.W_hid_to_resetgate, self.b_resetgate,
+         self.nonlinearity_resetgate) = add_gate_params(resetgate, 'resetgate')
+
+        (self.W_in_to_hidden_update, self.W_hid_to_hidden_update,
+         self.b_hidden_update, self.nonlinearity_hid) = add_gate_params(
+             hidden_update, 'hidden_update')
+
+        # Initialize hidden state
+        if isinstance(hid_init, T.TensorVariable):
+            if hid_init.ndim != 2:
+                raise ValueError(
+                    "When hid_init is provided as a TensorVariable, it should "
+                    "have 2 dimensions and have shape (num_batch, num_units)")
+            self.hid_init = hid_init
+        else:
+            self.hid_init = self.add_param(
+                hid_init, (1, self.num_units), name="hid_init",
+                trainable=learn_init, regularizable=False)
+
+    def get_output_shape_for(self, input_shapes):
+        # The shape of the input to this layer will be the first element
+        # of input_shapes, whether or not a mask input is being used.
+        input_shape = input_shapes[0]
+        # When only_return_final is true, the second (sequence step) dimension
+        # will be flattened
+        if self.only_return_final:
+            return input_shape[0], self.num_units
+        # Otherwise, the shape will be (n_batch, n_steps, num_units)
+        else:
+            return input_shape[0], input_shape[1], self.num_units
+
+    def get_output_for(self, inputs, **kwargs):
+        """
+        Compute this layer's output function given a symbolic input variable
+        Parameters
+        ----------
+        inputs : list of theano.TensorType
+            `inputs[0]` should always be the symbolic input variable.  When
+            this layer has a mask input (i.e. was instantiated with
+            `mask_input != None`, indicating that the lengths of sequences in
+            each batch vary), `inputs` should have length 2, where `inputs[1]`
+            is the `mask`.  The `mask` should be supplied as a Theano variable
+            denoting whether each time step in each sequence in the batch is
+            part of the sequence or not.  `mask` should be a matrix of shape
+            ``(n_batch, n_time_steps)`` where ``mask[i, j] = 1`` when ``j <=
+            (length of sequence i)`` and ``mask[i, j] = 0`` when ``j > (length
+            of sequence i)``.
+        Returns
+        -------
+        layer_output : theano.TensorType
+            Symbolic output variable.
+        """
+        # Retrieve the layer input
+        input = inputs[0]
+        # Retrieve the mask when it is supplied
+        mask = inputs[1] if len(inputs) > 1 else None
+
+        # Treat all dimensions after the second as flattened feature dimensions
+        if input.ndim > 3:
+            input = T.flatten(input, 3)
+
+        # Because scan iterates over the first dimension we dimshuffle to
+        # (n_time_steps, n_batch, n_features)
+        input = input.dimshuffle(1, 0, 2)
+        seq_len, num_batch, _ = input.shape
+
+
+        # Stack input weight matrices into a (num_inputs, 3*num_units)
+        # matrix, which speeds up computation
+        W_in_stacked = T.concatenate(
+            [self.W_in_to_resetgate, self.W_in_to_updategate,
+             self.W_in_to_hidden_update], axis=1)
+
+        # Same for hidden weight matrices
+        W_hid_stacked = T.concatenate(
+            [self.W_hid_to_resetgate, self.W_hid_to_updategate,
+             self.W_hid_to_hidden_update], axis=1)
+
+        # Stack gate biases into a (3*num_units) vector
+        b_stacked = T.concatenate(
+            [self.b_resetgate, self.b_updategate,
+             self.b_hidden_update], axis=0)
+
+        if self.precompute_input:
+            # precompute_input inputs*W. W_in is (n_features, 3*num_units).
+            # input is then (n_batch, n_time_steps, 3*num_units).
+            input = T.dot(input, W_in_stacked) + b_stacked
+
+        # At each call to scan, input_n will be (n_time_steps, 3*num_units).
+        # We define a slicing function that extract the input to each GRU gate
+        def slice_w(x, n):
+            return x[:, n*self.num_units:(n+1)*self.num_units]
+
+        # Create single recurrent computation step function
+        # input__n is the n'th vector of the input
+        def step(input_n, hid_previous, *args):
+            # Compute W_{hr} h_{t - 1}, W_{hu} h_{t - 1}, and W_{hc} h_{t - 1}
+            hid_input = T.dot(hid_previous, W_hid_stacked)
+
+            if self.grad_clipping:
+                input_n = theano.gradient.grad_clip(
+                    input_n, -self.grad_clipping, self.grad_clipping)
+                hid_input = theano.gradient.grad_clip(
+                    hid_input, -self.grad_clipping, self.grad_clipping)
+
+            if not self.precompute_input:
+                # Compute W_{xr}x_t + b_r, W_{xu}x_t + b_u, and W_{xc}x_t + b_c
+                input_n = T.dot(input_n, W_in_stacked) + b_stacked
+
+            # Reset and update gates
+            resetgate = slice_w(hid_input, 0) + slice_w(input_n, 0)
+            updategate = slice_w(hid_input, 1) + slice_w(input_n, 1)
+            resetgate = self.nonlinearity_resetgate(resetgate)
+            updategate = self.nonlinearity_updategate(updategate)
+
+            # Compute W_{xc}x_t + r_t \odot (W_{hc} h_{t - 1})
+            hidden_update_in = slice_w(input_n, 2)
+            hidden_update_hid = slice_w(hid_input, 2)
+            hidden_update = hidden_update_in + resetgate*hidden_update_hid
+            if self.grad_clipping:
+                hidden_update = theano.gradient.grad_clip(
+                    hidden_update, -self.grad_clipping, self.grad_clipping)
+            hidden_update = self.nonlinearity_hid(hidden_update)
+
+            # Compute (1 - u_t)h_{t - 1} + u_t c_t
+            hid = (1 - updategate)*hid_previous + updategate*hidden_update
+            return hid
+
+        def step_masked(input_n, mask_n, hid_previous, *args):
+            hid = step(input_n, hid_previous, *args)
+
+            # Skip over any input with mask 0 by copying the previous
+            # hidden state; proceed normally for any input with mask 1.
+            not_mask = 1 - mask_n
+            hid = hid*mask_n + hid_previous*not_mask
+
+            return hid
+
+        if mask is not None:
+            # mask is given as (batch_size, seq_len). Because scan iterates
+            # over first dimension, we dimshuffle to (seq_len, batch_size) and
+            # add a broadcastable dimension
+            mask = mask.dimshuffle(1, 0, 'x')
+            sequences = [input, mask]
+            step_fun = step_masked
+        else:
+            sequences = [input]
+            step_fun = step
+
+        if isinstance(self.hid_init, T.TensorVariable):
+            hid_init = self.hid_init
+        else:
+            # Dot against a 1s vector to repeat to shape (num_batch, num_units)
+            hid_init = T.dot(T.ones((num_batch, 1)), self.hid_init)
+
+        # The hidden-to-hidden weight matrix is always used in step
+        non_seqs = [W_hid_stacked]
+        # When we aren't precomputing the input outside of scan, we need to
+        # provide the input weights and biases to the step function
+        if not self.precompute_input:
+            non_seqs += [W_in_stacked, b_stacked]
+
+        if self.unroll_scan:
+            # Retrieve the dimensionality of the incoming layer
+            input_shape = self.input_shapes[0]
+            # Explicitly unroll the recurrence instead of using scan
+            hid_out = unroll_scan(
+                fn=step_fun,
+                sequences=sequences,
+                outputs_info=[hid_init],
+                go_backwards=self.backwards,
+                non_sequences=non_seqs,
+                n_steps=input_shape[1])[0]
+        else:
+            # Scan op iterates over first dimension of input and repeatedly
+            # applies the step function
+            hid_out = theano.scan(
+                fn=step_fun,
+                sequences=sequences,
+                go_backwards=self.backwards,
+                outputs_info=[hid_init],
+                non_sequences=non_seqs,
+                truncate_gradient=self.gradient_steps,
+                strict=True)[0]
+
+        # When it is requested that we only return the final sequence step,
+        # we need to slice it out immediately after scan is applied
+        if self.only_return_final:
+            hid_out = hid_out[-1]
+        else:
+            # dimshuffle back to (n_batch, n_time_steps, n_features))
+            hid_out = hid_out.dimshuffle(1, 0, 2)
+
+            # if scan is backward reverse the output
+            if self.backwards:
+                hid_out = hid_out[:, ::-1]
+
+        return hid_out
