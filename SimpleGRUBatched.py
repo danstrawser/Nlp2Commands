@@ -99,7 +99,7 @@ class SimpleGRUBatched(object):
             hidden_update = slice_w(input_n, 2) + resetgate * slice_w(hid_input, 2)
             hidden_update = T.tanh(hidden_update)
 
-            h_cur = (1 - updategate) * hidden_update + updategate * hidden_update
+            h_cur = (1 - updategate) * h_prev + updategate * hidden_update
             h_cur = w_mask * h_cur + (1 - w_mask) * h_prev
 
             return h_cur
@@ -165,26 +165,45 @@ class SimpleGRUBatched(object):
 
             if e % 500 == 0:
                 lr /= 2
-            print(" at epoch, ", e, " avg one ll : ", ll / total_num_batches)
+            #print(" at epoch, ", e, " avg one ll : ", ll / total_num_batches)
 
+
+
+            test_batch_idx = 0
+            printout_ran = 0
             shuffle(shuffled_idxs)
             for idx in shuffled_idxs:
+
                 x_batch.append(self.GRU_x_train[idx])
                 x_mask_batch.append(self.GRU_w_mask_train[idx])
                 y_batch.append(self.Y_train[idx])
 
                 if len(x_batch) == self.n_batches:
+                    test_batch_idx += 1
                     x_mask_batch, y_batch2 = self._gen_new_batches(x_mask_batch, None)
 
                     y_pred = self.classify(x_batch, x_mask_batch)
 
-                    for yp, ya in zip(y_pred, y_batch):
+                    for idx, yp, ya in zip(range(len(y_pred)), y_pred, y_batch):
+
+                        if not printout_ran and e % 100 == 0 and test_batch_idx == 2:
+                            if yp != ya:
+                                print(" at epoch, ", e ) #, " avg one ll : ", ll / total_num_batches)
+                                #print(" ratio training data predicted correctly: ", num_train_correct / tot_num_train)
+                                print(" word 2 idx: ", self.word2idx)
+                                print(" this is yp: ", yp , " and ya: ", ya)
+                                print(" sent: ", x_batch[idx])
+                                printout_ran = 1
+
                         if yp == ya:
                             num_train_correct += 1
                         tot_num_train += 1
                     x_batch, x_mask_batch, y_batch = [], [], []
 
-            print(" ratio training data predicted correctly: ", num_train_correct / tot_num_train)
+
+            if e % 100 == 0:
+                print(" at epoch, ", e ," avg one ll : ", ll / total_num_batches)
+                print(" ratio training data predicted correctly: ", num_train_correct / tot_num_train)
 
 
     def _gen_new_batches(self, x_mask_batch, y_batch):
