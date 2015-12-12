@@ -106,31 +106,41 @@ class DMN_Batched(object):
                     else:
                         current_facts = T.concatenate((current_facts, [cur_word_state]), axis=1)  # you will want to make sure that this is (n_batch, stacking_dim, n_hidden)
 
-            z_dmn = T.concatenate(([question_encoding], [h_prev_episode]), axis=1)  # will want to make sure this is dimension (n_batch, stacking_dim, n_hidden)
-
-            # To do the G_dmn gate, I think you will have to make a dimension of W_dmn_2 broadcastable.
+            z_dmn = T.concatenate(([question_encoding], [h_prev_episode]), axis=1)  # will want to make sure this is dimension (n_batch, n_facts, n_hidden)
 
 
-            self.G_dmn = T.nnet.sigmoid(T.dot(self.W_dmn_2, T.tanh(T.dot(z_dmn, self.W_dmn_1)) + self.b_dmn_1) + self.b_dmn_2)  # Note that this should be 1-dimensional
+            #  Innermost product:  T.dot( z_dmn, self.W_dmn_1).  This is (n_batch, n_facts, n_hidden) dotP (n_hidden, n_facts )
+            innermost_product = T.tanh(T.dot(z_dmn, self.W_dmn_1))
 
-            # You could get G_dmn down to (n_batch, n_facts)
+            # b_dmn_1 is (n_hidden (broadcastable)
+            #innermost_product += self.b_dmn_1  # Let's leave out the b's for now
+            # You may need to do a dimshuffle to multiply with W_dmn_2
 
-            assert(1 == 2)
+            # Where we have (n_batch, n_facts) x (n_facts, n_facts)
+            innermost_product = T.dot(innermost_product, self.W_dmn_2)
 
+            # To the best of my knowledge, this will be (n_batch, n_facts)
+            self.G_dmn = T.nnet.sigmoid(innermost_product)
 
-            # Current facts has dim n_batch, n_hidden)  May also
+            # The RHS is (n_batch, n_facts, hidden_units) * (n_batch, n_facts (broadcastable)
+            result_of_gate = T.nnet.softmax(T.sum( current_facts * self.G_dmn.dimshuffle([0, 'x']), axis=2))
 
-            self.t_dot_res = T.dot(current_facts, self.G_dmn).T
-
-            result_of_gate = T.nnet.softmax(self.t_dot_res).T
+            assert(result_of_gate.ndim == 2)
 
             list_of_fact_softmaxes.append(result_of_gate)
-
 
             # Note:  at the end of the day, you want a gate that will have (n_batch, n_classes)
             assert( 1==2)
 
-            brain_input = T.dot(current_facts.T, result_of_gate)
+            # if you have result_of_gate being (n_batch, n_fact_classes), how do you do the dot product?
+            # current_facts is (n_batch, num_fact_classes, n_hidden)
+
+            # I think you want an element-wise multiply where n_fact_classes is broadcastable.
+
+            # this is (n_batch, n_fact_classes, hidden_units) * (n_batch, n_fact_classes (broadcastable)
+            brain_input = current_facts * result_of_gate.dimshuffle([0, 'x'])
+
+            #brain_input = T.dot(current_facts.T, result_of_gate)
 
             input_n = T.dot(brain_input.T, W_in_stacked)  #  Line is fine
             hid_input = T.dot(h_prev_episode, W_hid_stacked)  # This is not the error
