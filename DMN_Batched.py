@@ -16,7 +16,7 @@ class DMN_Batched(object):
     def __init__(self):
 
         self.n_batches = 20
-        print(" Starting dmn no scan... ")
+        print("DMN Batched Starting dmn no scan... ")
         self.preprocess_babi_set_for_dmn()
 
         self.X_train, self.mask_sentences_train, self.fact_ordering_train, self.question_train, self.question_train_mask, self.Y_train, self.X_test, self.mask_sentences_test, self.fact_ordering_test, self.question_test, self.question_test_mask, self.Y_test, self.word2idx, self.idx2word, dimension_fact_embeddings, max_queslen, max_sentlen, total_sequence_length = self.process_data("embeddings")
@@ -36,6 +36,8 @@ class DMN_Batched(object):
 
         max_fact_seqlen = max_sentlen
         total_number_of_sentences_per_episode = int(total_sequence_length / max_fact_seqlen)
+        self.total_number_sentences = total_number_of_sentences_per_episode
+
         dimension_word_embeddings = 9
         max_number_of_episodes_read = 1
         self.initialization_randomization = .1
@@ -57,6 +59,8 @@ class DMN_Batched(object):
         word_idxs = T.lmatrix("word_indices") # Dimensions are (num_batches, sequence_word_idxs)
         word_mask = T.TensorType(dtype='int32', broadcastable=(False, False, True))('word_mask')
         y_sentence = T.lmatrix('y_sentence')  # Dimensions are (answer_for_each_batch),
+        fact_outputs = T.lmatrix('fact_outputs') # Dimensions are (fact for each batch)
+
         lr = T.scalar('lr')
 
         #hid_init = T.dot(np.ones((self.n_batches, 1)), self.h0_gru)
@@ -103,23 +107,27 @@ class DMN_Batched(object):
                         current_facts = [cur_word_state] # dimensions should be (n_batch, n_hidden)
                     else:
                         current_facts = T.concatenate((current_facts, [cur_word_state]), axis=0).dimshuffle(1, 0, 2)  # you will want to make sure that this is (n_batch, stacking_dim, n_hidden)
-                        self.current_facts = current_facts
+                        #self.current_facts = current_facts
 
             z_dmn =  T.concatenate(([question_encoding], [cur_word_state]), axis=0).dimshuffle(1, 0, 2)   # will want to make sure this is dimension (n_batch, n_facts, n_hidden)
             #  Innermost product:  T.dot( z_dmn, self.W_dmn_1).  This is (n_batch, n_facts, n_hidden) dotP (n_hidden_units_facts, n_dmn_hidden_units)
             # Innermost_product1 has dim (n_batch, n_facts, n_dmn_hidden_units)
-            innermost_product1 = T.tanh(T.dot(z_dmn, self.W_dmn_1))
+
+                #     #innermost_product1 = T.tanh(T.dot(z_dmn, self.W_dmn_1))  # DS THIS WAS ORIGINAL
+            innermost_product1 = T.dot(z_dmn, self.W_dmn_1)
 
             # Where we have (n_batch, n_facts, n_dmn_hidden_units) x (n_dmn_hidden_units, n_hidden_units_facts)
             # Innermost_product2 has dimensions (n_batch, n_facts, n_hidden_units_facts)
-            innermost_product2 = T.dot(innermost_product1, self.W_dmn_2)
+
+            innermost_product2 = T.dot(innermost_product1, self.W_dmn_2)  # DS:  G should be a function of innermost_product2, not 1
             self.G_dmn = T.nnet.sigmoid(innermost_product2)
-
-            # The inner is an elementwise product of (n_batch, n_facts, n_hidden) * (n_batch, n_facts, n_hidden_units_facts)
-
+        #
+        #     # The inner is an elementwise product of (n_batch, n_facts, n_hidden) * (n_batch, n_facts, n_hidden_units_facts)
+        #
             self.result_of_gate = T.nnet.softmax(T.sum(current_facts * self.G_dmn, axis=2))
+
             # result_of_gate is dimension (n_batch, n_facts)
-            list_of_fact_softmaxes.append(self.result_of_gate)
+        #    list_of_fact_softmaxes.append(self.result_of_gate)
 
             padded_gate = T.shape_padright(self.result_of_gate, 1)
 
@@ -138,6 +146,7 @@ class DMN_Batched(object):
             h_cur = (1 - updategate) * h_prev_episode + updategate * hidden_update
 
             return h_cur
+            #return cur_word_state
 
         cur_episode_state = question_encoding
         for idx in range(max_number_of_episodes_read):
@@ -148,17 +157,36 @@ class DMN_Batched(object):
         y_pred = T.argmax(p_y_given_x_sentence, axis=1)
 
         sentence_nll = -T.mean(T.min(T.log(p_y_given_x_sentence) * y_sentence, axis=1))
+        fact_nll = -T.mean(T.min(T.log(self.result_of_gate) * fact_outputs, axis=1))
 
         sentence_gradients = T.grad(sentence_nll, self.params, disconnected_inputs='warn')  # Returns gradients of the nll w.r.t the params
+        fact_gradients = T.grad(fact_nll, self.params, disconnected_inputs='warn')  # Returns gradients of the nll w.r.t the params
+        sentence_gradients, norms = self.max_norm_constraints(sentence_gradients, 0.01)
 
         sentence_updates = OrderedDict((p, p - lr*g) for p, g in zip(self.params, sentence_gradients))  # computes the update for each of the params.
+        fact_updates = OrderedDict((p, p - lr*g) for p, g in zip(self.params, fact_gradients))  # computes the update for each of the params.
 
         print("Compiling fcns...")
         self.classify = theano.function(inputs=[word_idxs, word_mask, self.question_idxs, self.question_mask], outputs=y_pred, on_unused_input='warn')
-        self.sentence_train = theano.function(inputs=[word_idxs, word_mask, self.question_idxs, self.question_mask, y_sentence, lr], outputs=[sentence_nll, self.current_facts], updates=sentence_updates, on_unused_input='warn')
+        self.sentence_train = theano.function(inputs=[word_idxs, word_mask, self.question_idxs, self.question_mask, y_sentence, lr], outputs=sentence_nll, updates=sentence_updates, on_unused_input='warn')
+
+        self.fact_train = theano.function(inputs=[word_idxs, word_mask, self.question_idxs, self.question_mask, fact_outputs, y_sentence, lr], outputs=fact_nll, updates=fact_updates, on_unused_input='warn')
 
         #self.debug_output = theano.function(inputs=[word_idxs, word_mask, self.question_idxs, self.question_mask, y_sentence, lr], outputs=current_facts, on_unused_input='warn')
         print("Done compiling!")
+
+    def max_norm_constraints(self, updates, max_norm, epsilon=1e-3):
+        new_grads, norms_out = [], []
+        dtype = np.dtype(theano.config.floatX).type
+        for g in updates:
+            norms = T.sqrt(T.sum(T.sqr(g), axis=0,keepdims=True))
+
+            target_norms = T.clip(norms, 0, dtype(max_norm))
+            constrained_output = (g * (target_norms / (dtype(epsilon) + norms)))
+            new_grads.append(constrained_output)
+            norms_out.append(norms)
+        return new_grads, norms_out
+
 
     def GRU_question(self, num_hidden_units_questions, max_question_len):
 
@@ -203,7 +231,7 @@ class DMN_Batched(object):
         return cur_sent
 
     def train(self):
-        lr = .0005
+        lr = .01
         max_epochs = 20000
         print(" Starting training...")
 
@@ -211,10 +239,10 @@ class DMN_Batched(object):
 
             shuffled_idxs = [i for i in range(len(self.X_train))]
             shuffle(shuffled_idxs)
-            ll = 0
+            ll, ll_fact = 0, 0
             num_train_correct, tot_num_train = 0, 0
 
-            x_batch, x_mask_batch, q_batch, q_mask_batch, y_batch = [], [], [], [], []
+            x_batch, x_mask_batch, q_batch, q_mask_batch, y_batch, fact_ordering = [], [], [], [], [], []
 
             total_num_batches = 0
             for idx in shuffled_idxs:
@@ -224,25 +252,25 @@ class DMN_Batched(object):
                 q_batch.append(self.question_train[idx])
                 q_mask_batch.append(self.question_train_mask[idx])
                 y_batch.append(self.Y_train[idx])
+                fact_ordering.append(self.fact_ordering_train[idx])
 
                 if len(x_batch) == self.n_batches:
-
                     total_num_batches += 1
-                    x_mask_batch, q_mask_batch, y_batch2 = self._gen_new_batches(x_mask_batch, q_mask_batch, y_batch)
+                    x_mask_batch, q_mask_batch, y_batch2, fact_ordering2 = self._gen_new_batches(x_mask_batch, q_mask_batch, y_batch, fact_ordering)
 
-                    ll_cur, gate_res = self.sentence_train(x_batch, x_mask_batch, q_batch, q_mask_batch, y_batch2, lr)
+                    ll_fact += self.fact_train(x_batch, x_mask_batch, q_batch, q_mask_batch, fact_ordering2, y_batch2, lr)
+
+                    ll_cur = self.sentence_train(x_batch, x_mask_batch, q_batch, q_mask_batch, y_batch2, lr)
                     ll += ll_cur
-                    #brainin = self.debug_output(x_batch, x_mask_batch, q_batch, q_mask_batch, y_batch2, lr)
-
-                    #print(" cur facts: ", brainin.shape)
-                    #assert(1 == 2)
-                    x_batch, x_mask_batch, q_batch, q_mask_batch, y_batch = [], [], [], [], []
-
-            if e % 30 == 0:
-                print(" gate res: ", gate_res)
 
 
-            if e % 1000 == 0:
+                    x_batch, x_mask_batch, q_batch, q_mask_batch, y_batch, fact_ordering = [], [], [], [], [], []
+
+            #if e % 30 == 0:
+            #    print(" gate res: ", gate_res)
+            print(" overall ll: ", ll, " and ll fact: " , ll_fact)
+
+            if e % 500 == 0:
                 lr /= 2
 
             test_batch_idx = 0
@@ -254,24 +282,25 @@ class DMN_Batched(object):
                 q_batch.append(self.question_train[idx])
                 q_mask_batch.append(self.question_train_mask[idx])
                 y_batch.append(self.Y_train[idx])
+                fact_ordering.append(self.fact_ordering_test[idx])
 
                 if len(x_batch) == self.n_batches:
 
                     test_batch_idx += 1
-                    x_mask_batch, q_mask_batch, y_batch2 = self._gen_new_batches(x_mask_batch, q_mask_batch, y_batch)
+                    x_mask_batch, q_mask_batch, y_batch2, fact_ordering2 = self._gen_new_batches(x_mask_batch, q_mask_batch, y_batch, fact_ordering)
                     y_pred = self.classify(x_batch, x_mask_batch, q_batch, q_mask_batch)
 
                     for idx, yp, ya in zip(range(len(y_pred)), y_pred, y_batch):
                         if yp == ya:
                             num_train_correct += 1
                         tot_num_train += 1
-                    x_batch, x_mask_batch, q_batch, q_mask_batch, y_batch = [], [], [], [], []
+                    x_batch, x_mask_batch, q_batch, q_mask_batch, y_batch, fact_ordering = [], [], [], [], [], []
 
             print(" at epoch, ", e ," avg one ll : ", ll / total_num_batches)
             print(" ratio training data predicted correctly: ", num_train_correct / tot_num_train)
 
 
-    def _gen_new_batches(self, x_mask_batch, q_mask_batch, y_batch):
+    def _gen_new_batches(self, x_mask_batch, q_mask_batch, y_batch, fact_batch):
         new_masks = []
         for x in x_mask_batch:
             new_batch = []
@@ -299,14 +328,24 @@ class DMN_Batched(object):
                 cur_vec[y] = 1
                 new_y.append(np.asarray(cur_vec))
 
-            return x_mask_batch, q_mask_batch, np.asarray(new_y)
+            if fact_batch is None:
+                return x_mask_batch, q_mask_batch, np.asarray(new_y)
+            else:
+                new_fact = []
+                for f in fact_batch:
+                    cur_vec = []
+                    for idx in range(self.total_number_sentences):
+                        cur_vec.append(0)
+                    cur_vec[f[0]] = 1
+                    new_fact.append(cur_vec)
+                return x_mask_batch, q_mask_batch, np.asarray(new_y), np.asarray(new_fact)
 
     def initialize_dmn_params(self, nh, num_hidden_units_words, num_hidden_units_facts, num_hidden_units_episodes, num_hidden_units_questions, dimension_word_embeddings, dimension_fact_embeddings, max_fact_seqlen, max_number_of_episodes_read, number_word_classes, total_number_of_sentences_per_episode):
 
         num_hidden_units = nh
 
         # Initializers
-        self.emb = T.clip(theano.shared(name='embeddings_prob', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (number_word_classes, dimension_word_embeddings)).astype(theano.config.floatX)), -1, 1)
+        self.emb = theano.shared(name='embeddings_prob', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (number_word_classes, dimension_word_embeddings)).astype(theano.config.floatX))
 
         # GRU Word Parameters
         self.W_word_reset_gate_h = theano.shared(name='W_word_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_words, num_hidden_units_words)).astype(theano.config.floatX))
@@ -353,7 +392,7 @@ class DMN_Batched(object):
 
         # W_dmn_2:  size (8, 2).  W_dmn_1 size (8,1), b_dmn_1 = 1, b_dmn-2 = 1
 
-        dmn_hidden_units = 30
+        dmn_hidden_units = 10
         self.W_dmn_1 = theano.shared(name='W_dmn_1', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts , dmn_hidden_units)).astype(theano.config.floatX))
         self.W_dmn_2 = theano.shared(name='W_dmn_2', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (dmn_hidden_units, num_hidden_units_facts)).astype(theano.config.floatX))
         self.b_dmn_1 = theano.shared(name='b_dmn_1', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (1)).astype(theano.config.floatX))

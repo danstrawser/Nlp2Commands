@@ -16,7 +16,7 @@ class SimpleGRUBatched(object):
     def __init__(self):
 
         self.n_batches = 20
-        print(" Starting dmn no scan... ")
+        print(" Starting dmn no scan Simple GRU... ")
         self.preprocess_babi_set_for_dmn()
 
         self.X_train, self.mask_sentences_train, self.fact_ordering_train, self.question_train, self.question_train_mask, self.Y_train, self.X_test, self.mask_sentences_test, self.fact_ordering_test, self.question_test, self.question_test_mask, self.Y_test, self.word2idx, self.idx2word, dimension_fact_embeddings, max_queslen, max_sentlen, total_sequence_length = self.process_data("embeddings")

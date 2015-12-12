@@ -262,7 +262,9 @@ class DMN_SimplerGate(object):
               
                 x, word_mask, fact_ordering, q, mask_question, y = self.X_train[idx], self.mask_sentences_train[idx], self.fact_ordering_train[idx], self.question_train[idx], self.question_train_mask[idx], self.Y_train[idx]
                 ll_fact += self.fact_train([x], [word_mask], fact_ordering, q, mask_question, lr)
-                
+
+
+
 #                 val_you = self.eval_fact_train([x], [word_mask], fact_ordering, q, mask_question, lr)
 #                 print(" one val you: ", val_you)
 #                 gdm = self.get_gdmn([x], [word_mask], fact_ordering, q, mask_question, lr)
