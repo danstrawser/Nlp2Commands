@@ -9,6 +9,7 @@ from mem_network import MemNet
 from wqa_processor import WikiProcessor
 from cnn_processor import CNNProcessor
 from SimpleGRUBatched import SimpleGRUBatched
+from DMN_Original_Gate import DMN_Original_Gate
 from DMN_Batched import DMN_Batched
 from babi_processor import BabiProcessor
 import sys
@@ -57,7 +58,7 @@ def main(nn_type, data_type):
     elif nn_type == "dynam_net_theano":
         #num_fact_hidden_units, number_classes, number_fact_embeddings, dimension_fact_embeddings, num_episode_hidden_units
 
-        dmn_t = DMN_Batched()
+        dmn_t = DMN_Original_Gate()
         dmn_t.train()
         print("Finished DMN Theano")
 
