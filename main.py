@@ -76,7 +76,15 @@ if __name__ == '__main__':
         nn_type = "dynam_net_theano"
         data_type = "babi_medium"
 
+        #A = np.array([[[.01, .02, .01, .01], [.04, .05, .01, .01], [.043, .01, .01, .01]], [[1, 2, 1, 1], [4, 5, 1, 1], [8, 9, 1, 1]]] , np.float)
+        #B = np.array([[1, 2, 3], [4, 5, 6], [4, 5, 6], [4, 5, 6]] , np.float)
+        #c = np.dot(A, B)
+        #print(" c: ", c)
+        # Rules, whatever other dimensions you have, the two inner must be aligned!
 
+
+        # So when you do a dot product of something (2, 3, 4) dot (4,3) you get something (2, 3, 3)
+        # The middle dimension collapses.  The first dimension does not "mingle"
     main(nn_type, data_type)
 
 

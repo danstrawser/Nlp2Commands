@@ -88,7 +88,6 @@ class SimpleGRUBatched(object):
             x_cur = self.emb[word_idxs[:, idx]]  # This will produce a matrix of size (n_batch, word_dimensions)
             cur_h_state = gru_layer(x_cur, cur_h_state, word_mask[:, idx])
 
-
         p_y_given_x_sentence = T.nnet.softmax(T.dot(cur_h_state, self.W_output_to_answer))
         y_pred = T.argmax(p_y_given_x_sentence, axis=1)
         sentence_nll = -T.mean(T.min(T.log(p_y_given_x_sentence) * y_sentence, axis=1))
