@@ -21,7 +21,6 @@ class DMN_Batched(object):
 
         self.X_train, self.mask_sentences_train, self.fact_ordering_train, self.question_train, self.question_train_mask, self.Y_train, self.X_test, self.mask_sentences_test, self.fact_ordering_test, self.question_test, self.question_test_mask, self.Y_test, self.word2idx, self.idx2word, dimension_fact_embeddings, max_queslen, max_sentlen, total_sequence_length = self.process_data("embeddings")
 
-
         #self.GRU_x_train, self.GRU_x_test, self.GRU_w_mask_train, self.GRU_w_mask_test = [], [], [], []
 
         # for x, xm, q, qm in zip(self.X_train, self.mask_sentences_train, self.question_train, self.question_train_mask):
@@ -70,7 +69,7 @@ class DMN_Batched(object):
         def slice_w(x, n):
              return x[:, n*num_hidden_units_facts:(n+1)*num_hidden_units_facts]
 
-        def gru_layer(x_cur, h_prev, w_mask):
+        def gru_word_layer(x_cur, h_prev, w_mask):
 
             input_n = T.dot(x_cur, W_in_stacked)  # input_n will have dimension (n_batches, W_in_stacked_n_cols)
             hid_input = T.dot(h_prev, W_hid_stacked)
@@ -87,13 +86,71 @@ class DMN_Batched(object):
 
             return h_cur
 
-        cur_h_state = question_encoding
-        for idx in range(total_len_word_seq):
-            x_cur = self.emb[word_idxs[:, idx]]  # This will produce a matrix of size (n_batch, word_dimensions)
-            cur_h_state = gru_layer(x_cur, cur_h_state, word_mask[:, idx])
+
+        list_of_fact_softmaxes = []
+        W_in_stacked = T.concatenate([self.W_episode_reset_gate_x, self.W_episode_update_gate_x, self.W_episode_hidden_gate_x], axis=1)  # I think your issue is that this should have # dim brain embeddings
+        W_hid_stacked = T.concatenate([self.W_episode_reset_gate_h, self.W_episode_update_gate_h, self.W_episode_hidden_gate_h], axis=1)
+
+        def gru_episode_layer(h_prev_episode):
+
+            current_facts = None
+            cur_word_state = question_encoding
+            for jdx in range(total_sequence_length):
+                x_cur = self.emb[word_idxs[:, jdx]]
+                cur_word_state = gru_word_layer(x_cur, cur_word_state, word_mask[:, jdx])
+
+                if jdx % max_sentlen:
+                    if current_facts is None:
+                        current_facts = [cur_word_state] # dimensions should be (n_batch, n_hidden)
+
+                    else:
+                        current_facts = T.concatenate((current_facts, [cur_word_state]), axis=1)  # you will want to make sure that this is (n_batch, stacking_dim, n_hidden)
+
+            z_dmn = T.concatenate(([question_encoding], [h_prev_episode]), axis=1)  # will want to make sure this is dimension (n_batch, stacking_dim, n_hidden)
+
+            # To do the G_dmn gate, I think you will have to make a dimension of W_dmn_2 broadcastable.
 
 
-        p_y_given_x_sentence = T.nnet.softmax(T.dot(cur_h_state, self.W_output_to_answer))
+            self.G_dmn = T.nnet.sigmoid(T.dot(self.W_dmn_2, T.tanh(T.dot(z_dmn, self.W_dmn_1)) + self.b_dmn_1) + self.b_dmn_2)  # Note that this should be 1-dimensional
+
+            # You could get G_dmn down to (n_batch, n_facts)
+
+            assert(1 == 2)
+
+
+            # Current facts has dim n_batch, n_hidden)  May also
+
+            self.t_dot_res = T.dot(current_facts, self.G_dmn).T
+
+            result_of_gate = T.nnet.softmax(self.t_dot_res).T
+
+            list_of_fact_softmaxes.append(result_of_gate)
+
+
+            # Note:  at the end of the day, you want a gate that will have (n_batch, n_classes)
+            assert( 1==2)
+
+            brain_input = T.dot(current_facts.T, result_of_gate)
+
+            input_n = T.dot(brain_input.T, W_in_stacked)  #  Line is fine
+            hid_input = T.dot(h_prev_episode, W_hid_stacked)  # This is not the error
+
+            resetgate = slice_w(hid_input, 0) + slice_w(input_n, 0)
+            updategate = slice_w(hid_input, 1) + slice_w(input_n, 1)
+            resetgate = T.tanh(resetgate)
+            updategate = T.tanh(updategate)
+            hidden_update = slice_w(input_n, 2) + resetgate * slice_w(hid_input, 2)
+            hidden_update = T.tanh(hidden_update)
+            h_cur = (1 - updategate) * h_prev_episode + updategate * hidden_update
+
+            return h_cur
+
+        cur_episode_state = question_encoding
+        for idx in range(max_number_of_episodes_read):
+            cur_episode_state = gru_episode_layer(cur_episode_state)
+
+
+        p_y_given_x_sentence = T.nnet.softmax(T.dot(self.W_episode_to_word, cur_episode_state) + self.b_episode_to_word)
         y_pred = T.argmax(p_y_given_x_sentence, axis=1)
         sentence_nll = -T.mean(T.min(T.log(p_y_given_x_sentence) * y_sentence, axis=1))
 
@@ -101,9 +158,12 @@ class DMN_Batched(object):
         sentence_updates = OrderedDict((p, p - lr*g) for p, g in zip(self.params, sentence_gradients))  # computes the update for each of the params.
 
         print("Compiling fcns...")
-        self.classify = theano.function(inputs=[word_idxs, word_mask, self.question_idxs, self.question_mask], outputs=y_pred, on_unused_input='warn')
-        self.sentence_train = theano.function(inputs=[word_idxs, word_mask, self.question_idxs, self.question_mask, y_sentence, lr], outputs=sentence_nll, updates=sentence_updates, on_unused_input='warn')
-        #self.debug_output = theano.function(inputs=[word_idxs, word_mask, y_sentence, lr], outputs=[sentence_nll], on_unused_input='warn')
+        #self.classify = theano.function(inputs=[word_idxs, word_mask, self.question_idxs, self.question_mask], outputs=y_pred, on_unused_input='warn')
+        #self.sentence_train = theano.function(inputs=[word_idxs, word_mask, self.question_idxs, self.question_mask, y_sentence, lr], outputs=sentence_nll, updates=sentence_updates, on_unused_input='warn')
+
+        self.debug_output = theano.function(inputs=[word_idxs, word_mask, self.question_idxs, self.question_mask, y_sentence, lr], outputs=[sentence_nll], on_unused_input='warn')
+
+
 
         print("Done compiling!")
 
@@ -182,7 +242,12 @@ class DMN_Batched(object):
                     total_num_batches += 1
                     x_mask_batch, q_mask_batch, y_batch2 = self._gen_new_batches(x_mask_batch, q_mask_batch, y_batch)
 
-                    ll += self.sentence_train(x_batch, x_mask_batch, q_batch, q_mask_batch, y_batch2, lr)
+                    #ll += self.sentence_train(x_batch, x_mask_batch, q_batch, q_mask_batch, y_batch2, lr)
+
+                    dv = self.debug_output(x_batch, x_mask_batch, q_batch, q_mask_batch, y_batch2, lr)
+
+                    print(" cur dv: ", dv)
+                    assert(1 == 2)
 
                     x_batch, x_mask_batch, q_batch, q_mask_batch, y_batch = [], [], [], [], []
 
@@ -277,15 +342,32 @@ class DMN_Batched(object):
         self.W_question_update_gate_x = theano.shared(name='W_question_update_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_questions)).astype(theano.config.floatX))
         self.W_question_hidden_gate_h = theano.shared(name='W_question_hidden_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_questions, num_hidden_units_questions)).astype(theano.config.floatX))
         self.W_question_hidden_gate_x = theano.shared(name='W_question_hidden_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (dimension_word_embeddings, num_hidden_units_questions)).astype(theano.config.floatX))
-
         self.h0_questions = theano.shared(name='h0_questions', value=np.zeros((1, num_hidden_units_questions), dtype=theano.config.floatX))
 
         self.params.extend((self.W_question_reset_gate_h, self.W_question_reset_gate_x, self.W_question_update_gate_h, self.W_question_update_gate_x, self.W_question_hidden_gate_h, self.W_question_hidden_gate_x,
                         self.h0_questions))
 
+        # GRU Episode Parameters
+        self.W_episode_reset_gate_h = theano.shared(name='W_episode_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, num_hidden_units_episodes)).astype(theano.config.floatX))
+        self.W_episode_reset_gate_x = theano.shared(name='W_episode_reset_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, dimension_fact_embeddings)).astype(theano.config.floatX))
+        self.W_episode_update_gate_h = theano.shared(name='W_episode_update_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, num_hidden_units_episodes)).astype(theano.config.floatX))
+        self.W_episode_update_gate_x = theano.shared(name='W_episode_update_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, dimension_fact_embeddings)).astype(theano.config.floatX))
+        self.W_episode_hidden_gate_h = theano.shared(name='W_episode_hidden_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, num_hidden_units_episodes)).astype(theano.config.floatX))
+        self.W_episode_hidden_gate_x = theano.shared(name='W_episode_hidden_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, dimension_fact_embeddings)).astype(theano.config.floatX))
+        # W_episode to word is (21 x 8)
+        self.W_episode_to_word = theano.shared(name='W_fact_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (number_word_classes, num_hidden_units_facts)).astype(theano.config.floatX))
+        self.b_episode_to_word = theano.shared(name='W_fact_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, number_word_classes).astype(theano.config.floatX))
 
+        self.params.extend((self.W_episode_reset_gate_h, self.W_episode_reset_gate_x, self.W_episode_update_gate_h, self.W_episode_update_gate_x, self.W_episode_hidden_gate_h, self.W_episode_hidden_gate_x,
+                            self.W_episode_to_word, self.b_episode_to_word))
 
+        # W_dmn_2:  size (8, 2).  W_dmn_1 size (8,1), b_dmn_1 = 1, b_dmn-2 = 1
+        self.W_dmn_1 = theano.shared(name='W_dmn_1', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts , 1)).astype(theano.config.floatX))
+        self.W_dmn_2 = theano.shared(name='W_dmn_2', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, total_number_of_sentences_per_episode)).astype(theano.config.floatX))
+        self.b_dmn_1 = theano.shared(name='b_dmn_1', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (1)).astype(theano.config.floatX))
+        self.b_dmn_2 = theano.shared(name='b_dmn_2', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (1)).astype(theano.config.floatX))
 
+        self.params.extend((self.W_dmn_1, self.W_dmn_2, self.b_dmn_1, self.b_dmn_2))
 
 
 

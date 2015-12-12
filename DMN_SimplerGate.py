@@ -679,8 +679,7 @@ class DMN_SimplerGate(object):
         num_rows_z_dmn = 2
         inner_dmn_dimension = 8
         
-        # W_dmn_2:  size (8, 2).  W_dmn_1 size (8,1), b_dmn_1 = 1, b_dmn-2 = 1 
-            
+        # W_dmn_2:  size (8, 2).  W_dmn_1 size (8,1), b_dmn_1 = 1, b_dmn-2 = 1
         self.W_dmn_1 = theano.shared(name='W_dmn_1', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts , 1)).astype(theano.config.floatX))
         self.W_dmn_2 = theano.shared(name='W_dmn_2', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, total_number_of_sentences_per_episode)).astype(theano.config.floatX))
 
