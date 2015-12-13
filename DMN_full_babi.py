@@ -9,8 +9,9 @@ from collections import OrderedDict
 from nltk.tokenize import RegexpTokenizer
 import random
 from random import shuffle
+from babi_processor_dmn import babi_processor_dmn
 
-class DMN_Original_Gate(object):
+class DMN_full_babi(object):
 
     # We take as input a string of "facts"
     def __init__(self):
@@ -19,7 +20,10 @@ class DMN_Original_Gate(object):
         print("DMN Batched Starting dmn no scan... ")
         self.preprocess_babi_set_for_dmn()
 
-        self.X_train, self.mask_sentences_train, self.fact_ordering_train, self.question_train, self.question_train_mask, self.Y_train, self.X_test, self.mask_sentences_test, self.fact_ordering_test, self.question_test, self.question_test_mask, self.Y_test, self.word2idx, self.idx2word, dimension_fact_embeddings, max_queslen, max_sentlen, total_sequence_length = self.process_data("embeddings")
+        #self.X_train, self.mask_sentences_train, self.fact_ordering_train, self.question_train, self.question_train_mask, self.Y_train, self.X_test, self.mask_sentences_test, self.fact_ordering_test, self.question_test, self.question_test_mask, self.Y_test, self.word2idx, self.idx2word, dimension_fact_embeddings, max_queslen, max_sentlen, total_sequence_length = self.process_data("embeddings")
+        data_proc = babi_processor_dmn('data/babi_tasks/tasks_1-20_v1-2/en/qa1_single-supporting-fact_train.txt', 'data/babi_tasks/tasks_1-20_v1-2/en/qa1_single-supporting-fact_test.txt')
+        data_proc.process()
+
 
         #self.GRU_x_train, self.GRU_x_test, self.GRU_w_mask_train, self.GRU_w_mask_test = [], [], [], []
 
