@@ -1,0 +1,60 @@
+\title{Giving Machines Memory and Focus:  Evaluating Attention-Based and Memory-Based Neural Network Models on Large Q\&A Datasets} 
+\author{Dan Strawser}
+
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{amsfonts}
+
+\DeclareMathOperator*{\argmax}{\arg\!\max}
+
+\begin{document}
+\maketitle
+\begin{abstract}
+This is what the project is about
+\end{abstract}
+
+\section{Introduction}
+
+Question Answering tasks are some of the most basic in machine. 
+
+
+The very recent advancements in deep neural networks, particularly those with attention-mechanisms, have shown great
+
+Therefore, for this project, the goal is to evaluate some of the more recent neural network architectures on larger datasets.  
+
+\section{Approaches}
+
+\subsection{GRU Encoder}
+
+The baseline algorithm was a simple GRU encoder.   
+
+\subsection{Memory Network}
+
+More recently, the Memory Network was described in \cite{mem_net} as an End-to-End algorithm.  This is important because it means that the algorithm only requires (\textit{text}, \textit{question}, \textit{answer}) tuples instead of relying on fact annotations.  
+
+
+\subsection{Dynamic Memory Network}
+
+
+\section{Datasets}
+
+One of the 
+
+\subsection{Babi Tasks}
+
+The Babi Tasks are a set of 20 tasks created by researchers at Facebook.  The motivation behind the task 
+
+
+
+
+
+
+\nocite{*}
+\bibliography{bibliography}
+\bibliographystyle{IEEEtran}
+
+
+
+\end{document}

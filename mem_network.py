@@ -179,7 +179,7 @@ class Model:
             lines = np.concatenate([train_lines, test_lines], axis=0)
         elif data_source == 'cnn_qa':
             print(" CNN running... ")
-            proc = CNNProcessor("simplified")
+            proc = CNNProcessor("full")
             vocab, train_lines, test_lines, word_to_idx, idx_to_word, max_seqlen, max_sentlen = proc.process()
             lines = np.concatenate([train_lines, test_lines], axis=0)
 
@@ -350,8 +350,6 @@ class Model:
                 print(" past!")
             else:
                 y_true.append(self.vocab.index(y))
-
-
 
         #y_true = [self.vocab.index(y) for y in dataset['Y'][:len(y_pred)]]
         print(metrics.confusion_matrix(y_true, y_pred))

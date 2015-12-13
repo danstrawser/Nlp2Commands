@@ -63,7 +63,6 @@ def main(nn_type, data_type):
         dmn_t.train()
         print("Finished DMN Theano")
 
-
 if __name__ == '__main__':
     # See function train for all possible parameter and there definition.
 
@@ -76,8 +75,8 @@ if __name__ == '__main__':
         print(" data type: ", data_type)
     else:
         print(" running")
-        nn_type = "dynam_net_theano"
-        data_type = "babi_medium"
+        nn_type = "mem_net"
+        data_type = "cnn"
 
         #A = np.array([[[.01, .02, .01, .01], [.04, .05, .01, .01], [.043, .01, .01, .01]], [[1, 2, 1, 1], [4, 5, 1, 1], [8, 9, 1, 1]]] , np.float)
         #B = np.array([[1, 2, 3], [4, 5, 6], [4, 5, 6], [4, 5, 6]] , np.float)

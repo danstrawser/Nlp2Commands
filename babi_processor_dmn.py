@@ -25,11 +25,11 @@ class babi_processor_dmn(object):
         X_test, Question_test, Answer_test = self._gen_word_vecs(self.filename_test)
 
         cur_idx = 0
-        word2idx["<BLANK>"] = cur_idx
-        idx2word[cur_idx] = "<BLANK>"
+        word2idx["BLANK"] = cur_idx
+        idx2word[cur_idx] = "BLANK"
         cur_idx += 1
-        word2idx["<EOS>"] = cur_idx
-        idx2word[cur_idx] = "<EOS>"
+        word2idx["EOS"] = cur_idx
+        idx2word[cur_idx] = "EOS"
         cur_idx += 1
         for article in X_train + X_test:
             if len(article) > max_sentences_per_article:
@@ -52,32 +52,34 @@ class babi_processor_dmn(object):
                     idx2word[cur_idx] = w
                     cur_idx += 1
 
-        X_vec_train, sentence_mask_train, article_mask_train, Question_vec_train, Answer_vec_train = self._gen_idx_vecs(X_train, Question_train, Answer_train, word2idx, max_sentences_per_article, max_sentlen, max_question_len)
-        X_vec_test, sentence_mask_test, article_mask_test, Question_vec_test, Answer_vec_test = self._gen_idx_vecs(X_test, Question_test, Answer_test, word2idx, max_sentences_per_article, max_sentlen, max_question_len)
+        X_vec_train, sentence_mask_train, Question_vec_train, question_mask_train, Answer_vec_train = self._gen_idx_vecs(X_train, Question_train, Answer_train, word2idx, max_sentences_per_article, max_sentlen, max_question_len)
+        X_vec_test, sentence_mask_test, Question_vec_test, question_mask_test, Answer_vec_test = self._gen_idx_vecs(X_test, Question_test, Answer_test, word2idx, max_sentences_per_article, max_sentlen, max_question_len)
+        max_seqlen = max_sentlen * max_sentences_per_article
 
-        return X_vec_train, sentence_mask_train, Question_vec_train, Answer_vec_train, X_vec_test, sentence_mask_test, Question_vec_test, Answer_vec_test
+        return X_vec_train, sentence_mask_train, Question_vec_train, question_mask_train, Answer_vec_train, X_vec_test, sentence_mask_test, Question_vec_test, question_mask_test, Answer_vec_test, max_sentlen, max_question_len, max_seqlen, word2idx, idx2word
+
 
     def _gen_idx_vecs(self, X, Question, Answer, word2idx, max_sentences_per_article, max_sentlen, max_question_len):
         X_vec, sentence_mask, article_mask, Question_vec, Answer_vec = [], [], [], [], []
 
-        X_vec = word2idx["<BLANK>"] * np.ones((len(X), max_sentences_per_article, max_sentlen))
-        Question_vec = word2idx["<BLANK>"] * np.ones((len(X), max_question_len))
-        sentence_mask = np.zeros((len(X), max_sentences_per_article, max_sentlen))
-        article_mask = np.zeros((len(X), max_sentences_per_article))
+        X_vec = word2idx["BLANK"] * np.ones((len(X), max_sentences_per_article * max_sentlen))
+        Question_vec = word2idx["BLANK"] * np.ones((len(X), max_question_len))
+
+        sentence_mask = np.zeros((len(X), max_sentences_per_article * max_sentlen))
+        question_mask = np.ones((len(X), 3))
 
         for idx, article in enumerate(X):
-            article_mask[idx, :len(article)] = 1
             for jdx, sent in enumerate(article):
-                sentence_mask[idx, jdx, :len(sent)] = 1
+                sentence_mask[idx, jdx * max_sentlen : jdx * max_sentlen + len(sent)] = 1
                 for kdx, w in enumerate(sent):
-                    X_vec[idx, jdx, kdx] = word2idx[w]
+                    X_vec[idx, jdx * max_sentlen + kdx] = word2idx[w]
         for idx, question in enumerate(Question):
             for jdx, w in enumerate(question):
                 Question_vec[idx, jdx] = word2idx[w]
         for a in Answer:
             Answer_vec.append(word2idx[a])
 
-        return  X_vec, sentence_mask, article_mask, Question_vec, Answer_vec
+        return X_vec, sentence_mask, Question_vec, question_mask, Answer_vec
 
     def _gen_word_vecs(self, filename):
         X, Question, Answer = [], [], []
@@ -87,7 +89,7 @@ class babi_processor_dmn(object):
             for line in f:
                 cur_article_idx += 1
                 if "?" not in line:
-                    cur_article.append(self.tokenizer.tokenize(line.strip())[1:])
+                    cur_article.append(self.tokenizer.tokenize(line.strip() + " <EOS>")[1:])
                 else:
                     X.append(deepcopy(cur_article))
                     ques_answer = re.split(r'\t+', line.strip())

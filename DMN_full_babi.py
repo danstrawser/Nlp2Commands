@@ -22,18 +22,7 @@ class DMN_full_babi(object):
 
         #self.X_train, self.mask_sentences_train, self.fact_ordering_train, self.question_train, self.question_train_mask, self.Y_train, self.X_test, self.mask_sentences_test, self.fact_ordering_test, self.question_test, self.question_test_mask, self.Y_test, self.word2idx, self.idx2word, dimension_fact_embeddings, max_queslen, max_sentlen, total_sequence_length = self.process_data("embeddings")
         data_proc = babi_processor_dmn('data/babi_tasks/tasks_1-20_v1-2/en/qa1_single-supporting-fact_train.txt', 'data/babi_tasks/tasks_1-20_v1-2/en/qa1_single-supporting-fact_test.txt')
-        data_proc.process()
-
-
-        #self.GRU_x_train, self.GRU_x_test, self.GRU_w_mask_train, self.GRU_w_mask_test = [], [], [], []
-
-        # for x, xm, q, qm in zip(self.X_train, self.mask_sentences_train, self.question_train, self.question_train_mask):
-        #     self.GRU_x_train.append(np.concatenate((q, x), axis=1))
-        #     self.GRU_w_mask_train.append(np.concatenate((qm, xm), axis=1))
-        #
-        # for x, xm, q, qm in zip(self.X_train, self.mask_sentences_test, self.question_test, self.question_test_mask):
-        #     self.GRU_x_train.append(np.concatenate((q, x), axis=1))
-        #     self.GRU_w_mask_train.append(np.concatenate((qm, xm), axis=1))
+        self.X_train, self.mask_sentences_train, self.question_train, self.question_train_mask, self.Y_train, self.X_test, self.mask_sentences_test, self.question_test, self.question_test_mask, self.Y_test, max_sentlen, max_queslen, total_sequence_length, self.word2idx, self.idx2word = data_proc.process()
 
         print(" Building model... ")
         number_word_classes = max(self.idx2word.keys(), key=int) + 1
@@ -43,6 +32,7 @@ class DMN_full_babi(object):
         self.total_number_sentences = total_number_of_sentences_per_episode
 
         dimension_word_embeddings = 9
+        dimension_fact_embeddings = dimension_word_embeddings
         max_number_of_episodes_read = 1
         self.initialization_randomization = .5
         assert(self.initialization_randomization < 1)
@@ -56,7 +46,6 @@ class DMN_full_babi(object):
         num_hidden_units_questions = num_hidden_units_episodes
         num_hidden_units_words = num_hidden_units_questions
         self.num_word_classes = number_word_classes
-        total_len_word_seq = total_sequence_length
 
         self.initialize_dmn_params(nh, num_hidden_units_words, num_hidden_units_facts, num_hidden_units_episodes, num_hidden_units_questions, dimension_word_embeddings, dimension_fact_embeddings, max_fact_seqlen, max_number_of_episodes_read, number_word_classes, total_number_of_sentences_per_episode)
 
@@ -115,10 +104,6 @@ class DMN_full_babi(object):
             innermost_product2 = T.dot(innermost_product1, self.W_dmn_2)  # The result of this will be (n_batch, n_features, hidden_units_facts)
             self.G_dmn = T.nnet.sigmoid(innermost_product2)  # The gate should be (n_batches, 1)
 
-            #padded_gate = T.shape_padright(self.result_of_gate, 1)
-            # this is (n_batch, n_fact_classes, hidden_units) * (n_batch, n_fact_classes (broadcastable)
-            #brain_input = T.sum(current_facts * padded_gate, axis=1)
-
             input_n = T.dot(cur_word_state, W_in_stacked_episode)  #  Line is fine
             hid_input = T.dot(h_prev_episode, W_hid_stacked_episode)  # This is not the error
             resetgate = slice_w(hid_input, 0) + slice_w(input_n, 0)
@@ -126,9 +111,10 @@ class DMN_full_babi(object):
             resetgate = T.tanh(resetgate)
             updategate = T.tanh(updategate)
 
-            hidden_update = slice_w(input_n, 2) + resetgate * slice_w(hid_input, 2)
-            hidden_update =  T.tanh(hidden_update)
-            h_cur = (1 - updategate) * h_prev_episode + updategate * hidden_update
+            hidden_update2 = slice_w(input_n, 2) + resetgate * slice_w(hid_input, 2)
+            #hidden_update2 = resetgate * slice_w(hid_input, 2)  # It looks like input_n is (20,7) and resetgate * slice(hid_input) is (20, 10)
+            hidden_update2 =  T.tanh(hidden_update2)
+            h_cur = (1 - updategate) * h_prev_episode + updategate * hidden_update2
 
             padded_gate = T.shape_padright(self.G_dmn, 1)
             h_cur = padded_gate * h_cur + (1 - padded_gate) * h_prev_episode
@@ -157,12 +143,10 @@ class DMN_full_babi(object):
         print("Compiling fcns...")
         self.classify = theano.function(inputs=[word_idxs, word_mask, self.question_idxs, self.question_mask], outputs=y_pred, on_unused_input='warn')
         self.sentence_train = theano.function(inputs=[word_idxs, word_mask, self.question_idxs, self.question_mask, y_sentence, lr], outputs=sentence_nll, updates=sentence_updates, on_unused_input='warn')
-
         # self.fact_train = theano.function(inputs=[word_idxs, word_mask, self.question_idxs, self.question_mask, fact_outputs, y_sentence, lr], outputs=fact_nll, updates=fact_updates, on_unused_input='warn')
 
-        #self.debug_output = theano.function(inputs=[word_idxs, word_mask, self.question_idxs, self.question_mask, y_sentence, lr], outputs=current_facts, on_unused_input='warn')
+        #self.debug_output = theano.function(inputs=[word_idxs, word_mask, self.question_idxs, self.question_mask, y_sentence, lr], outputs=self.input_n, on_unused_input='warn')
         print("Done compiling!")
-
 
     def max_norm_constraints(self, updates, max_norm, epsilon=1e-3):
         new_grads, norms_out = [], []
@@ -241,16 +225,14 @@ class DMN_full_babi(object):
                 q_batch.append(self.question_train[idx])
                 q_mask_batch.append(self.question_train_mask[idx])
                 y_batch.append(self.Y_train[idx])
-                fact_ordering.append(self.fact_ordering_train[idx])
+                #fact_ordering.append(self.fact_ordering_train[idx])
 
                 if len(x_batch) == self.n_batches:
                     total_num_batches += 1
 
                     x_mask_batch, q_mask_batch, y_batch2, fact_ordering2 = self._gen_new_batches(x_mask_batch, q_mask_batch, y_batch, fact_ordering)
                     #ll_fact += self.fact_train(x_batch, x_mask_batch, q_batch, q_mask_batch, fact_ordering2, y_batch2, lr)
-                    ll_cur = self.sentence_train(x_batch, x_mask_batch, q_batch, q_mask_batch, y_batch2, lr)
-                    ll += ll_cur
-
+                    ll += self.sentence_train(x_batch, x_mask_batch, q_batch, q_mask_batch, y_batch2, lr)
                     x_batch, x_mask_batch, q_batch, q_mask_batch, y_batch, fact_ordering = [], [], [], [], [], []
 
             #if e % 30 == 0:
@@ -269,7 +251,7 @@ class DMN_full_babi(object):
                 q_batch.append(self.question_train[idx])
                 q_mask_batch.append(self.question_train_mask[idx])
                 y_batch.append(self.Y_train[idx])
-                fact_ordering.append(self.fact_ordering_test[idx])
+                #fact_ordering.append(self.fact_ordering_test[idx])
 
                 if len(x_batch) == self.n_batches:
 
@@ -364,11 +346,11 @@ class DMN_full_babi(object):
 
         # GRU Episode Parameters
         self.W_episode_reset_gate_h = theano.shared(name='W_episode_reset_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, num_hidden_units_episodes)).astype(theano.config.floatX))
-        self.W_episode_reset_gate_x = theano.shared(name='W_episode_reset_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, dimension_fact_embeddings)).astype(theano.config.floatX))
+        self.W_episode_reset_gate_x = theano.shared(name='W_episode_reset_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, num_hidden_units_episodes)).astype(theano.config.floatX))
         self.W_episode_update_gate_h = theano.shared(name='W_episode_update_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, num_hidden_units_episodes)).astype(theano.config.floatX))
-        self.W_episode_update_gate_x = theano.shared(name='W_episode_update_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, dimension_fact_embeddings)).astype(theano.config.floatX))
+        self.W_episode_update_gate_x = theano.shared(name='W_episode_update_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, num_hidden_units_episodes)).astype(theano.config.floatX))
         self.W_episode_hidden_gate_h = theano.shared(name='W_episode_hidden_gate_h', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, num_hidden_units_episodes)).astype(theano.config.floatX))
-        self.W_episode_hidden_gate_x = theano.shared(name='W_episode_hidden_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, dimension_fact_embeddings)).astype(theano.config.floatX))
+        self.W_episode_hidden_gate_x = theano.shared(name='W_episode_hidden_gate_x', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_episodes, num_hidden_units_episodes)).astype(theano.config.floatX))
         # W_episode to word is (21 x 8)
         self.W_episode_to_word = theano.shared(name='W_episode_to_word', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, (num_hidden_units_facts, number_word_classes)).astype(theano.config.floatX))
         #self.b_episode_to_word = theano.shared(name='b_episode_to_word', value=self.initialization_randomization * np.random.uniform(-1.0, 1.0, number_word_classes).astype(theano.config.floatX))

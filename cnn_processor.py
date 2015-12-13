@@ -12,12 +12,12 @@ class CNNProcessor(object):
         self.test_directory = 'test'
         assert(type_of_data == "full" or type_of_data == "simplified" or type_of_data == "medium")
         self.type_of_data = type_of_data
-        self.MAX_NUM_TRAINING_FILES = 20000
+        self.MAX_NUM_TRAINING_FILES = 25000
         self.MAX_NUM_TEST_FILES = 500
 
     def process(self):
         test_lines, train_lines, max_seqlen = [], [], 0
-
+        # cur_article[0] holes the article, cur_article[1] is the question, cur_article[2] is the answer
         for idx, file in enumerate(os.listdir(self.directory + '/' + self.training_directory)):
             with open(self.directory + '/' + self.training_directory + '/' + file, encoding="utf8") as f:
                 cur_article = []
