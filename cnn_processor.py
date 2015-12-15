@@ -106,7 +106,28 @@ class CNNProcessor(object):
                     vocab.add(w)
                     cur_idx += 1
 
-        #assert(1 ==2 )
+        base_str = "@entity"
+        max_idx = 200
+        for idx in range(max_idx):
+            cur_string = base_str + str(idx)
+            if cur_string not in word2idx:
+                word2idx[cur_string] = cur_idx
+                idx2word[cur_idx] = cur_string
+                vocab.add(cur_string)
+                cur_idx += 1
+
+        base_str = " @entity"
+        max_idx = 200
+        for idx in range(max_idx):
+            cur_string = base_str + str(idx)
+            if cur_string not in word2idx:
+                word2idx[cur_string] = cur_idx
+                idx2word[cur_idx] = cur_string
+                vocab.add(cur_string)
+                cur_idx += 1
+
+
+
         return word2idx, idx2word, vocab, max_sent_len
 
     def _split_test_train(self, lines):

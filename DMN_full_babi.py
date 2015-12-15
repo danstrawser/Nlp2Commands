@@ -88,7 +88,6 @@ class DMN_full_babi(object):
         W_in_stacked_episode = T.concatenate([self.W_episode_reset_gate_x, self.W_episode_update_gate_x, self.W_episode_hidden_gate_x], axis=1)  # I think your issue is that this should have # dim brain embeddings
         W_hid_stacked_episode = T.concatenate([self.W_episode_reset_gate_h, self.W_episode_update_gate_h, self.W_episode_hidden_gate_h], axis=1)
 
-
         def gru_episode_layer(cur_sentence_idx, h_prev_episode):
 
             cur_word_state = question_encoding  # could be right, could be wrong.

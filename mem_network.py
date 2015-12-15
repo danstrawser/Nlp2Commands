@@ -227,6 +227,8 @@ class Model:
         self.embedding_size = embedding_size
         self.num_classes = len(vocab) + 1
         self.vocab = vocab
+
+
         self.adj_weight_tying = adj_weight_tying
         self.num_hops = num_hops
         self.lb = lb
@@ -341,6 +343,7 @@ class Model:
 
         y_true = []
         for y in dataset['Y'][:len(y_pred)]:
+
             #print(" y: ", y)
             #print(" y idx: ", self.vocab.index(y))
             if y not in self.vocab:
